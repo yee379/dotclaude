@@ -33,11 +33,16 @@ End-to-end guidance for deploying and operating services on Kubernetes — from 
 ### Mental model
 
 ```
-Host cluster (physical nodes)
-└── Namespace: vclusters
-    ├── vcluster: dev        (virtual cluster — dev workloads)
-    ├── vcluster: staging    (virtual cluster — staging workloads)
-    └── vcluster: prod       (virtual cluster — production workloads)
+Host cluster: sdf-k8s01
+KUBECONFIG=~/.kube/config.sdf-k8s01
+│
+├── vcluster: ai-playground
+│   ├── namespace: dev    ← KUBECONFIG=~/.kube/contexts/ai-playground/dev
+│   ├── namespace: staging← KUBECONFIG=~/.kube/contexts/ai-playground/staging
+│   └── namespace: prod   ← KUBECONFIG=~/.kube/contexts/ai-playground/prod
+│
+└── vcluster: <other-project>
+    └── namespace: prod   ← KUBECONFIG=~/.kube/contexts/<other-project>/prod
 ```
 
 - **Inside a vcluster:** standard `kubectl`, `helm`, `make deploy` — looks and feels like a real cluster.
@@ -45,35 +50,76 @@ Host cluster (physical nodes)
 - **Isolation:** each vcluster has its own namespaces, RBAC, and resource quotas, fully isolated from other vclusters.
 - **Syncing:** by default, Pods created inside a vcluster are synced down to the host cluster as real Pods. Services, Ingresses, and PVCs can also be synced (configured in `vcluster.yaml`).
 
+### KUBECONFIG conventions
+
+We use **separate kubeconfig files per vcluster/namespace** rather than merging all contexts into a single `~/.kube/config`. Switching clusters is done by setting `KUBECONFIG`.
+
+```
+~/.kube/
+├── config.sdf-k8s01                      # host cluster (sdf-k8s01)
+└── contexts/
+    ├── ai-playground/
+    │   ├── dev
+    │   ├── staging
+    │   └── prod
+    └── <other-project>/
+        └── prod
+```
+
+```bash
+# Host cluster (sdf-k8s01) — manage vclusters themselves, inspect host-level resources
+export KUBECONFIG=/sdf/home/y/ytl/.kube/config.sdf-k8s01
+
+# ai-playground vcluster — prod namespace
+export KUBECONFIG=/sdf/home/y/ytl/.kube/contexts/ai-playground/prod
+
+# Confirm which cluster/context is active
+kubectl config current-context
+kubectl config get-contexts
+
+# One-liner: run a command against a specific cluster without changing the env
+KUBECONFIG=~/.kube/contexts/ai-playground/prod kubectl get pods
+```
+
+**Key rules:**
+- Always `echo $KUBECONFIG` or `kubectl config current-context` before any destructive command
+- Never merge kubeconfigs with `kubectl config flatten` — keep them separate files for clarity
+- The host kubeconfig (`config.sdf-k8s01`) is for infrastructure operations only; workloads are deployed via their vcluster kubeconfig
+
 ### CLI quickstart
 
 ```bash
 # Install the CLI (macOS)
 brew install loft-sh/tap/vcluster
 
-# Create a vcluster in a host namespace
-vcluster create prod --namespace vclusters-prod
+# List all vclusters visible from the host cluster
+KUBECONFIG=~/.kube/config.sdf-k8s01 vcluster list
 
-# Connect — switches kubeconfig context to the vcluster
-vcluster connect prod --namespace vclusters-prod
+# Create a new vcluster (run from host context)
+KUBECONFIG=~/.kube/config.sdf-k8s01 \
+  vcluster create ai-playground --namespace vclusters-ai-playground
 
-# Run a single command inside the vcluster without switching context
-vcluster connect prod --namespace vclusters-prod -- kubectl get pods -A
+# Export a vcluster's kubeconfig to a file (our preferred pattern)
+KUBECONFIG=~/.kube/config.sdf-k8s01 \
+  vcluster connect ai-playground \
+    --namespace vclusters-ai-playground \
+    --update-current=false \
+    --kube-config ~/.kube/contexts/ai-playground/prod
 
-# List all vclusters (across all host namespaces)
-vcluster list
+# Connect interactively (temporarily switches current context)
+KUBECONFIG=~/.kube/config.sdf-k8s01 \
+  vcluster connect ai-playground --namespace vclusters-ai-playground
 
-# Disconnect (restores previous kubeconfig context)
+# Disconnect (restores previous context)
 vcluster disconnect
 
 # Pause a vcluster (scales control plane to 0 — saves cost in non-prod)
-vcluster pause dev --namespace vclusters-dev
+KUBECONFIG=~/.kube/config.sdf-k8s01 \
+  vcluster pause ai-playground --namespace vclusters-ai-playground
 
 # Resume
-vcluster resume dev --namespace vclusters-dev
-
-# Delete
-vcluster delete dev --namespace vclusters-dev
+KUBECONFIG=~/.kube/config.sdf-k8s01 \
+  vcluster resume ai-playground --namespace vclusters-ai-playground
 ```
 
 ### vcluster.yaml — configuration
@@ -127,19 +173,19 @@ vcluster create prod \
 
 ### vcluster in the Makefile workflow
 
-Since we use Makefiles for deployments, wrap vcluster operations as Make targets too:
+Since we use Makefiles for deployments, wire `KUBECONFIG` as a Makefile variable so every `kubectl` call automatically targets the right cluster:
 
 ```makefile
-# Connect to a named vcluster and export the kubeconfig
-.PHONY: vcluster-connect
-vcluster-connect:
-	vcluster connect $(VCLUSTER_NAME) --namespace $(VCLUSTER_NAMESPACE) \
-	  --kube-config-context-name $(VCLUSTER_CONTEXT)
+# Connection is just setting KUBECONFIG — no vcluster connect needed
+KUBECONFIG_DIR := $(HOME)/.kube/contexts
+KUBECONFIG      := $(KUBECONFIG_DIR)/$(PROJECT)/$(ENV)
+export KUBECONFIG
 
-# Apply all rendered manifests into the currently connected vcluster
+# Apply all rendered manifests into the target vcluster/namespace
 .PHONY: deploy
 deploy: render
-	kubectl apply -f deploy/$(ENV)/manifests/ --context $(VCLUSTER_CONTEXT)
+	kubectl apply -f deploy/$(ENV)/manifests/
+	kubectl rollout status deployment/$(APP) --namespace $(NAMESPACE) --timeout 5m
 ```
 
 ### Namespace layout inside a vcluster
@@ -193,15 +239,26 @@ Makefile
 
 ```makefile
 # ---- configuration -----------------------------------------------
-CHART        := ./charts/api
-ENV          ?= dev                          # override: make deploy ENV=prod
-IMAGE_TAG    ?= $(shell git rev-parse --short HEAD)
+CHART     := ./charts/api
+APP       := api
+NAMESPACE := api
+ENV       ?= dev                          # override: make deploy ENV=prod
+IMAGE_TAG ?= $(shell git rev-parse --short HEAD)
+PROJECT   ?= ai-playground               # vcluster project name
 
-VCLUSTER_NAME      := api-$(ENV)
-VCLUSTER_NAMESPACE := vclusters-$(ENV)
-VCLUSTER_CONTEXT   := vcluster_$(VCLUSTER_NAME)_$(VCLUSTER_NAMESPACE)
+# KUBECONFIG is the cluster-switching mechanism.
+# Each vcluster/env has its own kubeconfig file; no --context flag needed.
+KUBECONFIG_DIR := $(HOME)/.kube/contexts
+KUBECONFIG      := $(KUBECONFIG_DIR)/$(PROJECT)/$(ENV)
+export KUBECONFIG
 
 MANIFESTS_DIR := ./deploy/$(ENV)/manifests
+
+# ---- guard: confirm target cluster before any deploy/rollback -----
+.PHONY: whoami
+whoami:
+	@echo "KUBECONFIG: $(KUBECONFIG)"
+	@kubectl config current-context
 
 # ---- render -------------------------------------------------------
 # Render Helm chart to plain YAML and commit — this is the source of truth.
@@ -209,11 +266,11 @@ MANIFESTS_DIR := ./deploy/$(ENV)/manifests
 render:
 	@echo "Rendering $(ENV) manifests (image: $(IMAGE_TAG))..."
 	mkdir -p $(MANIFESTS_DIR)
-	helm template api $(CHART) \
+	helm template $(APP) $(CHART) \
 	  -f $(CHART)/values.yaml \
 	  -f $(CHART)/values-$(ENV).yaml \
 	  --set image.tag=$(IMAGE_TAG) \
-	  --namespace api \
+	  --namespace $(NAMESPACE) \
 	  > $(MANIFESTS_DIR)/all.yaml
 	@echo "Rendered → $(MANIFESTS_DIR)/all.yaml"
 
@@ -221,31 +278,27 @@ render:
 .PHONY: render-split
 render-split:
 	mkdir -p $(MANIFESTS_DIR)
-	helm template api $(CHART) \
+	helm template $(APP) $(CHART) \
 	  -f $(CHART)/values.yaml \
 	  -f $(CHART)/values-$(ENV).yaml \
 	  --set image.tag=$(IMAGE_TAG) \
-	  --namespace api \
+	  --namespace $(NAMESPACE) \
 	  --output-dir $(MANIFESTS_DIR)
 
 # ---- diff ---------------------------------------------------------
-# Show what would change before applying (requires kubectl-diff or helm-diff).
+# Show what would change before applying.
 .PHONY: diff
-diff:
-	kubectl diff -f $(MANIFESTS_DIR)/ --context $(VCLUSTER_CONTEXT) || true
+diff: whoami
+	kubectl diff -f $(MANIFESTS_DIR)/ || true
 
 # ---- deploy -------------------------------------------------------
-# Apply committed manifests to the vcluster. render MUST be run first.
+# Apply committed manifests. render MUST be run (and committed) first.
 .PHONY: deploy
-deploy:
+deploy: whoami
 	@echo "Deploying $(ENV) from $(MANIFESTS_DIR)..."
-	kubectl apply -f $(MANIFESTS_DIR)/ \
-	  --context $(VCLUSTER_CONTEXT) \
-	  --namespace api
-	kubectl rollout status deployment/api \
-	  --context $(VCLUSTER_CONTEXT) \
-	  --namespace api \
-	  --timeout 5m
+	kubectl apply -f $(MANIFESTS_DIR)/ --namespace $(NAMESPACE)
+	kubectl rollout status deployment/$(APP) \
+	  --namespace $(NAMESPACE) --timeout 5m
 
 # ---- render + commit + deploy (full pipeline) --------------------
 .PHONY: release
@@ -256,27 +309,21 @@ release: render
 
 # ---- rollback (git-based) ----------------------------------------
 # Roll back to any previously committed manifest state.
+# Usage: make rollback ENV=prod ROLLBACK_SHA=abc1234
 .PHONY: rollback
-rollback:
+rollback: whoami
 	@echo "Rolling back $(ENV) to $(ROLLBACK_SHA)..."
-	git show $(ROLLBACK_SHA):$(MANIFESTS_DIR)/all.yaml | \
-	  kubectl apply -f - --context $(VCLUSTER_CONTEXT) --namespace api
-	kubectl rollout status deployment/api \
-	  --context $(VCLUSTER_CONTEXT) --namespace api --timeout 5m
-
-# ---- connect to vcluster -----------------------------------------
-.PHONY: connect
-connect:
-	vcluster connect $(VCLUSTER_NAME) \
-	  --namespace $(VCLUSTER_NAMESPACE) \
-	  --kube-config-context-name $(VCLUSTER_CONTEXT)
+	git show $(ROLLBACK_SHA):$(MANIFESTS_DIR)/all.yaml \
+	  | kubectl apply -f - --namespace $(NAMESPACE)
+	kubectl rollout status deployment/$(APP) \
+	  --namespace $(NAMESPACE) --timeout 5m
 
 # ---- helpers ------------------------------------------------------
 .PHONY: pods logs
-pods:
-	kubectl get pods -n api --context $(VCLUSTER_CONTEXT)
+pods: whoami
+	kubectl get pods -n $(NAMESPACE)
 logs:
-	kubectl logs -n api -l app=api --tail=100 --follow --context $(VCLUSTER_CONTEXT)
+	kubectl logs -n $(NAMESPACE) -l app=$(APP) --tail=100 --follow
 ```
 
 ### Workflow in practice
@@ -343,16 +390,21 @@ make render ENV=prod + make release ENV=prod
 ### vcluster-per-environment isolation
 
 ```bash
-# Each environment is a separate vcluster — never share
-vcluster list
-# NAME           NAMESPACE         STATUS
-# api-dev        vclusters-dev     Running
-# api-staging    vclusters-staging Running
-# api-prod       vclusters-prod    Running
+# Each environment is a separate vcluster with its own kubeconfig file.
+# Switching environments = setting KUBECONFIG.
 
-# Connect to the target environment before running kubectl commands
-make connect ENV=staging
-kubectl get namespaces    # inside the staging vcluster
+export KUBECONFIG=~/.kube/contexts/ai-playground/dev
+kubectl get pods -A     # inside the dev vcluster
+
+export KUBECONFIG=~/.kube/contexts/ai-playground/prod
+kubectl get pods -A     # inside the prod vcluster
+
+# Check the host cluster (e.g. to inspect vcluster StatefulSets)
+export KUBECONFIG=~/.kube/config.sdf-k8s01
+kubectl get pods -n vclusters-ai-playground   # vcluster control plane pods
+
+# Always confirm before deploying
+make whoami ENV=prod    # prints KUBECONFIG path + current-context
 ```
 
 ---
@@ -668,18 +720,20 @@ helm upgrade --install cert-manager jetstack/cert-manager \
 Since manifests are committed to git, rolling back means applying a previous commit's manifests:
 
 ```bash
+# Set KUBECONFIG to the target environment first
+export KUBECONFIG=~/.kube/contexts/ai-playground/prod
+
 # Find the commit with the last known-good manifests
 git log --oneline deploy/prod/manifests/
 
-# Roll back to a specific commit
+# Roll back using the Makefile target
 make rollback ENV=prod ROLLBACK_SHA=<commit-sha>
 
 # Or manually:
 git show <commit-sha>:deploy/prod/manifests/all.yaml \
-  | kubectl apply -f - --context vcluster_api-prod_vclusters-prod --namespace api
+  | kubectl apply -f - --namespace api
 
-kubectl rollout status deployment/api --namespace api \
-  --context vcluster_api-prod_vclusters-prod --timeout 5m
+kubectl rollout status deployment/api --namespace api --timeout 5m
 ```
 
 ### Fallback: kubectl rollout undo
@@ -687,8 +741,7 @@ kubectl rollout status deployment/api --namespace api \
 Use when you need to roll back the running Deployment without touching git state (emergency only — reconcile git afterwards):
 
 ```bash
-# Undo last rollout inside the vcluster
-vcluster connect api-prod --namespace vclusters-prod
+export KUBECONFIG=~/.kube/contexts/ai-playground/prod
 kubectl rollout undo deployment/api -n api
 kubectl rollout status deployment/api -n api
 ```
@@ -707,11 +760,11 @@ kubectl rollout status deployment/api -n api
 ## Debugging
 
 ```bash
-# Connect to the target vcluster first
-make connect ENV=prod
-# or: vcluster connect api-prod --namespace vclusters-prod
+# Set KUBECONFIG to the target vcluster first — then all kubectl commands
+# automatically hit the right cluster with no --context needed.
+export KUBECONFIG=~/.kube/contexts/ai-playground/prod
 
-# Pod status (inside the vcluster)
+# Pod status
 kubectl get pods -n api -l app=api
 kubectl describe pod <pod-name> -n api    # events, resource limits, probe failures
 
@@ -738,20 +791,24 @@ kubectl describe pod <pod-name> -n api | grep -A10 Events
 ### vcluster-specific debugging
 
 ```bash
-# Check the vcluster control plane health (from the HOST cluster)
-kubectl get pods -n vclusters-prod        # vcluster StatefulSet should be Running
+# Switch to the HOST cluster to inspect vcluster infrastructure
+export KUBECONFIG=~/.kube/config.sdf-k8s01
 
-# Check vcluster syncer logs (host cluster) — useful for sync errors
-kubectl logs -n vclusters-prod -l app=vcluster --tail=50
+# Check the vcluster control plane pods (host-side)
+kubectl get pods -n vclusters-ai-playground
 
-# List all vclusters and their status
+# Check vcluster syncer logs — useful for sync errors (Ingress/PVC not appearing)
+kubectl logs -n vclusters-ai-playground -l app=vcluster --tail=50
+
+# List all vclusters
 vcluster list
 
-# If the vcluster itself is unresponsive: pause and resume to restart control plane
-vcluster pause api-prod --namespace vclusters-prod
-vcluster resume api-prod --namespace vclusters-prod
+# If a vcluster is unresponsive: pause and resume to restart the control plane
+vcluster pause ai-playground --namespace vclusters-ai-playground
+vcluster resume ai-playground --namespace vclusters-ai-playground
 
-# Compare manifests in git vs what's actually running
+# Compare committed manifests vs what's actually running in the vcluster
+export KUBECONFIG=~/.kube/contexts/ai-playground/prod
 git show HEAD:deploy/prod/manifests/all.yaml | kubectl diff -f - -n api || true
 ```
 
