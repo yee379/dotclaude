@@ -36,6 +36,8 @@ compatibility: opencode
 
 **The handoff:** This skill plans what documentation needs to change and ensures that work is called out in the plan. `/document-release` executes those changes after the code ships. If this review is skipped, `document-release` has to reverse-engineer intent from a diff — it will miss context, tone, and the "why" behind changes.
 
+To run all gates in sequence automatically, use `/full-review` instead of invoking each skill individually.
+
 ---
 
 ## Purpose

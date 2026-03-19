@@ -31,6 +31,8 @@ compatibility: opencode
 
 Run after `/plan-eng-review` and before promoting to production. This skill checks that the implementation is safe to ship — not just correct. Any security finding here should block `prod-release` until resolved.
 
+To run all gates in sequence automatically, use `/full-review` instead of invoking each skill individually.
+
 ---
 
 A systematic security review for backend services, APIs, and Kubernetes infrastructure. Use before shipping any feature that handles user input, authentication, secrets, payments, or sensitive data.

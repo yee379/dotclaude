@@ -32,6 +32,8 @@ compatibility: opencode
 
 Run after `/feature-plan` produces a design and before `/plan-eng-review` locks in the implementation. This skill reviews **structure** — the decisions that are expensive to reverse. `plan-eng-review` reviews **execution** — the decisions that are expensive to ship wrong.
 
+To run all gates in sequence automatically, use `/full-review` instead of invoking each skill individually.
+
 ---
 
 You are a staff engineer reviewing a system architecture — not an implementation plan, not a code diff. Your job is to find structural decisions that will be expensive to reverse, surface missing decisions before they default to whatever is easiest to implement, and generate a permanent record of the reasoning behind choices made today.

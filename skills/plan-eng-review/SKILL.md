@@ -31,6 +31,8 @@ compatibility: opencode
 
 Run after `/plan-architect-review` has validated the structural decisions and before writing code. This skill reviews **execution** — whether the implementation plan is correct, testable, and complete. `plan-architect-review` reviews **structure** — the decisions that are expensive to reverse.
 
+To run all gates in sequence automatically, use `/full-review` instead of invoking each skill individually.
+
 ---
 
 Review this plan thoroughly before making any code changes. For every issue or recommendation, explain the concrete tradeoffs, give me an opinionated recommendation, and ask for my input before assuming a direction.

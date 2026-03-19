@@ -33,6 +33,8 @@ A structured approach to planning features and architectural changes before writ
 
 Use `/feature-plan` first — before architecture review or implementation. Its output (problem statement, requirements, rough design, ADRs) is the input that `plan-architect-review` needs to do a meaningful structural review.
 
+Once the plan exists, run `/full-review` to gate it through the complete review pipeline in one go.
+
 ---
 
 ## When to Use
