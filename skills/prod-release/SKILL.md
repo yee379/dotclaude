@@ -7,6 +7,26 @@ compatibility: opencode
 
 # Production Release
 
+## Workflow position
+
+```
+/feature-plan            problem framing, requirements, rough system design, ADRs
+      │
+      ▼
+/plan-architect-review   deep structural review: service boundaries, data ownership,
+      │                  consistency models, failure domains, technology choices → ADR log
+      ▼
+/plan-eng-review         implementation gate: code quality, test coverage, performance,
+      │                  edge cases → test plan artifact
+      ▼
+/prod-release          ← YOU ARE HERE: environment promotion, smoke tests, feature flag
+                         rollout, monitoring validation, rollback procedure
+```
+
+Run after `/plan-eng-review` has passed and implementation is complete. This skill owns the promotion path from feature branch to production. Earlier skills validate plans — this skill ships them safely.
+
+---
+
 A disciplined process for promoting code from test through staging to production safely — with gates, checklists, and a clear rollback plan at every step.
 
 ## When to Use

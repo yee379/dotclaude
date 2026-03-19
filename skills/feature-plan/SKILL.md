@@ -9,6 +9,26 @@ compatibility: opencode
 
 A structured approach to planning features and architectural changes before writing code. Produces a clear spec, design decisions, and delivery sequence.
 
+## Workflow position
+
+```
+/feature-plan          ← YOU ARE HERE: problem framing, requirements, rough system design, ADRs
+      │
+      ▼
+/plan-architect-review   deep structural review: service boundaries, data ownership,
+      │                  consistency models, failure domains, technology choices → ADR log
+      ▼
+/plan-eng-review         implementation gate: code quality, test coverage, performance,
+      │                  edge cases → test plan artifact
+      ▼
+/prod-release            environment promotion, smoke tests, feature flag rollout,
+                         monitoring validation, rollback procedure
+```
+
+Use `/feature-plan` first — before architecture review or implementation. Its output (problem statement, requirements, rough design, ADRs) is the input that `plan-architect-review` needs to do a meaningful structural review.
+
+---
+
 ## When to Use
 
 - Planning a significant new feature or system change

@@ -7,6 +7,26 @@ compatibility: opencode
 
 # Plan Review Mode
 
+## Workflow position
+
+```
+/feature-plan            problem framing, requirements, rough system design, ADRs
+      │
+      ▼
+/plan-architect-review   deep structural review: service boundaries, data ownership,
+      │                  consistency models, failure domains, technology choices → ADR log
+      ▼
+/plan-eng-review       ← YOU ARE HERE: implementation gate: code quality, test coverage,
+      │                  performance, edge cases → test plan artifact
+      ▼
+/prod-release            environment promotion, smoke tests, feature flag rollout,
+                         monitoring validation, rollback procedure
+```
+
+Run after `/plan-architect-review` has validated the structural decisions and before writing code. This skill reviews **execution** — whether the implementation plan is correct, testable, and complete. `plan-architect-review` reviews **structure** — the decisions that are expensive to reverse.
+
+---
+
 Review this plan thoroughly before making any code changes. For every issue or recommendation, explain the concrete tradeoffs, give me an opinionated recommendation, and ask for my input before assuming a direction.
 
 ## Priority hierarchy
