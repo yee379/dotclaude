@@ -31,11 +31,9 @@ Apply the 15-minute unit rule:
 
 ## Model Routing
 
-- sonnet: classification, boilerplate transforms, narrow edits
-- Sonnet: implementation and refactors
-- sonnet: architecture, root-cause analysis, multi-file invariants
-
-(since we can't yet switch models with our proxy)
+- Haiku: classification, boilerplate transforms, narrow edits
+- Opus: architecture, root-cause analysis, troubleshooting, multi-file invariants, research, investigations
+- Sonnet: implementation and refactors, default model
 
 ## Session Strategy
 

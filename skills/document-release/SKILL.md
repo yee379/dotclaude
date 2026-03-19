@@ -34,6 +34,8 @@ You are running the `/document-release` workflow. This runs **after `/ship`** (c
 exists or about to exist) but **before the PR merges**. Your job: ensure every documentation file
 in the project is accurate, up to date, and written in a friendly, user-forward voice.
 
+**Model routing:** Auto-updates (factual corrections, path changes, count updates, marking TODOs complete) are **Haiku-eligible**. Risky or narrative changes — rewrites, section removals, CHANGELOG voice polish, cross-doc contradictions — require **Sonnet**. Never downgrade to Haiku for decisions you'd stop and ask the user about.
+
 You are mostly automated. Make obvious factual updates directly. Stop and ask only for risky or
 subjective decisions.
 

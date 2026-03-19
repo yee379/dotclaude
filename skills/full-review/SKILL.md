@@ -9,6 +9,8 @@ compatibility: opencode
 
 Orchestrates the complete pre-implementation review pipeline against an existing plan. Each gate must pass before the next runs. You get a running dashboard so you always know where you are and what's left.
 
+**Model routing:** Triage (Step 1) is Haiku-eligible — it's a classification task. Each gate (Steps 2+) runs at **Opus** — they require deep reasoning, cross-file analysis, and architectural judgment. Do not downgrade gate execution to Sonnet to save cost; the gates exist precisely because the decisions are hard.
+
 **This skill assumes a plan already exists.** If you don't have one yet, run `/feature-plan` first.
 
 **This skill does not implement anything.** It sequences reviews, tracks gate status, and tells you when you're clear to build.
