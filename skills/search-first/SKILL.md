@@ -15,6 +15,7 @@ Use this skill when:
 - Adding a dependency or integration
 - The user asks "add X functionality" and you're about to write code
 - Before creating a new utility, helper, or abstraction
+- Troubleshooting problems
 
 ## Workflow
 
