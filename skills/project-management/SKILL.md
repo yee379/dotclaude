@@ -134,14 +134,15 @@ patterns used. This section grows as the design is locked in.
 
 1. Check `todo/README.md` — what's the next available number?
 2. Create `todo/<number>-<slug>.md` from the template above
-3. Add a row to `todo/README.md`
+3. **Add a row to `todo/README.md` immediately** — status 📋 Planned (or 🔄 In progress if starting now), branch `—`, PR `—`
 4. Create a git branch: `feat/<slug>` (or `fix/<slug>` for bugs)
 
 ```bash
 git checkout -b feat/<slug>
 ```
 
-5. If this is a planned feature, run `/feature-plan` and paste or link the output into the task file's **Approach** section.
+5. **Update `todo/README.md`** — set Branch to `feat/<slug>`
+6. If this is a planned feature, run `/feature-plan` and paste or link the output into the task file's **Approach** section.
 
 ### During Development
 
@@ -239,13 +240,45 @@ includes design decisions, problems encountered, and trade-offs.
 
 ---
 
+## README.md Maintenance
+
+`todo/README.md` is the single source of truth for project status. It must be updated **as part of the same action** that changes a task — never as a follow-up.
+
+### When to update README.md
+
+| Trigger | What to update |
+|---------|---------------|
+| New task created | Add row with status 💡 or 📋, branch `—`, PR `—` |
+| Task moves to In progress | Status → 🔄, Branch → `feat/<slug>` |
+| PR opened | Status → 👀, PR → `#<number>` |
+| PR merged | Status → ✅, note shipped date in task file |
+| Task cancelled | Status → ❌, add reason in task file |
+| Branch renamed or PR number changes | Update Branch/PR columns immediately |
+
+### README.md sync check
+
+Before ending any session that touched task files, verify the README is in sync:
+
+1. Open `todo/README.md`
+2. For each task file that was created or modified this session, confirm the row matches the current state of the task file
+3. If any row is stale — wrong status, missing branch, missing PR — update it now
+4. If a task file exists with no corresponding README row, add it
+
+**The README must never lag the task files.** A task file updated to `🔄 In progress` with no corresponding README update is a broken index.
+
+### README health check
+
+When asked "what are we working on?" or "show me project status", always read `todo/README.md` first — not individual task files. If the README appears stale (tasks in progress with no branch, shipped tasks still showing as in-review), run the sync check above before reporting status.
+
+---
+
 ## Quality Rules
 
 1. **Write problems down immediately.** The value of this system is in the **Problems & Solutions** section. A task file with no problems recorded is incomplete — every non-trivial feature hits at least one wall.
 2. **Never delete task files.** They are institutional memory. Cancelled tasks get `❌ Cancelled` status and a reason.
-3. **Keep the README index current.** It should always reflect reality. A stale index is worse than no index.
+3. **README.md is updated in the same action, not as a follow-up.** See README.md Maintenance above. A stale index is worse than no index.
 4. **One branch per task.** Don't mix unrelated work on a branch — it breaks the task ↔ branch ↔ PR traceability.
-5. **Update before ending a session.** If you close your laptop without updating the task file, the context is gone.
+5. **Update before ending a session.** If you close your laptop without updating the task file and README, the context is gone.
 6. **Link, don't duplicate.** If `/feature-plan` produced a detailed doc, link to it rather than copying it. The task file is the hub, not the whole archive.
 
 ---
