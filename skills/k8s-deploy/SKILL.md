@@ -237,26 +237,36 @@ Makefile
 
 ### Makefile patterns
 
+The Makefile is the source of truth for which vcluster a project belongs to. `PROJECT` and the per-env `KUBECONFIG` paths are hardcoded — not passed at runtime. A developer reading the Makefile immediately knows exactly which cluster each `make` target hits.
+
 ```makefile
-# ---- configuration -----------------------------------------------
-CHART     := ./charts/api
+# ---- project identity (hardcoded — this IS the cluster mapping) --
+# These values define which vcluster this project lives in.
+# Change them here if the project moves to a different vcluster.
+PROJECT   := ai-playground
 APP       := api
 NAMESPACE := api
-ENV       ?= dev                          # override: make deploy ENV=prod
-IMAGE_TAG ?= $(shell git rev-parse --short HEAD)
-PROJECT   ?= ai-playground               # vcluster project name
+CHART     := ./charts/api
 
-# KUBECONFIG is the cluster-switching mechanism.
-# Each vcluster/env has its own kubeconfig file; no --context flag needed.
-KUBECONFIG_DIR := $(HOME)/.kube/contexts
-KUBECONFIG      := $(KUBECONFIG_DIR)/$(PROJECT)/$(ENV)
+# ---- per-environment KUBECONFIG (derived from project identity) ---
+# Each env maps to a specific kubeconfig file. No --context flag needed.
+KUBECONFIG_DEV     := $(HOME)/.kube/contexts/$(PROJECT)/dev
+KUBECONFIG_STAGING := $(HOME)/.kube/contexts/$(PROJECT)/staging
+KUBECONFIG_PROD    := $(HOME)/.kube/contexts/$(PROJECT)/prod
+
+# Default env (can still be overridden: make deploy ENV=prod)
+ENV       ?= dev
+KUBECONFIG := $(HOME)/.kube/contexts/$(PROJECT)/$(ENV)
 export KUBECONFIG
 
+IMAGE_TAG  ?= $(shell git rev-parse --short HEAD)
 MANIFESTS_DIR := ./deploy/$(ENV)/manifests
 
 # ---- guard: confirm target cluster before any deploy/rollback -----
 .PHONY: whoami
 whoami:
+	@echo "Project:    $(PROJECT)"
+	@echo "Env:        $(ENV)"
 	@echo "KUBECONFIG: $(KUBECONFIG)"
 	@kubectl config current-context
 
@@ -326,7 +336,24 @@ logs:
 	kubectl logs -n $(NAMESPACE) -l app=$(APP) --tail=100 --follow
 ```
 
-### Workflow in practice
+### Reading a project's cluster targeting
+
+When working in an unfamiliar project, **read the Makefile first** to understand which vcluster it belongs to and how environments map to kubeconfig files:
+
+```bash
+# Quick scan — shows project/cluster identity at a glance
+grep -E '^\s*(PROJECT|APP|NAMESPACE|KUBECONFIG|VCLUSTER)' Makefile
+
+# Example output:
+# PROJECT   := ai-playground
+# APP       := my-service
+# NAMESPACE := my-service
+# KUBECONFIG := $(HOME)/.kube/contexts/ai-playground/$(ENV)
+```
+
+The `PROJECT` value is the key — it tells you which vcluster directory to look under in `~/.kube/contexts/`.
+
+---
 
 ```bash
 # 1. Make code changes, build & push image
