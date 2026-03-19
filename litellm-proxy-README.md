@@ -1,11 +1,8 @@
 # Zed + Claude Agent ACP + LiteLLM Proxy
 
-Running the Claude Code ACP agent (`claude-agent-acp`) in Zed's agent panel through a local LiteLLM proxy (`litellm-proxy.py`) requires several patches. The proxy exists for two distinct, separable reasons:
+Running the Claude Code ACP agent (`claude-agent-acp`) in Zed's agent panel through a local LiteLLM proxy (`litellm-proxy.py`) requires several patches. The proxy exists because of **protocol friction** — Claude Code speaks a slightly different dialect of the Anthropic API than SLAC's older LiteLLM deployment expects: header names differ, newer request body fields cause nginx 400s, model version strings use a different separator, and prompt-caching annotations are not understood.
 
-1. **Network access** — SLAC's LiteLLM is behind the SLAC network. The SOCKS5 tunnel solves that. Python's stdlib HTTP client can't speak SOCKS5 natively, so the proxy bridges that gap.
-2. **Protocol friction** — Claude Code speaks a slightly different dialect of the Anthropic API than SLAC's older LiteLLM deployment expects: header names differ, newer request body fields cause nginx 400s, model version strings use a different separator, and prompt-caching annotations are not understood.
-
-These two concerns are tangled together in the proxy right now but are fundamentally separable — which matters when thinking about what to change or replace (see [Background & Context](#background--context)).
+The proxy also supports optional SOCKS5 tunnelling for cases where the LiteLLM server isn't directly reachable (see [SOCKS Proxying](#socks-proxying)).
 
 Verify everything is working end-to-end with:
 
@@ -46,37 +43,119 @@ Zed Agent Panel
                            ├─ strips/rewrites non-standard body fields
                            ├─ normalises auth headers (single Authorization: Bearer)
                            ├─ rewrites model names (hyphens → dots)
-                           └─ SOCKS5 127.0.0.1:9051 (ssh tunnel)
+                           └─ SOCKS5 127.0.0.1:9051 (optional; ssh tunnel)
                                 └─ https://sdf-llm.slac.stanford.edu (LiteLLM)
 ```
 
 ---
 
-## Root Causes & Fixes
+## Running the Proxy
 
-### 1. Shell `HTTP_PROXY` Routing the Local Proxy Through SOCKS
+### Why you need to run it
 
-The shell sets `HTTP_PROXY=socks5://127.0.0.1:9051` (SSH SOCKS tunnel to SLAC). Zed's GUI launcher inherits this, so the `claude` child process routes its connection to `http://127.0.0.1:19999` (the local proxy) through the SOCKS tunnel — where `127.0.0.1:19999` doesn't exist. The connection hangs silently.
+The proxy is not optional or a one-time setup step — it must be **running whenever you use Claude Code or the Zed agent panel**.
 
-**Fix:** The `index.js` entrypoint patch reads `delete_env` from `~/.claude/settings.json` and calls `delete process.env[k]` for each proxy-related var. Setting them to `""` is insufficient — some HTTP clients treat an empty string as "use empty proxy URL" rather than "no proxy". Full deletion is required.
+**Protocol translation.** The `claude` binary speaks a slightly newer dialect of the Anthropic API than SLAC's LiteLLM deployment expects. The proxy rewrites headers, strips unsupported request body fields, normalises model names, and fixes authentication headers so requests actually succeed. Without it, most requests would hit nginx 400 errors or LiteLLM 422s.
 
----
+If the proxy is not running:
+- `ANTHROPIC_BASE_URL=http://127.0.0.1:19999` points nowhere → `claude` fails immediately with a connection refused error.
+- Zed shows "Unable to connect to API" or "Query closed before response received".
 
-### 2. Zed's Application-Level `"proxy"` Setting
+### Prerequisites
 
-Separate from the `HTTP_PROXY` env var, Zed has its own `"proxy"` setting in `~/.config/zed/settings.json` that it applies to all connections it manages. This caused the same problem as root cause 1: `127.0.0.1:19999` was being tunneled through SOCKS to SLAC, where nothing listens on that port. Deleting `HTTP_PROXY` from the env has no effect on this setting.
+**API key in `~/.claude/settings.json`.** The proxy reads `ANTHROPIC_API_KEY` from the `env` block at startup as a fallback. Make sure the key is set — see [Configuration](#configuration).
 
-**Fix:** Comment out `"proxy"` in `~/.config/zed/settings.json`:
+If you need to route through a SOCKS5 tunnel, see [SOCKS Proxying](#socks-proxying).
 
-```json
-// "proxy": "socks5://127.0.0.1:9051"  // DISABLED — routes local proxy through SOCKS
+### Starting the proxy
+
+**Foreground (easiest for debugging):**
+
+```sh
+python3 ~/.claude/litellm-proxy.py
 ```
 
-**Caveat:** This disables Zed's SOCKS proxy for all of its own HTTP connections (telemetry, extension registry, etc.). SSH remote connections configured in `ssh_connections` still work because they use SSH's own transport. If other Zed features break, see [Caveats](#caveats).
+The proxy logs every request, rewrite, and upstream response to stdout. Leave this terminal open while using Claude.
+
+**Background (for normal use):**
+
+```sh
+nohup python3 ~/.claude/litellm-proxy.py > /tmp/litellm-proxy.log 2>&1 &
+echo "Proxy PID: $!"
+```
+
+Follow the log:
+
+```sh
+tail -f /tmp/litellm-proxy.log
+```
+
+Stop it:
+
+```sh
+pkill -f litellm-proxy.py
+```
+
+### CLI options
+
+```
+python3 ~/.claude/litellm-proxy.py [OPTIONS]
+```
+
+| Option | Default | Env var | Description |
+|--------|---------|---------|-------------|
+| `--port PORT` | `19999` | `PROXY_PORT` | Local listen port |
+| `--target URL` | `https://sdf-llm.slac.stanford.edu` | `LITELLM_TARGET` | Upstream LiteLLM URL. Do **not** append `/v1` — the `claude` binary already sends that path. |
+| `--token BEARER_TOKEN` | — | `ANTHROPIC_API_KEY` or `settings.json` | Bearer token to send upstream. Overrides env and settings file. |
+| `--socks-host HOST` | `127.0.0.1` | `SOCKS_HOST` | SOCKS5 proxy host |
+| `--socks-port PORT` | `9051` | `SOCKS_PORT` | SOCKS5 proxy port |
+| `--force-model NAME` | — | — | Replace every client model name with `NAME` upstream. Highest priority. |
+| `--model-map FROM=TO` | — | — | Rewrite model `FROM` → `TO` (repeatable). Overrides auto hyphen→dot rewrite; overridden by `--force-model`. |
+| `--no-model-rewrite` | — | — | Disable automatic `claude-X-Y → claude-X.Y` hyphen-to-dot rewrite. Explicit `--model-map` entries still apply. |
+| `--no-ssl-verify` | — | `SSL_VERIFY=0` | Skip TLS certificate verification for the upstream connection. |
+
+> **Note:** `--token` takes precedence over `ANTHROPIC_API_KEY` and `~/.claude/settings.json`. Omitting it is fine — the proxy falls back to the key in your settings file.
+
+### Confirming it's working
+
+After starting the proxy, run the full test suite:
+
+```sh
+python3 ~/.claude/litellm-proxy-test.py
+# Expected: PASS 25   FAIL 0   WARN 0
+```
+
+Or do a quick smoke-test with curl:
+
+```sh
+curl -s --max-time 30 -X POST http://127.0.0.1:19999/v1/messages \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: " \
+  -H "anthropic-version: 2023-06-01" \
+  -d '{"model":"claude-sonnet-4-6","max_tokens":10,"messages":[{"role":"user","content":"say hi"}]}'
+```
+
+Expected: a JSON response with `"type":"message"` and content. The proxy log should show a model rewrite line and `<- upstream 200`.
+
+### Startup sequence (full)
+
+Each session:
+
+```sh
+# 1. Proxy
+nohup python3 ~/.claude/litellm-proxy.py > /tmp/litellm-proxy.log 2>&1 &
+
+# 2. (Optional) verify
+python3 ~/.claude/litellm-proxy-test.py
+```
+
+Then open Zed — the agent panel will route through the proxy automatically via the env injected by the `index.js` entrypoint patch.
 
 ---
 
-### 3. Wrong `default_model` Provider
+## Root Causes & Fixes
+
+### 1. Wrong `default_model` Provider
 
 `agent.default_model` in `~/.config/zed/settings.json` had `"provider": "copilot_chat"`. This is Zed's built-in GitHub Copilot Chat integration — a direct language-model provider, not an agent server. It does not appear in the agent panel's model picker (which only lists agent servers like `claude-acp`), but when persisted as `default_model` it silently routes all agent panel requests to Copilot's backend (`api.business.githubcopilot.com`).
 
@@ -85,11 +164,11 @@ The picker selection and the persisted `default_model` value can diverge — the
 **Fix:** Edit `~/.config/zed/settings.json` directly — see the [Configuration](#configuration) section for the correct block.
 
 
-Also remove `"enable_thinking": true` and `"effort": "high"` from `default_model` — these cause the `claude` binary to emit unsupported request fields (see [Root Cause 5](#5-non-standard-request-body-fields--nginx-400)).
+Also remove `"enable_thinking": true` and `"effort": "high"` from `default_model` — these cause the `claude` binary to emit unsupported request fields (see [Root Cause 3](#3-non-standard-request-body-fields--nginx-400)).
 
 ---
 
-### 4. `createEnvForGateway()` Overriding `ANTHROPIC_BASE_URL`
+### 2. `createEnvForGateway()` Overriding `ANTHROPIC_BASE_URL`
 
 In `acp-agent.js`, the env passed to `query()` is:
 
@@ -129,7 +208,7 @@ process.stderr.write("[DEBUG-ENV] ANTHROPIC_BASE_URL=" +
 
 ---
 
-### 5. Non-standard Request Body Fields → nginx 400
+### 3. Non-standard Request Body Fields → nginx 400
 
 The `claude` binary (v2.1.79) sends several fields that SLAC's LiteLLM deployment does not recognise. nginx validates the upstream request body and returns a plain HTML `400 Bad Request` (no JSON error body) before LiteLLM ever sees it:
 
@@ -143,7 +222,7 @@ The `claude` binary (v2.1.79) sends several fields that SLAC's LiteLLM deploymen
 
 ---
 
-### 6. Background Calls to `api.anthropic.com` Hanging
+### 4. Background Calls to `api.anthropic.com` Hanging
 
 The `claude` binary makes background startup calls to `api.anthropic.com` even in ACP/headless mode: telemetry, fast-mode status (`/api/claude_code_penguin_mode`), plugin security manifest, OAuth client data, quota check, etc. Because `ANTHROPIC_API_KEY` is set to the LiteLLM token (which Anthropic's servers don't recognise), these calls complete the TLS handshake but then hang waiting for a response. This blocks the subprocess long enough to trigger the ACP SDK's "Query closed before response received" timeout — with no embedded error detail, since the subprocess itself never reported a specific failure.
 
@@ -153,7 +232,7 @@ Note: running `claude --print` directly from the terminal still hangs even with 
 
 ---
 
-### 7. Prompt-Caching `cache_control` Blocks → nginx 400
+### 5. Prompt-Caching `cache_control` Blocks → nginx 400
 
 The `claude` binary sends the `system` field as an array of content blocks (Anthropic prompt-caching format, API ≥ 2024-06-01) and annotates blocks with `cache_control: {"type": "ephemeral"}`. SLAC's LiteLLM/nginx does not understand the `cache_control` field and returns a plain 400. The proxy was already stripping the `anthropic-beta: prompt-caching-*` header, but leaving the body annotations in place — they were orphaned noise that the upstream rejected.
 
@@ -161,7 +240,7 @@ The `claude` binary sends the `system` field as an array of content blocks (Anth
 
 ---
 
-### 8. Duplicate `Authorization` Headers → nginx 400
+### 6. Duplicate `Authorization` Headers → nginx 400
 
 The Anthropic TypeScript SDK (used internally by the `claude` binary) sends an `authorization: Bearer <token>` header directly (OAuth-style). The proxy was only stripping `x-api-key` from incoming requests — it passed the `authorization` header through unchanged, then also injected its own `Authorization: Bearer <api_key>`. nginx receives both headers and treats it as a malformed request, returning 400 before LiteLLM sees anything.
 
@@ -171,7 +250,7 @@ This wasn't caught by the test suite because `litellm-proxy-test.py` uses `x-api
 
 ---
 
-### 9. Model Name Mismatch
+### 7. Model Name Mismatch
 
 Claude Code sends model names with hyphens (`claude-sonnet-4-6`); SLAC's LiteLLM expects dots (`claude-sonnet-4.6`). LiteLLM rejects with 400, which the SDK surfaces as a generic "Query closed before response received" error.
 
@@ -186,7 +265,7 @@ Claude Code sends model names with hyphens (`claude-sonnet-4-6`); SLAC's LiteLLM
 
 ---
 
-### 10. Empty API Key
+### 8. Empty API Key
 
 Zed launches `claude-agent-acp` as a GUI app without inheriting shell env vars, so `ANTHROPIC_API_KEY` is absent. The proxy would forward an empty key and LiteLLM would reject with 401. The `claude` binary also prompts for interactive login if no auth token is present, which hangs the headless process.
 
@@ -416,12 +495,12 @@ Expected: `PASS 25   FAIL 0   WARN 0`
 
 | Failing category | Likely cause | See |
 |---|---|---|
-| Infrastructure | SOCKS tunnel down, or proxy not running / not listening | [Check the SOCKS tunnel](#check-the-socks-tunnel), [Check proxy logs](#check-proxy-logs) |
+| Infrastructure | SOCKS tunnel down (if used), or proxy not running / not listening | [Check the SOCKS tunnel](#check-the-socks-tunnel), [Check proxy logs](#check-proxy-logs) |
 | JS Patches | Zed updated `claude-agent-acp` and overwrote the patches | [Entrypoint Patches](#entrypoint-patches) |
 | Proxy: basics / stripping / auth | Proxy logic or `settings.json` misconfigured | [litellm-proxy.py Request Sanitisation](#litellm-proxypy-request-sanitisation) |
-| Proxy: streaming | SOCKS tunnel dropping mid-request | [Check the SOCKS tunnel](#check-the-socks-tunnel) |
-| Proxy: real-world | A new unsupported field appeared in Claude Code requests | [Root Cause 5](#5-non-standard-request-body-fields--nginx-400) |
-| Zed log | Patch not applied or wrong `default_model` provider | [Entrypoint Patches](#entrypoint-patches), [Root Cause 3](#3-wrong-default_model-provider) |
+| Proxy: streaming | SOCKS tunnel dropping mid-request (if using SOCKS) | [Check the SOCKS tunnel](#check-the-socks-tunnel) |
+| Proxy: real-world | A new unsupported field appeared in Claude Code requests | [Root Cause 3](#3-non-standard-request-body-fields--nginx-400) |
+| Zed log | Patch not applied or wrong `default_model` provider | [Entrypoint Patches](#entrypoint-patches), [Root Cause 1](#1-wrong-default_model-provider) |
 
 ---
 
@@ -454,7 +533,6 @@ grep -iE 'Query closed|acp_thread|Unable to connect|auth.*required|Internal erro
 | `Unable to connect to API` | Proxy returned non-2xx; check proxy log for `UPSTREAM 4xx RESPONSE BODY` |
 | `No language model configured` | Same as above — wrong provider in settings |
 | `Query closed before response received` (no detail) | Background `api.anthropic.com` calls hanging — check `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` is set |
-| `Query closed` + `socks connect error` | SOCKS tunnel dropped mid-request — restart tunnel |
 
 For `UPSTREAM 400` errors, inspect the dumped request body:
 ```sh
@@ -528,33 +606,70 @@ claude -p "say hi" --output-format text
 
 If this works but Zed doesn't, the problem is in how Zed launches or configures the agent, not in the proxy or binary itself.
 
-> **Note:** `claude --print` (and `claude -p`) hang even with `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` set, because `--print` mode runs the full interactive startup sequence which makes more background calls than ACP headless mode. Use `curl` to test the proxy directly (see [Test the proxy directly](#test-the-proxy-directly)) — don't use the binary to validate the proxy. See [Root Cause 6](#6-background-calls-to-apianthropic-com-hanging) for details.
+> **Note:** `claude --print` (and `claude -p`) hang even with `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` set, because `--print` mode runs the full interactive startup sequence which makes more background calls than ACP headless mode. Use `curl` to test the proxy directly (see [Test the proxy directly](#test-the-proxy-directly)) — don't use the binary to validate the proxy. See [Root Cause 4](#4-background-calls-to-apianthropic-com-hanging) for details.
 
 ### Check the SOCKS tunnel
 
+See [SOCKS Proxying](#socks-proxying) for tunnel setup, verification, and restart instructions.
+
+---
+
+## SOCKS Proxying
+
+The proxy supports optional SOCKS5 tunnelling for cases where `sdf-llm.slac.stanford.edu` isn't directly reachable (e.g. when testing from off-network via an SSH dynamic forward). If the server is directly accessible, skip this section entirely — the proxy connects to it without a tunnel.
+
+### Starting the tunnel
+
+```sh
+ssh -D 9051 -q -N <your-slac-user>@sdf-login.slac.stanford.edu
+```
+
+Verify it's listening:
+
 ```sh
 nc -z 127.0.0.1 9051 && echo "SOCKS UP" || echo "SOCKS DOWN"
-grep "socks connect error" ~/Library/Logs/Zed/Zed.log | tail -5
 ```
 
-If down, restart:
-```sh
-ssh localhost -N -D9051 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 &
-```
+For automatic reconnection if the tunnel drops:
 
-For automatic reconnection:
 ```sh
 brew install autossh
-autossh -M 0 -N -D9051 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 localhost
+autossh -M 0 -N -D9051 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 <user>@sdf-login.slac.stanford.edu
 ```
+
+### Proxy CLI flags
+
+Pass `--socks-host` and `--socks-port` to route through the tunnel (these default to `127.0.0.1:9051` if not specified):
+
+```sh
+python3 ~/.claude/litellm-proxy.py --socks-host 127.0.0.1 --socks-port 9051
+```
+
+### Pitfall: HTTP_PROXY env var routing the local proxy through SOCKS
+
+If the shell has `HTTP_PROXY=socks5://127.0.0.1:9051` set (e.g. for other tools), Zed's GUI launcher inherits it. The `claude` child process then tries to route its connection to `http://127.0.0.1:19999` (the local proxy) *through* the SOCKS tunnel — where `127.0.0.1:19999` doesn't exist on the remote side. The connection hangs silently.
+
+**Fix:** The `index.js` entrypoint patch reads `delete_env` from `~/.claude/settings.json` and calls `delete process.env[k]` for each proxy-related var. Setting them to `""` is insufficient — some HTTP clients treat an empty string as "use empty proxy URL" rather than "no proxy". Full deletion is required.
+
+### Pitfall: Zed's application-level `"proxy"` setting
+
+Separate from `HTTP_PROXY`, Zed has its own `"proxy"` setting in `~/.config/zed/settings.json` that applies to all connections it manages. This causes the same problem: `127.0.0.1:19999` gets tunnelled through SOCKS to the remote host, where nothing listens on that port. Deleting `HTTP_PROXY` from the env has no effect on this setting.
+
+**Fix:** Comment out `"proxy"` in `~/.config/zed/settings.json`:
+
+```json
+// "proxy": "socks5://127.0.0.1:9051"  // DISABLED — routes local proxy through SOCKS
+```
+
+**Caveat:** This disables Zed's SOCKS proxy for all of its own HTTP connections (telemetry, extension registry, etc.). SSH remote connections configured in `ssh_connections` still work because they use SSH's own transport.
+
+### Tunnel reliability
+
+The SSH tunnel can drop without warning. In-flight requests fail with `socks connect error: unexpected end of file` embedded in the "Query closed" detail. This is distinct from the background-call hang failure mode (which has no embedded detail). Use `autossh` (above) for automatic reconnection.
 
 ---
 
 ## Caveats
-
-### Disabling Zed's proxy setting
-
-Commenting out `"proxy"` means Zed no longer routes its own HTTP connections through the SOCKS tunnel. SSH remote sessions (`ssh_connections`) still work — they use SSH's own transport. Zed's own services (telemetry, extension registry, GitHub Copilot) will connect directly; if your network requires SOCKS for general internet access, these may break. Zed doesn't support per-feature proxy settings, so there's no more targeted option currently.
 
 ### Patches are fragile
 
@@ -568,7 +683,7 @@ Both `index.js` and `acp-agent.js` are overwritten whenever Zed updates the `cla
 
 ### SOCKS tunnel reliability
 
-The SSH tunnel can drop without warning. In-flight requests fail with `socks connect error: unexpected end of file` embedded in the "Query closed" detail. This is distinct from the background-call hang failure mode (which has no embedded detail). Use `autossh` for automatic reconnection.
+See [SOCKS Proxying → Tunnel reliability](#tunnel-reliability).
 
 ---
 
@@ -615,7 +730,6 @@ The SLAC setup has constraints that this path doesn't handle:
 
 | Constraint | Why it requires the proxy |
 |---|---|
-| SLAC network not publicly reachable | Requires SOCKS5 tunnel; Python stdlib has no native SOCKS5 client |
 | SLAC LiteLLM is an older version | Missing `drop_params: True`; strict nginx rejects unknown body fields and `anthropic-beta` headers |
 | Only `Authorization: Bearer` accepted | Older LiteLLM doesn't accept `x-api-key` |
 | Model names use `.` separators | Claude Code sends `claude-sonnet-4-6`; SLAC expects `claude-sonnet-4.6` |
@@ -631,7 +745,6 @@ It's useful to distinguish what the proxy must always do from what it's doing on
 
 **Permanent (won't go away without an architecture change):**
 
-- **SOCKS5 tunneling** — As long as SLAC is behind a firewall and we're not on VPN, something has to speak SOCKS5.
 - **SSE streaming relay** — Lightweight chunked pass-through; the right approach regardless.
 
 **Likely temporary (a SLAC LiteLLM upgrade would fix):**
@@ -683,7 +796,7 @@ Setting `ANTHROPIC_BASE_URL=http://litellm:4000/anthropic` makes LiteLLM forward
 
 **SSH + WireGuard or direct VPN**
 
-A proper VPN to the SLAC network would eliminate the SOCKS5 requirement entirely and let the Anthropic SDK connect directly to `sdf-llm.slac.stanford.edu`. The cleanest long-term architecture, but requires infra changes on the SLAC side.
+If `sdf-llm.slac.stanford.edu` is not directly reachable, a proper VPN to the SLAC network would eliminate the SOCKS5 requirement entirely and let the Anthropic SDK connect directly to it. The cleanest long-term architecture for the off-network case, but requires infra changes on the SLAC side.
 
 **mitmproxy or Caddy as the local proxy**
 
@@ -697,7 +810,7 @@ The proxy is the right approach for the current constraints. The ideal end state
 
 1. **SLAC upgrades LiteLLM to a recent version with `drop_params: True`** — eliminates most body/header sanitisation. The proxy shrinks to SOCKS5 tunnel + auth header swap (or disappears entirely if SLAC also updates to accept `x-api-key`).
 
-2. **SLAC adds a VPN/WireGuard endpoint** — eliminates the SOCKS5 requirement. The proxy reduces to just auth header normalisation, or disappears if SLAC's version also accepts `x-api-key`.
+2. **SLAC adds a VPN/WireGuard endpoint** — provides a better path for off-network access than an SSH SOCKS tunnel. The proxy reduces to just auth header normalisation, or disappears if SLAC's version also accepts `x-api-key`.
 
 3. **LiteLLM fixes the remaining `/v1/messages` bugs** (spend logging #23981, `input_text` blocks #23841) and SLAC upgrades — at that point the integration becomes as simple as two env vars for anyone without a network barrier.
 
