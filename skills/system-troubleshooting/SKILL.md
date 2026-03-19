@@ -17,7 +17,7 @@ triggers:
 
 # system-troubleshooting
 
-Structured workflow for diagnosing physical node and service health using observability MCPs.
+Structured workflow for diagnosing physical node and service health using observability MCPs — **triage, correlate, then confirm root cause before remediating**.
 
 ## MCP Availability Check
 
@@ -196,6 +196,28 @@ Look for:
 
 ---
 
+### Step 4.5 — Confirm root cause before remediating
+
+**Do not apply a fix until you can state the root cause in one sentence.**
+
+The format: _"The root cause is [specific thing] because [evidence from metrics/logs], not [ruled-out alternative]."_
+
+Examples:
+- ✅ "The root cause is a log-writing runaway in the `worker` service — Loki shows 50k lines/min from `app=worker` starting at 14:32, coinciding with the disk fill rate spike in InfluxDB."
+- ✅ "The root cause is a memory leak, not undersized limits — InfluxDB shows `mem.used_percent` growing linearly at 2%/h for 18h before the OOM kill, well within historical normal load."
+- ❌ "The node is running out of memory." (symptom, not cause)
+- ❌ "Something is wrong with the service." (too vague)
+
+**Root-cause checklist — before fixing:**
+
+- [ ] **Evidence confirmed:** I have a specific query output or log line that directly shows the cause.
+- [ ] **Timestamp correlated:** the metric anomaly and log anomaly occur at the same time.
+- [ ] **Alternatives ruled out:** I have checked and eliminated the next most likely cause.
+- [ ] **Blast radius known:** is this one node/service or multiple?
+- [ ] **One-sentence root cause written:** stated above before applying any fix.
+
+---
+
 ### Step 5 — Service health check
 
 ```promql
@@ -309,10 +331,12 @@ When you successfully diagnose an issue, add the query pattern to this skill:
 
 ```markdown
 ### Exemplar: <brief description> (<date>)
-- **Symptom**: ...
-- **Signal found**: `<query>` on `<system>`
-- **Root cause**: ...
-- **Fix**: ...
+- **Symptom**: what was reported or alerted
+- **Signal found**: `<query>` on `<system>` → `<key output>`
+- **Alternatives ruled out**: what else was checked and eliminated
+- **Root cause**: one sentence — "[specific thing] because [evidence], not [ruled-out alternative]"
+- **Fix**: what was changed
+- **Recurrence prevention**: what would prevent this happening again
 ```
 
 This builds a local playbook tuned to the actual label schema and service names in this environment.

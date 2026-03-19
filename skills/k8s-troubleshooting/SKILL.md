@@ -30,9 +30,11 @@ triggers:
 
 # k8s-troubleshooting
 
-Structured workflow for diagnosing Kubernetes workload and cluster issues — **architecture first, then drill down**.
+Structured workflow for diagnosing Kubernetes workload and cluster issues — **architecture first, then drill down, then confirm root cause**.
 
 The golden rule: always understand the data path before touching individual components. Traffic enters through an Ingress or Gateway → reaches a Service → is load-balanced to Pods → Pods connect to backends (databases, queues, other services). Understand that path before chasing symptoms.
+
+**The goal is not just to fix the symptom — it is to identify and state the root cause before applying any fix.** A fix applied without a confirmed root cause is a guess. Guesses mask the real problem and cause recurrence.
 
 ### Top-down vs. bottom-up
 
@@ -661,6 +663,39 @@ kubectl get nodes -o json | \
 
 ---
 
+## Root-cause identification
+
+**Do not apply a fix until you can state the root cause in one sentence.**
+
+The format: _"The root cause is [specific thing] because [evidence], not [ruled-out alternative]."_
+
+Examples:
+- ✅ "The root cause is a label selector mismatch on the `api` Service — the Service selects `app=api` but pods are labelled `app=api-v2`, confirmed by empty Endpoints object."
+- ✅ "The root cause is OOMKilled due to a memory leak in the request handler, not an undersized limit — memory grew linearly over 4h and the limit was set to 2× historical peak."
+- ❌ "The pod is crashing." (symptom, not cause)
+- ❌ "Something is wrong with the network." (too vague)
+
+### Root-cause checklist — before fixing
+
+- [ ] **Evidence confirmed:** I have a specific command output, log line, or metric that directly shows the cause — not just a plausible theory.
+- [ ] **Alternatives ruled out:** I have eliminated the two most likely alternative causes.
+- [ ] **Blast radius known:** I know whether this is isolated to one pod/service or affects multiple.
+- [ ] **Recurrence risk assessed:** I know whether fixing the symptom prevents recurrence or just masks it.
+- [ ] **One-sentence root cause written:** stated above before applying any fix.
+
+### Common root-cause traps
+
+| Symptom | Common wrong hypothesis | Actual cause (check this) |
+|---------|------------------------|---------------------------|
+| Pod `CrashLoopBackOff` | "App is broken" | Exit code — 137=OOM, 1=app error, 143=unhandled SIGTERM |
+| Service unreachable | "Network policy blocking" | Empty Endpoints — label selector mismatch is 10× more common |
+| 502/504 from ingress | "Ingress misconfigured" | Readiness probe failing → no healthy pods behind service |
+| StatefulSet stuck | "Storage issue" | Pod ordering — pod-N won't start until pod-(N-1) is Ready |
+| Intermittent failures | "Resource contention" | Clock skew, DNS TTL, or retry storm from upstream |
+| `Pending` pod | "Not enough resources" | Taint/toleration mismatch or missing node selector |
+
+---
+
 ## Quick diagnostic one-liners
 
 ```bash
@@ -804,9 +839,11 @@ When you diagnose an issue, add the pattern here:
 
 ```markdown
 ### Exemplar: <brief description> (<date>)
-- **Symptom**: ...
+- **Symptom**: what the user/alert reported
 - **Resource**: Deployment/StatefulSet/Service/...
 - **Signal found**: `<command>` → `<key output>`
-- **Root cause**: ...
-- **Fix**: ...
+- **Alternatives ruled out**: what else was checked and eliminated
+- **Root cause**: one sentence — "[specific thing] because [evidence], not [ruled-out alternative]"
+- **Fix**: what was changed
+- **Recurrence prevention**: what would prevent this happening again
 ```
