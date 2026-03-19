@@ -37,188 +37,47 @@ if [ -n "$(git status --porcelain)" ]; then
 fi
 ```
 
-**Find the browse binary:**
-
-## SETUP (run this check BEFORE any browse command)
+**Create output directory:**
 
 ```bash
-_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-B=""
-[ -n "$_ROOT" ] && [ -x "$_ROOT/.claude/skills/gstack/browse/dist/browse" ] && B="$_ROOT/.claude/skills/gstack/browse/dist/browse"
-[ -z "$B" ] && B=~/.claude/skills/gstack/browse/dist/browse
-if [ -x "$B" ]; then
-  echo "READY: $B"
-else
-  echo "NEEDS_SETUP"
-fi
+mkdir -p design-reports/screenshots
+REPORT_DIR="design-reports"
 ```
-
-If `NEEDS_SETUP`:
-1. Tell the user: "gstack browse needs a one-time build (~10 seconds). OK to proceed?" Then STOP and wait.
-2. Run: `cd <SKILL_DIR> && ./setup`
-3. If `bun` is not installed: `curl -fsSL https://bun.sh/install | bash`
-
-**Check test framework (bootstrap if needed):**
-
-## Test Framework Bootstrap
-
-**Detect existing test framework and project runtime:**
-
-```bash
-# Detect project runtime
-[ -f Gemfile ] && echo "RUNTIME:ruby"
-[ -f package.json ] && echo "RUNTIME:node"
-[ -f requirements.txt ] || [ -f pyproject.toml ] && echo "RUNTIME:python"
-[ -f go.mod ] && echo "RUNTIME:go"
-[ -f Cargo.toml ] && echo "RUNTIME:rust"
-[ -f composer.json ] && echo "RUNTIME:php"
-[ -f mix.exs ] && echo "RUNTIME:elixir"
-# Detect sub-frameworks
-[ -f Gemfile ] && grep -q "rails" Gemfile 2>/dev/null && echo "FRAMEWORK:rails"
-[ -f package.json ] && grep -q '"next"' package.json 2>/dev/null && echo "FRAMEWORK:nextjs"
-# Check for existing test infrastructure
-ls jest.config.* vitest.config.* playwright.config.* .rspec pytest.ini pyproject.toml phpunit.xml 2>/dev/null
-ls -d test/ tests/ spec/ __tests__/ cypress/ e2e/ 2>/dev/null
-# Check opt-out marker
-[ -f .gstack/no-test-bootstrap ] && echo "BOOTSTRAP_DECLINED"
-```
-
-**If test framework detected** (config files or test directories found):
-Print "Test framework detected: {name} ({N} existing tests). Skipping bootstrap."
-Read 2-3 existing test files to learn conventions (naming, imports, assertion style, setup patterns).
-Store conventions as prose context for use in Phase 8e.5 or Step 3.4. **Skip the rest of bootstrap.**
-
-**If BOOTSTRAP_DECLINED** appears: Print "Test bootstrap previously declined — skipping." **Skip the rest of bootstrap.**
-
-**If NO runtime detected** (no config files found): Use AskUserQuestion:
-"I couldn't detect your project's language. What runtime are you using?"
-Options: A) Node.js/TypeScript B) Ruby/Rails C) Python D) Go E) Rust F) PHP G) Elixir H) This project doesn't need tests.
-If user picks H → write `.gstack/no-test-bootstrap` and continue without tests.
-
-**If runtime detected but no test framework — bootstrap:**
-
-### B2. Research best practices
-
-Use WebSearch to find current best practices for the detected runtime:
-- `"[runtime] best test framework 2025 2026"`
-- `"[framework A] vs [framework B] comparison"`
-
-If WebSearch is unavailable, use this built-in knowledge table:
-
-| Runtime | Primary recommendation | Alternative |
-|---------|----------------------|-------------|
-| Ruby/Rails | minitest + fixtures + capybara | rspec + factory_bot + shoulda-matchers |
-| Node.js | vitest + @testing-library | jest + @testing-library |
-| Next.js | vitest + @testing-library/react + playwright | jest + cypress |
-| Python | pytest + pytest-cov | unittest |
-| Go | stdlib testing + testify | stdlib only |
-| Rust | cargo test (built-in) + mockall | — |
-| PHP | phpunit + mockery | pest |
-| Elixir | ExUnit (built-in) + ex_machina | — |
-
-### B3. Framework selection
-
-Use AskUserQuestion:
-"I detected this is a [Runtime/Framework] project with no test framework. I researched current best practices. Here are the options:
-A) [Primary] — [rationale]. Includes: [packages]. Supports: unit, integration, smoke, e2e
-B) [Alternative] — [rationale]. Includes: [packages]
-C) Skip — don't set up testing right now
-RECOMMENDATION: Choose A because [reason based on project context]"
-
-If user picks C → write `.gstack/no-test-bootstrap`. Tell user: "If you change your mind later, delete `.gstack/no-test-bootstrap` and re-run." Continue without tests.
-
-If multiple runtimes detected (monorepo) → ask which runtime to set up first, with option to do both sequentially.
-
-### B4. Install and configure
-
-1. Install the chosen packages (npm/bun/gem/pip/etc.)
-2. Create minimal config file
-3. Create directory structure (test/, spec/, etc.)
-4. Create one example test matching the project's code to verify setup works
-
-If package installation fails → debug once. If still failing → revert with `git checkout -- package.json package-lock.json` (or equivalent for the runtime). Warn user and continue without tests.
-
-### B4.5. First real tests
-
-Generate 3-5 real tests for existing code:
-
-1. **Find recently changed files:** `git log --since=30.days --name-only --format="" | sort | uniq -c | sort -rn | head -10`
-2. **Prioritize by risk:** Error handlers > business logic with conditionals > API endpoints > pure functions
-3. **For each file:** Write one test that tests real behavior with meaningful assertions. Never `expect(x).toBeDefined()` — test what the code DOES.
-4. Run each test. Passes → keep. Fails → fix once. Still fails → delete silently.
-5. Generate at least 1 test, cap at 5.
-
-Never import secrets, API keys, or credentials in test files. Use environment variables or test fixtures.
-
-### B5. Verify
-
-```bash
-# Run the full test suite to confirm everything works
-{detected test command}
-```
-
-If tests fail → debug once. If still failing → revert all bootstrap changes and warn user.
-
-### B5.5. CI/CD pipeline
-
-```bash
-# Check CI provider
-ls -d .github/ 2>/dev/null && echo "CI:github"
-ls .gitlab-ci.yml .circleci/ bitrise.yml 2>/dev/null
-```
-
-If `.github/` exists (or no CI detected — default to GitHub Actions):
-Create `.github/workflows/test.yml` with:
-- `runs-on: ubuntu-latest`
-- Appropriate setup action for the runtime (setup-node, setup-ruby, setup-python, etc.)
-- The same test command verified in B5
-- Trigger: push + pull_request
-
-If non-GitHub CI detected → skip CI generation with note: "Detected {provider} — CI pipeline generation supports GitHub Actions only. Add test step to your existing pipeline manually."
-
-### B6. Create TESTING.md
-
-First check: If TESTING.md already exists → read it and update/append rather than overwriting. Never destroy existing content.
-
-Write TESTING.md with:
-- Philosophy: "100% test coverage is the key to great vibe coding. Tests let you move fast, trust your instincts, and ship with confidence — without them, vibe coding is just yolo coding. With tests, it's a superpower."
-- Framework name and version
-- How to run tests (the verified command from B5)
-- Test layers: Unit tests (what, where, when), Integration tests, Smoke tests, E2E tests
-- Conventions: file naming, assertion style, setup/teardown patterns
-
-### B7. Update CLAUDE.md
-
-First check: If CLAUDE.md already has a `## Testing` section → skip. Don't duplicate.
-
-Append a `## Testing` section:
-- Run command and test directory
-- Reference to TESTING.md
-- Test expectations:
-  - 100% test coverage is the goal — tests make vibe coding safe
-  - When writing new functions, write a corresponding test
-  - When fixing a bug, write a regression test
-  - When adding error handling, write a test that triggers the error
-  - When adding a conditional (if/else, switch), write tests for BOTH paths
-  - Never commit code that makes existing tests fail
-
-### B8. Commit
-
-```bash
-git status --porcelain
-```
-
-Only commit if there are changes. Stage all bootstrap files (config, test directory, TESTING.md, CLAUDE.md, .github/workflows/test.yml if created):
-`git commit -m "chore: bootstrap test framework ({framework name})"`
 
 ---
 
-**Create output directories:**
+## Pragmatic Mindset
 
-```bash
-REPORT_DIR=".gstack/design-reports"
-mkdir -p "$REPORT_DIR/screenshots"
-```
+Before raising a finding, challenge it against these questions. If you can't answer yes to at least one — skip it.
+
+**1. Does it actually hurt users?**
+A skipped heading level hurts screen reader users. A slightly off-brand blue on a tooltip hurts no one. Only raise issues that have a real user or trust impact.
+
+**2. Is this a deliberate choice?**
+Before flagging Inter as "generic", check if the DESIGN.md or design system specifies it. Before flagging centered text, consider if this is a marketing page where centering is conventional. Ask: could a reasonable designer have chosen this intentionally?
+
+**3. Is the fix proportionate to the problem?**
+A 30-minute CSS fix for a high-impact hierarchy issue: raise it. A 2-day refactor to change border-radius from 8px to 6px: note it at most, don't push for it.
+
+**4. What's the context?**
+- Internal tool vs. public-facing product → different bar for polish
+- v0.1 MVP vs. mature product → different bar for completeness
+- Small team with no designer → focus on the highest-leverage fixes only
+- Ask about context if unknown before scoring
+
+**5. Challenge your own checklist**
+The 80-item checklist is a *lens*, not a law. If a rule doesn't apply to this product type, say so and skip it. A data-dense dashboard tool is not a marketing site — different spacing rhythms apply. A developer tool doesn't need the same emotional warmth as a consumer app.
+
+**Assumption-challenging prompts to use during the review:**
+- "This violates the rule, but is the rule right for this product?"
+- "Would fixing this make the user's life better, or just make the audit score higher?"
+- "Is there a version of this design decision that's actually good?"
+- "What was the designer probably trying to achieve here, and did they succeed on their own terms?"
+
+**When to push back on your own findings:**
+- A finding that requires a content or copy change → flag as deferred, not fixable by a CSS change
+- A finding that conflicts with a known brand constraint → note the tension, don't override the brand
+- More than 5 high-impact findings → prioritise ruthlessly; don't overwhelm with a list of 20
 
 ---
 
@@ -469,16 +328,9 @@ Compare screenshots and observations across pages for:
 
 ### Output Locations
 
-**Local:** `.gstack/design-reports/design-audit-{domain}-{YYYY-MM-DD}.md`
+**Local:** `design-reports/design-audit-{domain}-{YYYY-MM-DD}.md`
 
-**Project-scoped:**
-```bash
-eval $(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)
-mkdir -p ~/.gstack/projects/$SLUG
-```
-Write to: `~/.gstack/projects/{slug}/{user}-{branch}-design-audit-{datetime}.md`
-
-**Baseline:** Write `design-baseline.json` for regression mode:
+**Baseline:** Write `design-reports/design-baseline.json` for regression mode:
 ```json
 {
   "date": "YYYY-MM-DD",
@@ -686,16 +538,7 @@ After all fixes are applied:
 
 ## Phase 10: Report
 
-Write the report to both local and project-scoped locations:
-
-**Local:** `.gstack/design-reports/design-audit-{domain}-{YYYY-MM-DD}.md`
-
-**Project-scoped:**
-```bash
-eval $(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)
-mkdir -p ~/.gstack/projects/$SLUG
-```
-Write to `~/.gstack/projects/{slug}/{user}-{branch}-design-audit-{datetime}.md`
+Write the report to `design-reports/design-audit-{domain}-{YYYY-MM-DD}.md`
 
 **Per-finding additions** (beyond standard design audit report):
 - Fix Status: verified / best-effort / reverted / deferred
