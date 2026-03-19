@@ -19,6 +19,9 @@ compatibility: opencode
 /plan-eng-review       ← YOU ARE HERE: implementation gate: code quality, test coverage,
       │                  performance, edge cases → test plan artifact
       ▼
+/security-review         security gate: secrets, auth, input validation, injection,
+      │                  supply chain, Kubernetes workload security
+      ▼
 /prod-release            environment promotion, smoke tests, feature flag rollout,
                          monitoring validation, rollback procedure
 ```

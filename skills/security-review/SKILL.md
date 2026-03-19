@@ -7,6 +7,29 @@ compatibility: opencode
 
 # Security Review
 
+## Workflow position
+
+```
+/feature-plan            problem framing, requirements, rough system design, ADRs
+      │
+      ▼
+/plan-architect-review   deep structural review: service boundaries, data ownership,
+      │                  consistency models, failure domains, technology choices → ADR log
+      ▼
+/plan-eng-review         implementation gate: code quality, test coverage, performance,
+      │                  edge cases → test plan artifact
+      ▼
+/security-review       ← YOU ARE HERE: security gate: secrets, auth, input validation,
+      │                  injection prevention, supply chain, Kubernetes workload security
+      ▼
+/prod-release            environment promotion, smoke tests, feature flag rollout,
+                         monitoring validation, rollback procedure
+```
+
+Run after `/plan-eng-review` and before promoting to production. This skill checks that the implementation is safe to ship — not just correct. Any security finding here should block `prod-release` until resolved.
+
+---
+
 A systematic security review for backend services, APIs, and Kubernetes infrastructure. Use before shipping any feature that handles user input, authentication, secrets, payments, or sensitive data.
 
 ## When to Use

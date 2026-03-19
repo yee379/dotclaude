@@ -21,6 +21,9 @@ A structured approach to planning features and architectural changes before writ
 /plan-eng-review         implementation gate: code quality, test coverage, performance,
       │                  edge cases → test plan artifact
       ▼
+/security-review         security gate: secrets, auth, input validation, injection,
+      │                  supply chain, Kubernetes workload security
+      ▼
 /prod-release            environment promotion, smoke tests, feature flag rollout,
                          monitoring validation, rollback procedure
 ```
