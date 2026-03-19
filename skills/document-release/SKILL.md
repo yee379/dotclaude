@@ -57,7 +57,7 @@ git diff <base>...HEAD --name-only
 3. Discover all documentation files in the repo:
 
 ```bash
-find . -maxdepth 2 -name "*.md" -not -path "./.git/*" -not -path "./node_modules/*" -not -path "./.gstack/*" -not -path "./.context/*" | sort
+find . -maxdepth 2 -name "*.md" -not -path "./.git/*" -not -path "./node_modules/*" | sort
 ```
 
 4. Classify the changes into categories relevant to documentation:
@@ -73,7 +73,7 @@ find . -maxdepth 2 -name "*.md" -not -path "./.git/*" -not -path "./node_modules
 ## Step 2: Per-File Documentation Audit
 
 Read each documentation file and cross-reference it against the diff. Use these generic heuristics
-(adapt to whatever project you're in — these are not gstack-specific):
+(adapt to whatever project you're in):
 
 **README.md:**
 - Does it describe all features and capabilities visible in the diff?
@@ -279,7 +279,7 @@ git push
 1. Read the existing PR body into a PID-unique tempfile:
 
 ```bash
-gh pr view --json body -q .body > /tmp/gstack-pr-body-$$.md
+gh pr view --json body -q .body > /tmp/pr-body-$$.md
 ```
 
 2. If the tempfile already contains a `## Documentation` section, replace that section with the
@@ -292,13 +292,13 @@ gh pr view --json body -q .body > /tmp/gstack-pr-body-$$.md
 4. Write the updated body back:
 
 ```bash
-gh pr edit --body-file /tmp/gstack-pr-body-$$.md
+gh pr edit --body-file /tmp/pr-body-$$.md
 ```
 
 5. Clean up the tempfile:
 
 ```bash
-rm -f /tmp/gstack-pr-body-$$.md
+rm -f /tmp/pr-body-$$.md
 ```
 
 6. If `gh pr view` fails (no PR exists): skip with message "No PR found — skipping body update."
