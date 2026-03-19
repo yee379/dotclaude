@@ -1,0 +1,18 @@
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:19999",
+    "ANTHROPIC_AUTH_TOKEN": "",
+    "ANTHROPIC_API_KEY": "REDACTED",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+  },
+  "delete_env": [
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "http_proxy",
+    "https_proxy",
+    "npm_config_proxy",
+    "npm_config_https_proxy",
+    "ALL_PROXY",
+    "all_proxy"
+  ]
+}

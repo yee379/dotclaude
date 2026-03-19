@@ -1,0 +1,21 @@
+# Claude Code runtime state — not version controlled
+__pycache__/
+.claude/
+backups/
+cache/
+debug/
+history.jsonl
+plans/
+plugins/
+projects/
+session-env/
+sessions/
+shell-snapshots/
+telemetry/
+
+# Litellm proxy scripts (local tooling, not skills)
+litellm-proxy*.py
+litellm-proxy*.md
+
+# skill-stocktake results cache (regenerated on each run)
+skills/skill-stocktake/results.json
