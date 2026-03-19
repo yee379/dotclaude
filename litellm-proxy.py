@@ -132,6 +132,7 @@ Environment variables (lower priority than CLI flags)
 import argparse
 import http.server
 import http.client
+import hashlib
 import json
 import socket
 import ssl
@@ -178,6 +179,51 @@ _derive_target(TARGET_URL)
 
 CHUNK = 4096
 
+# ── Session ID tracking ────────────────────────────────────────────────────
+# Maps a conversation fingerprint (hash of first user message) to a short ID.
+# This lets all log lines for a single Claude conversation share the same sid.
+_session_map: dict = {}
+_session_lock = threading.Lock()
+
+
+def _get_session_id(body: bytes | None) -> str:
+    """Return a short 6-char session ID derived from the conversation.
+
+    The ID is stable across all requests in the same conversation: it is keyed
+    on the *content* of the very first user message in the ``messages`` array.
+    If the body cannot be parsed (non-JSON, no messages, etc.) a per-call
+    random ID is used so logs are still tagged.
+    """
+    try:
+        if body:
+            obj = json.loads(body)
+            msgs = obj.get("messages")
+            if msgs and isinstance(msgs, list):
+                # Use the first message's content as the stable fingerprint.
+                first = msgs[0]
+                content = first.get("content", "")
+                if isinstance(content, list):
+                    # Extract text from content-block arrays
+                    content = "".join(
+                        b.get("text", "") for b in content if isinstance(b, dict)
+                    )
+                key = str(content)[:512]  # cap to avoid huge keys
+                digest = hashlib.sha256(key.encode("utf-8", errors="replace")).hexdigest()[:6]
+                with _session_lock:
+                    if digest not in _session_map:
+                        _session_map[digest] = digest
+                        # Prune old entries — keep at most 256 sessions in RAM
+                        if len(_session_map) > 256:
+                            oldest = next(iter(_session_map))
+                            del _session_map[oldest]
+                    return digest
+    except Exception:
+        pass
+    # Fallback: random 6-char ID for this request only
+    import secrets
+    return secrets.token_hex(3)
+
+
 # ── Model name rewriting ───────────────────────────────────────────────────
 # All three of the variables below are populated from CLI args inside main().
 
@@ -188,7 +234,22 @@ _FORCE_MODEL = None
 # Explicit per-name map.  Keys are the names the client sends; values are the
 # names forwarded upstream.  Takes precedence over the auto rewrite but is
 # itself overridden by _FORCE_MODEL.
-_MODEL_MAP = {}        # type: dict[str, str]
+#
+# Pre-seeded with known versioned aliases that LiteLLM registers without the
+# date suffix.  CLI --model-map entries are merged on top and can override
+# these defaults.
+_MODEL_MAP = {
+    # Versioned aliases: strip date suffixes that LiteLLM doesn't register.
+    # Keys are the hyphenated names Claude CLI sends; the auto hyphen-to-dot
+    # rewrite runs after this map, so dotted-key entries are not needed here.
+    "claude-haiku-4-5-20251001":  "claude-haiku-4.5",
+    "claude-sonnet-4-20250514":   "claude-sonnet-4",
+    "claude-sonnet-4-5-20251022": "claude-sonnet-4.5",
+    "claude-sonnet-4-6-20260101": "claude-sonnet-4.6",
+    "claude-opus-4-20250514":     "claude-opus-4",
+    "claude-opus-4-5-20251101":   "claude-opus-4.5",
+    "claude-opus-4-6-20260101":   "claude-opus-4.6",
+}        # type: dict[str, str]
 
 # When True, the automatic ``claude-X-Y -> claude-X.Y`` hyphen-to-dot
 # rewrite is skipped.  Explicit _MODEL_MAP entries still apply.
@@ -208,6 +269,9 @@ def rewrite_model_name(name):
 
     1. ``--force-model NAME``  — unconditional override; every request uses NAME.
     2. ``--model-map FROM=TO`` — exact-match explicit remapping (repeatable).
+                                 Also covers the pre-seeded _MODEL_MAP defaults
+                                 (e.g. ``claude-haiku-4-5-20251001`` ->
+                                 ``claude-haiku-4.5``).
     3. Auto hyphen-to-dot     — e.g. ``claude-sonnet-4-6`` -> ``claude-sonnet-4.6``.
                                 Disabled by ``--no-model-rewrite``.
     """
@@ -344,12 +408,17 @@ _STRIP_BODY_FIELDS = ("context_management", "output_config")
 # SLAC's nginx does not accept query strings on /v1/messages.
 _STRIP_QUERY_PARAMS = frozenset({"beta"})
 
-# SLAC's LiteLLM rejects *any* unrecognised anthropic-beta flag with a
-# plain nginx 400.  Rather than maintaining a denylist that falls behind
-# as the claude binary adds new flags (e.g. claude-code-20250219,
-# interleaved-thinking-2025-05-14), we drop the entire header.
-# LiteLLM works fine without it.
-_STRIP_ANTHROPIC_BETA_ENTIRELY = True
+# Flags in anthropic-beta that Claude Code *requires* for correct operation.
+# These are passed through to LiteLLM unchanged.  Everything else is stripped
+# so that SLAC's nginx / older LiteLLM versions don't return 400.
+#
+# claude-code-20250219   — activates Claude Code agentic behaviour + tool-use
+#                          response shapes.  Without it the model emits a
+#                          different output format that Claude Code's SSE parser
+#                          cannot handle, causing the agent to stall silently.
+_ANTHROPIC_BETA_PASSTHROUGH = frozenset({
+    "claude-code-20250219",
+})
 
 
 def _strip_cache_control_from_blocks(content):
@@ -463,9 +532,11 @@ def maybe_rewrite_body(body):
 def maybe_rewrite_headers(hdrs):
     """Strip headers that older LiteLLM deployments reject.
 
-    - anthropic-beta: dropped entirely.  SLAC's LiteLLM returns a plain
-      nginx 400 for *any* unrecognised beta flag, and the set of flags the
-      claude binary sends grows over time.  LiteLLM works fine without it.
+    - anthropic-beta: flags not in _ANTHROPIC_BETA_PASSTHROUGH are removed.
+      SLAC's LiteLLM returns nginx 400 for unrecognised flags, but
+      claude-code-20250219 *must* be forwarded — without it the model
+      produces a different SSE output shape that Claude Code cannot parse,
+      causing the agent to stall.
     - anthropic-dangerous-direct-browser-access: CORS-bypass header added
       by the SDK for browser contexts; meaningless (and WAF-triggering)
       when talking to LiteLLM.
@@ -478,10 +549,16 @@ def maybe_rewrite_headers(hdrs):
             sys.stderr.flush()
         elif lo == "anthropic-beta":
             flags = [b.strip() for b in hdrs[hk].split(",") if b.strip()]
+            kept    = [f for f in flags if f in _ANTHROPIC_BETA_PASSTHROUGH]
+            dropped = [f for f in flags if f not in _ANTHROPIC_BETA_PASSTHROUGH]
             del hdrs[hk]
-            sys.stderr.write("[proxy] stripped anthropic-beta header entirely: %s\n"
-                             % ", ".join(flags))
-            sys.stderr.flush()
+            if kept:
+                hdrs[hk] = ", ".join(kept)
+                sys.stderr.write("[proxy] anthropic-beta kept: %s\n" % ", ".join(kept))
+                sys.stderr.flush()
+            if dropped:
+                sys.stderr.write("[proxy] anthropic-beta dropped: %s\n" % ", ".join(dropped))
+                sys.stderr.flush()
 
     return hdrs
 
@@ -587,20 +664,25 @@ class Handler(http.server.BaseHTTPRequestHandler):
         _clean_path = _parsed_req.path + (
             "?" + urlencode(_req_qs_out, doseq=True) if _req_qs_out else ""
         )
-        if _stripped_qp:
-            sys.stderr.write("[proxy] stripped query params: %s\n" % ", ".join(_stripped_qp))
-            sys.stderr.flush()
         path = TGT_BASE + _clean_path
         clen = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(clen) if clen else None
+
+        # Compute a stable session ID for this conversation
+        sid = _get_session_id(body)
+        _P = "[proxy:%s]" % sid  # log prefix for all lines in this request
+
+        if _stripped_qp:
+            sys.stderr.write("%s stripped query params: %s\n" % (_P, ", ".join(_stripped_qp)))
+            sys.stderr.flush()
 
         # Log incoming request
         stream_req = (
             self.headers.get("Accept", "") == "text/event-stream"
             or (body and b'"stream":true' in (body if isinstance(body, bytes) else body.encode()))
         )
-        sys.stderr.write("[proxy] %s %s (len=%d stream=%s)\n" % (
-            self.command, self.path, clen, stream_req))
+        sys.stderr.write("%s %s %s (len=%d stream=%s)\n" % (
+            _P, self.command, self.path, clen, stream_req))
         sys.stderr.flush()
 
         # Rewrite model names in JSON request bodies
@@ -660,14 +742,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
             try:
                 conn = make_upstream()
                 lbl = "" if _attempt == 0 else " (retry %d/%d)" % (_attempt, _RETRIES)
-                sys.stderr.write("[proxy] -> upstream %s %s%s\n" % (self.command, path, lbl))
+                sys.stderr.write("%s -> upstream %s %s%s\n" % (_P, self.command, path, lbl))
                 sys.stderr.flush()
                 conn.request(self.command, path, body=body, headers=hdrs)
                 resp = conn.getresponse()
                 ct = resp.getheader("Content-Type", "")
                 streaming = "text/event-stream" in ct
-                sys.stderr.write("[proxy] <- upstream %d %s (stream=%s)\n" % (
-                    resp.status, ct[:60], streaming))
+                sys.stderr.write("%s <- upstream %d %s (stream=%s)\n" % (
+                    _P, resp.status, ct[:60], streaming))
                 sys.stderr.flush()
 
                 if resp.status == 504 and _attempt < _RETRIES:
@@ -678,8 +760,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                         pass
                     conn = None
                     sys.stderr.write(
-                        "[proxy] 504 gateway timeout on attempt %d/%d — retrying in 5s\n"
-                        % (_attempt + 1, _RETRIES + 1)
+                        "%s 504 gateway timeout on attempt %d/%d — retrying in 5s\n"
+                        % (_P, _attempt + 1, _RETRIES + 1)
                     )
                     sys.stderr.flush()
                     time.sleep(5)
@@ -692,8 +774,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 last_exc = exc
                 if _attempt < _RETRIES:
                     sys.stderr.write(
-                        "[proxy] connect error on attempt %d/%d: %s — retrying in 3s\n"
-                        % (_attempt + 1, _RETRIES + 1, exc)
+                        "%s connect error on attempt %d/%d: %s — retrying in 3s\n"
+                        % (_P, _attempt + 1, _RETRIES + 1, exc)
                     )
                     sys.stderr.flush()
                     time.sleep(3)
@@ -734,18 +816,18 @@ class Handler(http.server.BaseHTTPRequestHandler):
                         dump_path = "/tmp/proxy_debug_request_%d.json" % int(time.time())
                         with open(dump_path, "wb") as _df:
                             _df.write(raw)
-                        sys.stderr.write("[proxy] DUMPED full request body (%d bytes) to %s\n"
-                                         % (len(raw), dump_path))
+                        sys.stderr.write("%s DUMPED full request body (%d bytes) to %s\n"
+                                         % (_P, len(raw), dump_path))
                     except Exception as _de:
-                        sys.stderr.write("[proxy] failed to dump request body: %s\n" % _de)
-                sys.stderr.write("[proxy] REQ PATH: %s\n" % path)
-                sys.stderr.write("[proxy] REQ HEADERS:\n")
+                        sys.stderr.write("%s failed to dump request body: %s\n" % (_P, _de))
+                sys.stderr.write("%s REQ PATH: %s\n" % (_P, path))
+                sys.stderr.write("%s REQ HEADERS:\n" % _P)
                 for hk, hv in hdrs.items():
                     if hk.lower() == "authorization":
-                        sys.stderr.write("[proxy]   %s: Bearer <redacted>\n" % hk)
+                        sys.stderr.write("%s   %s: Bearer <redacted>\n" % (_P, hk))
                     else:
-                        sys.stderr.write("[proxy]   %s: %s\n" % (hk, hv[:200]))
-                sys.stderr.write("[proxy] REQ BODY (first 2000 chars): %s\n" % body_snippet)
+                        sys.stderr.write("%s   %s: %s\n" % (_P, hk, hv[:200]))
+                sys.stderr.write("%s REQ BODY (first 2000 chars): %s\n" % (_P, body_snippet))
                 sys.stderr.flush()
 
             self.send_response_only(resp.status)
@@ -761,8 +843,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             # Log upstream error response body for debugging
             if resp.status >= 300 and not streaming:
                 err_body = resp.read()
-                sys.stderr.write("[proxy] UPSTREAM %d RESPONSE BODY (%d bytes): %s\n" % (
-                    resp.status, len(err_body),
+                sys.stderr.write("%s UPSTREAM %d RESPONSE BODY (%d bytes): %s\n" % (
+                    _P, resp.status, len(err_body),
                     err_body[:2000].decode("utf-8", errors="replace")))
                 sys.stderr.flush()
                 # Tell the HTTP/1.1 keep-alive loop not to read another request —
@@ -779,18 +861,33 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self.send_header("Transfer-Encoding", "chunked")
                 self.end_headers()
                 total = 0
+                chunks = 0
+                last_log = time.monotonic()
+                _LOG_INTERVAL = 5.0   # seconds between heartbeat lines
+                sys.stderr.write("%s SSE stream started for %s\n" % (_P, self.path))
+                sys.stderr.flush()
                 while True:
                     chunk = resp.read(CHUNK)
                     if not chunk:
                         break
                     total += len(chunk)
+                    chunks += 1
                     hx = format(len(chunk), "x")
                     self.wfile.write(hx.encode() + b"\r\n")
                     self.wfile.write(chunk + b"\r\n")
                     self.wfile.flush()
+                    now = time.monotonic()
+                    if now - last_log >= _LOG_INTERVAL:
+                        sys.stderr.write(
+                            "%s SSE streaming \u2026 %d bytes / %d chunks (%s)\n"
+                            % (_P, total, chunks, self.path)
+                        )
+                        sys.stderr.flush()
+                        last_log = now
                 self.wfile.write(b"0\r\n\r\n")
                 self.wfile.flush()
-                sys.stderr.write("[proxy] streamed %d bytes for %s\n" % (total, self.path))
+                sys.stderr.write("%s SSE stream done: %d bytes / %d chunks for %s\n" % (
+                    _P, total, chunks, self.path))
                 sys.stderr.flush()
             else:
                 data = resp.read()
@@ -798,7 +895,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(data)
                 self.wfile.flush()
-                sys.stderr.write("[proxy] sent %d bytes for %s\n" % (len(data), self.path))
+                sys.stderr.write("%s sent %d bytes for %s\n" % (_P, len(data), self.path))
                 sys.stderr.flush()
 
         except Exception as exc:
