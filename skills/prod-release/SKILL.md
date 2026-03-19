@@ -19,6 +19,9 @@ compatibility: opencode
 /plan-eng-review         implementation gate: code quality, test coverage, performance,
       │                  edge cases → test plan artifact
       ▼
+/plan-documentation-review  documentation planning gate: which docs change, what changes
+      │                  in each, breaking change upgrade guides, gaps added to plan
+      ▼
 /security-review         security gate: secrets, auth, input validation, injection,
       │                  supply chain, Kubernetes workload security
       ▼

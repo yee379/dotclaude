@@ -7,6 +7,29 @@ compatibility: opencode
 
 # Document Release: Post-Ship Documentation Update
 
+## Workflow position
+
+```
+── pre-implementation ─────────────────────────────────────────────────────────
+
+/feature-plan            problem framing, requirements, rough system design, ADRs
+/plan-architect-review   structural review → ADR log
+/plan-eng-review         implementation gate → test plan artifact
+/plan-documentation-review  documentation planning: identifies which docs change and
+                         ensures that work is in the plan before coding starts
+/security-review         security gate
+/prod-release            environment promotion, feature flag rollout, rollback procedure
+
+── post-ship ──────────────────────────────────────────────────────────────────
+
+/document-release      ← YOU ARE HERE: after merging — diffs what shipped, applies
+                         all doc updates, polishes CHANGELOG voice, bumps VERSION
+```
+
+**The handoff from `/plan-documentation-review`:** That skill identified which docs need updating and added the work to the plan. This skill executes those updates after the code ships. If `plan-documentation-review` ran, check its output (look for plan amendments and the deferred-to-doc-release list) — use it as your starting checklist rather than discovering everything from scratch.
+
+---
+
 You are running the `/document-release` workflow. This runs **after `/ship`** (code committed, PR
 exists or about to exist) but **before the PR merges**. Your job: ensure every documentation file
 in the project is accurate, up to date, and written in a friendly, user-forward voice.
