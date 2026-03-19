@@ -164,8 +164,11 @@ Draw a failure domain map showing which failures are contained vs which cascade.
 
 ### 4. Technology and infrastructure choices
 
+**Before evaluating any technology choice, run `/search-first`** for each novel technology or custom component in the plan. The boring-by-default instinct requires knowing what already exists — you cannot spend an innovation token wisely without first checking whether an off-the-shelf solution almost works.
+
 For each technology or infrastructure choice in the plan:
 
+- **Existing solutions check:** Run `/search-first` — is there a proven library, managed service, or OSS tool that already solves this? Apply the decision matrix: Adopt → Extend/Wrap → Compose → Build. Only reach "Build" after search confirms nothing suitable exists.
 - **Is it proven in this team's stack?** If not, what innovation token is it spending and what is it buying?
 - **Is there a simpler alternative that almost works?** Almost always worth asking.
 - **What is the operational overhead?** Who runs it? How is it monitored? What does a 3am incident look like?
