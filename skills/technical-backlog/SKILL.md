@@ -25,14 +25,14 @@ to reconstruct context from scratch.
 
 ```
 todo/
-├── README.md                              ← priority index (source of truth)
+├── TODO.md                              ← priority index (source of truth)
 ├── 001-per-user-identity.md
 ├── 002-input-validation.md
 ├── 010-sanitise-error-messages.md
 └── ...
 ```
 
-### README.md — The Priority Index
+### TODO.md — The Priority Index
 
 The index groups items by priority tier and shows status at a glance:
 
@@ -161,7 +161,7 @@ Which items does this depend on, unblock, or interact with?
 
 ### Picking the Next Item
 
-1. Read `todo/README.md` in full
+1. Read `todo/TODO.md` in full
 2. Find the highest-priority `⬜ Open` item
 3. Read its full TODO file — understand the problem before the plan
 4. Ask: are there open questions that need answering first?
@@ -198,7 +198,7 @@ When implementation is complete:
 
 1. Tick all checklist items in the TODO file
 2. Change `**Status:**` to `✅ Done`
-3. Update `todo/README.md` — flip status, update summary count
+3. Update `todo/TODO.md` — flip status, update summary count
 4. Commit everything together
 
 ```bash
@@ -208,10 +208,10 @@ git commit -m "feat: <title> (TODO #<n>)"
 
 ### Adding a New TODO
 
-1. Pick the next available number from `todo/README.md`
+1. Pick the next available number from `todo/TODO.md`
 2. Create `todo/<n>-<slug>.md` with the template above
 3. Fill in at minimum: Problem Statement and Goals
-4. Add a row to `todo/README.md` with priority and status `⬜ Open`
+4. Add a row to `todo/TODO.md` with priority and status `⬜ Open`
 5. Commit the new file: `git add todo/ && git commit -m "docs(todo): add #<n> <title>"`
 
 ---
@@ -220,7 +220,7 @@ git commit -m "feat: <title> (TODO #<n>)"
 
 When asked "what should we work on next?" or "what can get us out of alpha/beta?":
 
-1. Read `todo/README.md` in full
+1. Read `todo/TODO.md` in full
 2. Group open items by: blockers → high-value → polish
 3. Identify dependency chains (e.g. #10 must land before #23)
 4. Suggest a sequenced roadmap with effort estimates
@@ -241,7 +241,7 @@ When asked "what should we work on next?" or "what can get us out of alpha/beta?
 4. **Non-Goals prevent scope creep.** Every TODO must say what it
    deliberately does not do. "Out of scope for this PR" is a complete
    sentence.
-5. **Close the loop.** A TODO is not done until the README index
+5. **Close the loop.** A TODO is not done until the TODO.md index
    reflects it. A stale index is worse than no index.
 6. **Design refinements belong in the TODO file.** If you spot a
    problem with the original plan during implementation, update the
