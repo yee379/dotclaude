@@ -434,6 +434,22 @@ def _strip_cache_control_from_blocks(content):
     return cleaned, changed
 
 
+def _fmt_notes(stripped, kept):
+    """Format stripped/kept dicts into a single log string.
+
+    Produces e.g.:
+      stripped: fields=output_config; cache_control=system,1msg; beta=interleaved-thinking-2025-05-14 | kept: model=claude-opus-4.6; beta=claude-code-20250219
+
+    Returns an empty string if both dicts are empty.
+    """
+    parts = []
+    if stripped:
+        parts.append("stripped: " + "; ".join("%s=%s" % (k, v) for k, v in stripped.items()))
+    if kept:
+        parts.append("kept: "    + "; ".join("%s=%s" % (k, v) for k, v in kept.items()))
+    return " | ".join(parts)
+
+
 def maybe_rewrite_body(body):
     """Rewrite request body for LiteLLM compatibility.
 
@@ -445,20 +461,22 @@ def maybe_rewrite_body(body):
     - Strip cache_control from system / message content blocks (prompt-caching
       annotations that SLAC's LiteLLM/nginx rejects with 400 Bad Request)
 
-    Returns (new_body, notes) where notes is a list of short change strings
-    (empty if nothing changed).  The caller is responsible for logging.
+    Returns (new_body, stripped, kept) where stripped and kept are dicts of
+    {label: value} for the "stripped:" and "kept:" log sections respectively.
+    The caller is responsible for logging via _fmt_notes(stripped, kept).
     """
     if not body:
-        return body, []
+        return body, {}, {}
     try:
         obj = json.loads(body)
     except (json.JSONDecodeError, UnicodeDecodeError):
-        return body, []
+        return body, {}, {}
     if not isinstance(obj, dict):
-        return body, []
+        return body, {}, {}
 
     changed = False
-    notes = []
+    stripped = {}  # key -> value for "stripped:" section
+    kept     = {}  # key -> value for "kept:" section
 
     # 1. Rewrite model name
     if "model" in obj:
@@ -466,7 +484,7 @@ def maybe_rewrite_body(body):
         rewritten = rewrite_model_name(original)
         if rewritten != original:
             obj["model"] = rewritten
-            notes.append("model %s->%s" % (original, rewritten))
+            kept["model"] = rewritten
             changed = True
 
     # 2. Strip unsupported top-level fields
@@ -475,7 +493,7 @@ def maybe_rewrite_body(body):
         del obj[field]
         changed = True
     if stripped_fields:
-        notes.append("stripped fields: %s" % ", ".join(stripped_fields))
+        stripped["fields"] = ",".join(stripped_fields)
 
     # 3. Normalize thinking field
     thinking = obj.get("thinking")
@@ -486,12 +504,12 @@ def maybe_rewrite_body(body):
             # doesn't choke — it's semantically equivalent to "don't force
             # thinking" so removing it is safe.
             del obj["thinking"]
-            notes.append("stripped thinking type=adaptive")
+            stripped["thinking"] = "type=adaptive"
             changed = True
         elif t_type == "enabled" and not thinking.get("budget_tokens"):
             # budget_tokens is required when type=enabled
             obj["thinking"]["budget_tokens"] = 16000
-            notes.append("added thinking.budget_tokens=16000")
+            kept["thinking.budget_tokens"] = "16000"
             changed = True
 
     # 4. Strip cache_control from system and message content blocks.
@@ -499,11 +517,12 @@ def maybe_rewrite_body(body):
     #    cache_control: {type: "ephemeral"}.  We already strip the
     #    anthropic-beta prompt-caching header, so these annotations are
     #    orphaned and cause a plain nginx 400 from SLAC LiteLLM.
+    cache_parts = []
     if isinstance(obj.get("system"), list):
         cleaned, c = _strip_cache_control_from_blocks(obj["system"])
         if c:
             obj["system"] = cleaned
-            notes.append("stripped cache_control from system")
+            cache_parts.append("system")
             changed = True
     msgs_stripped = 0
     for msg in obj.get("messages", []):
@@ -514,11 +533,13 @@ def maybe_rewrite_body(body):
                 msgs_stripped += 1
                 changed = True
     if msgs_stripped:
-        notes.append("stripped cache_control from %d msg(s)" % msgs_stripped)
+        cache_parts.append("%dmsg" % msgs_stripped)
+    if cache_parts:
+        stripped["cache_control"] = ",".join(cache_parts)
 
     if changed:
-        return json.dumps(obj).encode("utf-8"), notes
-    return body, notes
+        return json.dumps(obj).encode("utf-8"), stripped, kept
+    return body, stripped, kept
 
 
 def maybe_rewrite_headers(hdrs):
@@ -533,26 +554,29 @@ def maybe_rewrite_headers(hdrs):
       by the SDK for browser contexts; meaningless (and WAF-triggering)
       when talking to LiteLLM.
 
-    Returns (hdrs, notes) where notes is a list of short change strings
-    (empty if nothing changed).  The caller is responsible for logging.
+    Returns (hdrs, stripped, kept) where stripped and kept are dicts of
+    {label: value} for the "stripped:" and "kept:" log sections respectively.
+    The caller is responsible for logging via _fmt_notes(stripped, kept).
     """
-    notes = []
+    stripped = {}
+    kept     = {}
     for hk in list(hdrs.keys()):
         lo = hk.lower()
         if lo == "anthropic-dangerous-direct-browser-access":
             del hdrs[hk]
-            notes.append("stripped hdr %s" % hk)
+            stripped["hdr"] = hk
         elif lo == "anthropic-beta":
-            flags = [b.strip() for b in hdrs[hk].split(",") if b.strip()]
-            kept    = [f for f in flags if f in _ANTHROPIC_BETA_PASSTHROUGH]
+            flags   = [b.strip() for b in hdrs[hk].split(",") if b.strip()]
+            kept_f  = [f for f in flags if f in _ANTHROPIC_BETA_PASSTHROUGH]
             dropped = [f for f in flags if f not in _ANTHROPIC_BETA_PASSTHROUGH]
             del hdrs[hk]
-            if kept:
-                hdrs[hk] = ", ".join(kept)
+            if kept_f:
+                hdrs[hk] = ", ".join(kept_f)
             if dropped:
-                notes.append("beta: kept=%s dropped=%s" % (", ".join(kept) if kept else "none", ", ".join(dropped)))
+                stripped["beta"] = ",".join(dropped)
+                kept["beta"]     = ",".join(kept_f) if kept_f else "none"
 
-    return hdrs, notes
+    return hdrs, stripped, kept
 
 
 # ── SOCKS5 helper (RFC 1928) ───────────────────────────────────────────────
@@ -678,7 +702,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         sys.stderr.flush()
 
         # Rewrite model names in JSON request bodies
-        body, body_notes = maybe_rewrite_body(body)
+        body, body_stripped, body_kept = maybe_rewrite_body(body)
         # Update Content-Length after potential rewrite
         if body and isinstance(body, bytes):
             clen = len(body)
@@ -711,10 +735,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
             else "%s:%d" % (TGT_HOST, TGT_PORT)
         )
         # Strip LiteLLM-incompatible headers
-        hdrs, hdr_notes = maybe_rewrite_headers(hdrs)
-        all_notes = body_notes + hdr_notes
-        if all_notes:
-            sys.stderr.write("%s rewrote: %s\n" % (_P, "; ".join(all_notes)))
+        hdrs, hdr_stripped, hdr_kept = maybe_rewrite_headers(hdrs)
+        all_stripped = dict(list(body_stripped.items()) + list(hdr_stripped.items()))
+        all_kept     = dict(list(body_kept.items())     + list(hdr_kept.items()))
+        note = _fmt_notes(all_stripped, all_kept)
+        if note:
+            sys.stderr.write("%s %s\n" % (_P, note))
             sys.stderr.flush()
         if body:
             hdrs["Content-Length"] = str(
