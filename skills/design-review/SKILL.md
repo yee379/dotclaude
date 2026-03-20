@@ -467,13 +467,12 @@ For each fixable finding, in impact order:
 
 ### 8c. Commit
 
-```bash
-git add <only-changed-files>
-git commit -m "style(design): FINDING-NNN — short description"
-```
+Stage and commit following the git discipline in `/project-management` (stage by name, one
+commit per fix — never bundle multiple fixes). Message format:
 
-- One commit per fix. Never bundle multiple fixes.
-- Message format: `style(design): FINDING-NNN — short description`
+```
+style(design): FINDING-NNN — short description
+```
 
 ### 8d. Re-test
 

@@ -280,19 +280,14 @@ committing.
 
 **Commit:**
 
-1. Stage modified documentation files by name (never `git add -A` or `git add .`).
-2. Create a single commit:
+Stage and commit following the git discipline in `/project-management` (stage by name, one
+concern per commit). Use `docs:` as the commit type:
 
-```bash
-git commit -m "$(cat <<'EOF'
+```
 docs: update project documentation for vX.Y.Z.W
-
-Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
-EOF
-)"
 ```
 
-3. Push to the current branch:
+Push to the current branch:
 
 ```bash
 git push
