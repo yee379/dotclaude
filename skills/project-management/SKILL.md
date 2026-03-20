@@ -23,8 +23,8 @@ Maintain a `todo/` directory as a prioritised backlog where every item is a firs
 ## The `todo/` Directory Structure
 
 ```
+TODO.md                          ← priority index (source of truth)
 todo/
-├── TODO.md                          ← priority index (source of truth)
 ├── 001-user-authentication.md
 ├── 002-photo-upload.md
 ├── 003-billing-integration.md
@@ -189,7 +189,7 @@ Which items does this depend on, unblock, or interact with?
 
 ### Picking the Next Item
 
-1. Read `todo/TODO.md` in full
+1. Read `TODO.md` in full
 2. Find the highest-priority `⬜ Open` item (P0 before P1 before P2 before P3)
 3. Read its full task file — understand the problem before the plan
 4. Ask: are there open questions that need answering first?
@@ -202,12 +202,12 @@ git checkout -b feat/<slug>
 
 ### Starting a New Task
 
-1. Check `todo/TODO.md` — what's the next available number?
+1. Check `TODO.md` — what's the next available number?
 2. Create `todo/<number>-<slug>.md` from the template above
 3. Fill in at minimum: Problem Statement and Goals
-4. **Add a row to `todo/TODO.md` immediately** — priority, status `⬜ Open`, branch `—`, PR `—`
+4. **Add a row to `TODO.md` immediately** — priority, status `⬜ Open`, branch `—`, PR `—`
 5. Create a git branch: `feat/<slug>` (or `fix/<slug>` for bugs)
-6. **Update `todo/TODO.md`** — set Branch to `feat/<slug>`, status to `🔄 In Progress`
+6. **Update `TODO.md`** — set Branch to `feat/<slug>`, status to `🔄 In Progress`
 7. If this is a planned feature, run `/feature-plan` and paste or link the output into the task file's **Design** section
 
 ### Planning a Task
@@ -235,7 +235,7 @@ The task file *is* the plan. Don't maintain a separate plan document unless the 
 1. Update the task file:
    - Set `**PR:**` to the PR number/URL
    - Set `**Status:**` to `👀 In Review`
-2. Update `todo/TODO.md` — status and PR column
+2. Update `TODO.md` — status and PR column
 3. Reference the task file in the PR description:
 
 ```markdown
@@ -250,7 +250,7 @@ When implementation is complete:
 
 1. Tick all checklist items in the task file
 2. Change `**Status:**` to `✅ Done` and `**Shipped:**` to today's date
-3. Update `todo/TODO.md` — flip status, update summary count
+3. Update `TODO.md` — flip status, update summary count
 4. Commit everything together:
 
 ```bash
@@ -262,18 +262,18 @@ The task file is **never deleted** — it becomes a permanent record.
 
 ### Adding a New TODO (Backlog Item)
 
-1. Pick the next available number from `todo/TODO.md`
+1. Pick the next available number from `TODO.md`
 2. Create `todo/<n>-<slug>.md` with the template above
 3. Fill in at minimum: Problem Statement and Goals
 4. Assign a priority tier (P0–P3)
-5. Add a row to `todo/TODO.md` with priority and status `⬜ Open`
-6. Commit: `git add todo/ && git commit -m "docs(todo): add #<n> <title>"`
+5. Add a row to `TODO.md` with priority and status `⬜ Open`
+6. Commit: `git add TODO.md todo/ && git commit -m "docs(todo): add #<n> <title>"`
 
 ### Reviewing the Backlog
 
 When asked "what should we work on next?" or "what can get us out of alpha/beta?":
 
-1. Read `todo/TODO.md` in full
+1. Read `TODO.md` in full
 2. Group open items by: P0 blockers → P1 high-value → P2 polish → P3 nice-to-have
 3. Identify dependency chains (e.g. #001 must land before #002)
 4. Suggest a sequenced roadmap with effort estimates
@@ -338,7 +338,7 @@ includes design decisions, problems encountered, and trade-offs.
 
 ## TODO.md Maintenance
 
-`todo/TODO.md` is the single source of truth for project status. It must be updated **as part of the same action** that changes a task — never as a follow-up.
+`TODO.md` is the single source of truth for project status. It must be updated **as part of the same action** that changes a task — never as a follow-up.
 
 ### When to update TODO.md
 
@@ -355,7 +355,7 @@ includes design decisions, problems encountered, and trade-offs.
 
 Before ending any session that touched task files, verify TODO.md is in sync:
 
-1. Open `todo/TODO.md`
+1. Open `TODO.md`
 2. For each task file that was created or modified this session, confirm the row matches the current state of the task file
 3. If any row is stale — wrong status, missing branch, missing PR — update it now
 4. If a task file exists with no corresponding TODO.md row, add it
@@ -364,7 +364,7 @@ Before ending any session that touched task files, verify TODO.md is in sync:
 
 ### TODO.md health check
 
-When asked "what are we working on?" or "show me project status", always read `todo/TODO.md` first — not individual task files. If TODO.md appears stale (tasks in progress with no branch, shipped tasks still showing as in-review), run the sync check above before reporting status.
+When asked "what are we working on?" or "show me project status", always read `TODO.md` first — not individual task files. If TODO.md appears stale (tasks in progress with no branch, shipped tasks still showing as in-review), run the sync check above before reporting status.
 
 ---
 
