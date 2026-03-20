@@ -701,10 +701,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 api_key = v
                 continue
             if lo == "authorization":
-                # Strip incoming auth header — proxy re-adds a single
-                # canonical Authorization: Bearer below.  Passing it
-                # through alongside the proxy-added header creates a
-                # duplicate Authorization that nginx rejects with 400.
+                # Capture the incoming Authorization: Bearer value so we can
+                # pass it through when no startup --token was configured.
+                # We still strip the header here and re-add it below as a
+                # single canonical Authorization: Bearer to avoid duplicates
+                # that nginx rejects with 400.
+                if v.lower().startswith("bearer "):
+                    api_key = api_key or v[len("bearer "):].strip()
                 continue
             hdrs[k] = v
         if not api_key and API_KEY:
@@ -1103,7 +1106,7 @@ def main():
     else:
         token = _load_api_key()
         token_source = (
-            "~/.claude/settings.json" if token else "(none — requests will likely fail)"
+            "~/.claude/settings.json" if token else "(none — per-request key will be used)"
         )
     API_KEY = token
 

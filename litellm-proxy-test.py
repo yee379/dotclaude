@@ -7,7 +7,7 @@ Tests:
   2. JS Patches          — index.js and acp-agent.js patched in all _npx dirs
   3. Proxy: basics       — POST /v1/messages, ?beta=true stripped, model rewrite
   4. Proxy: stripping    — context_management, output_config, thinking, beta headers
-  5. Proxy: auth         — empty x-api-key falls back to settings.json key
+  5. Proxy: auth         — empty x-api-key fallback; x-api-key pass-through; Bearer pass-through
   6. Proxy: streaming    — stream=true returns SSE data: lines
   7. Proxy: real-world   — full combined payload (all bad fields + ?beta=true) → 200
   8. Zed log             — [PATCH] and [DEBUG-ENV] present and correct, no routing errors
@@ -330,6 +330,49 @@ def test_auth():
     else:
         fail("authorization Bearer header dedup",
              f"status={status} — proxy may be forwarding duplicate Authorization headers")
+
+    # Pass-through: x-api-key with a real key reaches upstream unchanged.
+    # This is the normal Claude Code path — ANTHROPIC_API_KEY → x-api-key header.
+    import pathlib as _pl, json as _json
+    _settings_key = ""
+    try:
+        _s = _json.loads(_pl.Path.home().joinpath(".claude", "settings.json").read_text())
+        _settings_key = _s.get("env", {}).get("ANTHROPIC_API_KEY", "")
+    except Exception:
+        pass
+
+    if _settings_key:
+        status, body, log = proxy_post(extra_headers={"x-api-key": _settings_key})
+        if status == 200:
+            ok("x-api-key pass-through → 200", "real key from settings.json forwarded via x-api-key")
+        elif status == 401:
+            fail("x-api-key pass-through",
+                 "401 — key from settings.json rejected by upstream")
+        else:
+            fail("x-api-key pass-through", f"status={status}  body={body[:160]}")
+    else:
+        warn("x-api-key pass-through", "skipped — no ANTHROPIC_API_KEY in ~/.claude/settings.json")
+
+    # Pass-through: Authorization: Bearer <real-key> with no x-api-key.
+    # This verifies the new behaviour: when a client sends Bearer auth directly
+    # (e.g. a generic OpenAI-compatible client), the proxy captures and forwards
+    # it rather than dropping it.
+    if _settings_key:
+        status, body, log = proxy_post(
+            extra_headers={"x-api-key": None, "authorization": "Bearer " + _settings_key},
+        )
+        if status == 200:
+            ok("Authorization: Bearer pass-through → 200",
+               "Bearer key forwarded when no x-api-key present")
+        elif status == 401:
+            fail("Authorization: Bearer pass-through",
+                 "401 — Bearer key not forwarded (dropped by proxy?)")
+        else:
+            fail("Authorization: Bearer pass-through",
+                 f"status={status}  body={body[:160]}")
+    else:
+        warn("Authorization: Bearer pass-through",
+             "skipped — no ANTHROPIC_API_KEY in ~/.claude/settings.json")
 
 
 def test_streaming():
