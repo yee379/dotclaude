@@ -1,6 +1,6 @@
 ---
 name: plan-doc-review
-description: Pre-implementation documentation planning review. Checks that the plan explicitly identifies every doc that needs updating — README, ARCHITECTURE, API docs, runbooks, CHANGELOG, ADRs, CONTRIBUTING — before any code is written. Pairs with /document-release which applies updates post-ship. Use when asked to "check the docs plan", "what docs need updating", or "documentation review".
+description: Pre-implementation documentation planning review. Checks that the plan explicitly identifies every doc that needs updating — README, ARCHITECTURE, API docs, runbooks, CHANGELOG, ADRs, CONTRIBUTING — before any code is written. Pairs with /plan-closeout which applies updates post-ship. Use when asked to "check the docs plan", "what docs need updating", or "documentation review".
 license: MIT
 compatibility: opencode
 ---
@@ -30,11 +30,11 @@ compatibility: opencode
 
 ── post-ship ──────────────────────────────────────────────────────────────────
 
-/document-release        after merging: diffs what shipped, updates all docs to match,
+/plan-closeout           after merging: diffs what shipped, updates all docs to match,
                          polishes CHANGELOG voice, bumps VERSION
 ```
 
-**The handoff:** This skill plans what documentation needs to change and ensures that work is called out in the plan. `/document-release` executes those changes after the code ships. If this review is skipped, `document-release` has to reverse-engineer intent from a diff — it will miss context, tone, and the "why" behind changes.
+**The handoff:** This skill plans what documentation needs to change and ensures that work is called out in the plan. `/plan-closeout` executes those changes after the code ships. If this review is skipped, `plan-closeout` has to reverse-engineer intent from a diff — it will miss context, tone, and the "why" behind changes.
 
 To run all gates in sequence automatically, use `/full-review` instead of invoking each skill individually.
 
@@ -45,7 +45,7 @@ To run all gates in sequence automatically, use `/full-review` instead of invoki
 Documentation debt is created at implementation time, not at ship time. When a plan doesn't name the docs that need updating, one of three things happens:
 
 1. Engineers forget to update them entirely
-2. `document-release` reverse-engineers partial updates from the diff, losing intent
+2. `plan-closeout` reverse-engineers partial updates from the diff, losing intent
 3. Docs are updated inconsistently — README says one thing, ARCHITECTURE says another
 
 This skill runs against the **plan** — before any code is written — and asks a single question: *does this plan account for every piece of documentation that this change touches?*
@@ -118,7 +118,7 @@ For any change that affects what users see, do, or configure:
 - For CLI or config changes: are all new flags, options, and environment variables documented?
 - For breaking changes: is there an upgrade guide or migration section in the plan?
 
-**STOP.** For each gap, raise it individually. State what is missing, what the user impact is if it ships undocumented, and whether it should be added to the plan or deferred to `document-release`. Only use AskUserQuestion when there is a genuine decision (e.g. whether a breaking change warrants a standalone upgrade guide vs a CHANGELOG note).
+**STOP.** For each gap, raise it individually. State what is missing, what the user impact is if it ships undocumented, and whether it should be added to the plan or deferred to `plan-closeout`. Only use AskUserQuestion when there is a genuine decision (e.g. whether a breaking change warrants a standalone upgrade guide vs a CHANGELOG note).
 
 ---
 
@@ -173,7 +173,7 @@ For each breaking change identified:
 
 - **One gap = one AskUserQuestion call.** Never batch.
 - Describe concretely: which doc, what is missing, what a user or engineer would be missing without it.
-- Present options: **A)** Add to plan now **B)** Defer to `document-release` **C)** Not needed — here's why.
+- Present options: **A)** Add to plan now **B)** Defer to `plan-closeout` **C)** Not needed — here's why.
 - State your recommendation and why. Bias toward adding to the plan: deferred documentation is documentation that often never happens.
 - **Escape hatch:** If a section has no gaps, say so and move on.
 
@@ -187,8 +187,8 @@ Mandatory. Produced in Step 0 and refined during review. Every affected doc must
 ### Plan amendments
 For each gap the user agrees to add to the plan: state exactly what should be added and where. Write it in imperative form as a task: "Update ARCHITECTURE.md: add new ingestion service to component diagram and describe its data ownership."
 
-### "Deferred to document-release" list
-Items the user chose to defer rather than add to the plan. These should be noted so `document-release` knows to look for them.
+### "Deferred to plan-closeout" list
+Items the user chose to defer rather than add to the plan. These should be noted so `plan-closeout` knows to look for them.
 
 ### "NOT in scope" section
 Documentation considered and explicitly decided as not needed, with one-line rationale.

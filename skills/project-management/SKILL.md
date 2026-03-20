@@ -392,4 +392,4 @@ When asked "what are we working on?" or "show me project status", always read `T
 | `/deep-research` | Research findings saved to `todo/research/<slug>/`; linked from task file |
 | `/code-review` | Review findings that require fixes become new task checklist items or new backlog items |
 | `/security-review` | Security gaps discovered become P0/P1 backlog items |
-| `/document-release` | After shipping, reference the task file as the source of truth for CHANGELOG entries |
+| `/plan-closeout` | After shipping, close out the task file, sync TODO.md, update all docs, and polish CHANGELOG |
