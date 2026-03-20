@@ -57,7 +57,7 @@ The index groups items by priority tier and shows status, branch, and PR at a gl
 - ⬜ Open — not started
 - 🔍 Reviewed — plan approved by full-review board, ready to implement
 - 🔄 In Progress — active development
-- 👀 In Review — PR open, awaiting merge
+- 👀 PR Open — PR raised, awaiting code review and merge
 - ✅ Done — merged to main
 - ❌ Won't Do — cancelled, reason noted in task file
 ```
@@ -244,7 +244,7 @@ The task file *is* the plan. Don't maintain a separate plan document unless the 
 
 1. Update the task file:
    - Set `**PR:**` to the PR number/URL
-   - Set `**Status:**` to `👀 In Review`
+   - Set `**Status:**` to `👀 PR Open`
 2. Update `TODO.md` — status and PR column
 3. Reference the task file in the PR description:
 
@@ -390,7 +390,7 @@ includes design decisions, problems encountered, and trade-offs.
 | New task created | Add row with priority, status ⬜, branch `—`, PR `—` |
 | full-review passes (CLEAR TO BUILD / CLEAR WITH WARNINGS) | Status → 🔍 Reviewed |
 | Implementation starts (branch created) | Status → 🔄 In Progress in task file and TODO.md, Branch → `feat/<slug>` |
-| PR opened | Status → 👀, PR → `#<number>` |
+| PR opened | Status → 👀 PR Open, PR → `#<number>` |
 | PR merged | Status → ✅, note shipped date in task file |
 | Task cancelled | Status → ❌, add reason in task file |
 | Branch renamed or PR number changes | Update Branch/PR columns immediately |
