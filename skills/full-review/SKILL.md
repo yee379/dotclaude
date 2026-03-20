@@ -157,7 +157,7 @@ After all gates have run (or the pipeline has been halted), produce the final su
 ║ Gate 3  plan-documentation-review ✅/⚠️/❌/— {N issues}         ║
 ║ Gate 4  security-review           ✅/⚠️/❌/— {N issues}         ║
 ╠══════════════════════════════════════════════════════════════════╣
-║ ADRs written:         N  (in .claude/adrs/)                     ║
+║ ADRs written:         N  (in docs/adr/)                         ║
 ║ Test plan written:    Y/N (in .claude/test-plans/)              ║
 ║ Doc gaps added to plan: N                                       ║
 ║ Accepted warnings:    N                                         ║

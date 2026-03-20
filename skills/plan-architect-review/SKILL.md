@@ -15,7 +15,7 @@ compatibility: opencode
       ▼
 /plan-architect-review ← YOU ARE HERE: deep structural review: service boundaries,
       │                  data ownership, consistency models, failure domains,
-      │                  technology choices → ADR log written to .claude/adrs/
+      │                  technology choices → ADR log written to docs/adr/
       ▼
 /plan-eng-review         implementation gate: code quality, test coverage, performance,
       │                  edge cases → test plan artifact
@@ -203,11 +203,11 @@ Architecture does not end at the service boundary diagram. Evaluate:
 
 After all review sections are complete, generate an Architecture Decision Record for each significant decision surfaced or confirmed during the review.
 
-Write ADRs to `.claude/adrs/` with filename `{NNN}-{slug}.md`:
+Write ADRs to `docs/adr/` with filename `{NNN}-{slug}.md`. This location is discoverable by engineers browsing the repo, appears in code review alongside the feature PR, and follows the de facto convention (originated from Thoughtworks). If the project already has an established docs convention (e.g. `architecture/decisions/` or `adr/` at the root), use that instead.
 
 ```bash
 BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null | tr '/' '-' || echo 'no-branch')
-mkdir -p .claude/adrs
+mkdir -p docs/adr
 ```
 
 Each ADR follows this format:
@@ -314,7 +314,7 @@ Failure domains:      N issues found
 Technology choices:   N issues found
 Operational topology: N issues found
 ─────────────────────────────────────────────────────
-ADRs generated:       N (written to .claude/adrs/)
+ADRs generated:       N (written to docs/adr/)
 NOT in scope:         written (N items)
 What already exists:  written
 TODOS.md updates:     N items proposed
