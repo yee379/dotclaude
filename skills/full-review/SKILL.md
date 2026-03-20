@@ -184,9 +184,14 @@ which reviewer they belong to.
 
 If verdict is **CLEAR TO BUILD** or **CLEAR WITH WARNINGS**:
 
-> "You're clear to implement. When the code is done, run `/plan-closeout` to close out the task,
-> apply the documentation updates identified by plan-doc-review, and sync TODO.md — then run
-> `/prod-release` to promote through environments."
+> "You're clear to implement. For the implementation phase:
+> - Use `/project-management` to track progress in the task file and keep TODO.md in sync
+> - Use `/tdd-workflow` to drive code quality — tests first, then implementation
+> - Use `/code-review` at any point if you want a mid-implementation sanity check
+>
+> When the code is done, run `/plan-closeout` to close out the task, apply the documentation
+> updates identified by plan-doc-review, and sync TODO.md — then run `/prod-release` to promote
+> through environments."
 
 If verdict is **BLOCKED** or **UNSTABLE**:
 
