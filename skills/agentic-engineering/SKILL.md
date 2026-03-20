@@ -32,7 +32,7 @@ Apply the 15-minute unit rule:
 ## Model Routing
 
 - Haiku: classification, boilerplate transforms, narrow edits
-- Opus: architecture, root-cause analysis, troubleshooting, multi-file invariants, research, investigations
+- Opus: architecture, root-cause analysis, troubleshooting, multi-file invariants, research, investigations, reviews, planning
 - Sonnet: implementation and refactors, default model
 
 ## Session Strategy
