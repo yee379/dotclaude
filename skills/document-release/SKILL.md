@@ -1,11 +1,11 @@
 ---
 name: document-release
-description: Post-ship documentation update. Reads all project docs, cross-references the diff, updates README/ARCHITECTURE/CONTRIBUTING/CLAUDE.md to match what shipped, polishes CHANGELOG voice, cleans up TODOS, and optionally bumps VERSION. Use when asked to "update the docs", "sync documentation", or "post-ship docs".
+description: Feature close-out and documentation update. Runs after a feature lands — diffs what shipped, updates README/ARCHITECTURE/CONTRIBUTING/CLAUDE.md, polishes CHANGELOG voice, closes out todo/ task files, syncs TODO.md, and optionally bumps VERSION. Use when asked to "update the docs", "close out this feature", "sync documentation", or "post-ship docs".
 license: MIT
 compatibility: opencode
 ---
 
-# Document Release: Post-Ship Documentation Update
+# Document Release: Feature Close-Out
 
 ## Workflow position
 
@@ -13,26 +13,33 @@ compatibility: opencode
 ── pre-implementation ─────────────────────────────────────────────────────────
 
 /feature-plan            problem framing, requirements, rough system design, ADRs
-/plan-arch-review   structural review → ADR log
+/plan-arch-review        structural review → ADR log
 /plan-eng-review         implementation gate → test plan artifact
-/plan-doc-review  documentation planning: identifies which docs change and
+/plan-doc-review         documentation planning: identifies which docs change and
                          ensures that work is in the plan before coding starts
 /security-review         security gate
+
+── implementation ─────────────────────────────────────────────────────────────
+
+  ... code, tests, PR, review ...
+
 /prod-release            environment promotion, feature flag rollout, rollback procedure
 
-── post-ship ──────────────────────────────────────────────────────────────────
+── feature close-out ──────────────────────────────────────────────────────────
 
-/document-release      ← YOU ARE HERE: after merging — diffs what shipped, applies
-                         all doc updates, polishes CHANGELOG voice, bumps VERSION
+/document-release      ← YOU ARE HERE: feature has landed — close out the task
+                         file, sync TODO.md, apply all doc updates, polish
+                         CHANGELOG voice, bump VERSION
 ```
 
 **The handoff from `/plan-doc-review`:** That skill identified which docs need updating and added the work to the plan. This skill executes those updates after the code ships. If `plan-doc-review` ran, check its output (look for plan amendments and the deferred-to-doc-release list) — use it as your starting checklist rather than discovering everything from scratch.
 
 ---
 
-You are running the `/document-release` workflow. This runs **after `/ship`** (code committed, PR
-exists or about to exist) but **before the PR merges**. Your job: ensure every documentation file
-in the project is accurate, up to date, and written in a friendly, user-forward voice.
+You are running the `/document-release` workflow. This runs **after the feature has landed** (code
+merged or about to merge). Your job: close out the feature cleanly — mark the task done, ensure
+every documentation file in the project is accurate and up to date, and leave the project in a
+state where the next contributor can orient themselves without asking questions.
 
 **Model routing:** Auto-updates (factual corrections, path changes, count updates, marking TODOs complete) are **Haiku-eligible**. Risky or narrative changes — rewrites, section removals, CHANGELOG voice polish, cross-doc contradictions — require **Sonnet**. Never downgrade to Haiku for decisions you'd stop and ask the user about.
 
