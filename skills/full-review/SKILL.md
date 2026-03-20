@@ -126,7 +126,8 @@ Run up to **3 rounds**. In each round:
 2. Create the output directory: `todo/review/<slug>/` (where `<slug>` is the task file name
    without extension, e.g. `027-my-feature`).
 
-3. **Launch all relevant reviewers as subagents in a single message.** Each subagent receives:
+3. **Launch all relevant reviewers as background subagents in a single message** using
+   `run_in_background: true`. Record each agent's task ID. Each subagent receives:
 
 ```
 You are a [REVIEWER NAME] subagent in a board review.
@@ -161,13 +162,46 @@ Reviewer roles:
 - **security-review**: Check secrets, auth, input validation, injection vectors, supply chain,
   Kubernetes workload security.
 
-4. **Wait for all subagents to complete**, then read each `todo/review/<slug>/round-N-<reviewer>.md`
-   file and consolidate results. For each reviewer record:
+4. **Poll all background agents continuously** until every one completes. After launching, enter
+   a polling loop:
+
+   a. Call `TaskOutput(task_id, block: false)` for each agent that has not yet completed.
+   b. After each polling pass, emit a **live status table** so the user can see progress in
+      real time:
+
+```
+⏳ Round N — in progress  (elapsed: Xs)
+──────────────────────────────────────────────────────────────
+Reviewer             Status            Elapsed   Early signal
+──────────────────────────────────────────────────────────────
+deep-research        ✅ complete       1m 43s    no amendments
+plan-arch-review     ⏳ running        2m 01s    1 issue found
+plan-eng-review      ⏳ running        2m 01s    —
+plan-doc-review      🔵 queued         —         —
+security-review      — skipped         —         —
+──────────────────────────────────────────────────────────────
+```
+
+   Status values:
+   - `🔵 queued`     — agent launched but no output yet
+   - `⏳ running`    — agent has produced partial output (output file exists or partial TaskOutput)
+   - `✅ complete`   — TaskOutput returned final result
+   - `— skipped`    — reviewer was triaged out
+
+   Early signal: if the agent's output file (`todo/review/<slug>/round-N-<reviewer>.md`) already
+   exists and contains partial content, read its last few lines to extract an early signal —
+   e.g. "3 issues found so far", "writing ADR", "no amendments". Show this in the table.
+
+   c. Repeat until all agents are `complete` or `skipped`. There is no fixed sleep between polls —
+      call TaskOutput again immediately after rendering the table.
+
+5. Once all agents are complete, read each `todo/review/<slug>/round-N-<reviewer>.md` file in
+   full and consolidate results. For each reviewer record:
    - Issues found
    - Amendments made to the plan
    - Status: PASS | PASS WITH WARNINGS | FAIL
 
-5. Show the round dashboard:
+6. Show the round dashboard:
 
 ```
 Round N complete
@@ -181,14 +215,14 @@ security-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N
 Plan amended this round: YES → starting Round N+1 | NO → board complete
 ```
 
-6. **Decide whether to iterate — automatically, no prompt needed:**
+8. **Decide whether to iterate — automatically, no prompt needed:**
    - If **any reviewer amended the plan** this round → immediately start the next round (all
      reviewers re-review the updated plan, including ones that passed)
    - If **no reviewer amended the plan** this round → board is complete, proceed to summary
    - If any reviewer has status **FAIL** (unresolved blocking issues) → **stop**. Do not start
      another round. Tell the user which issues must be resolved before continuing.
 
-7. If **Round 3 completes with amendments still happening**: stop. Tell the user the plan has
+9. If **Round 3 completes with amendments still happening**: stop. Tell the user the plan has
    not stabilised after 3 rounds and list the outstanding changes still being triggered.
 
 ---
