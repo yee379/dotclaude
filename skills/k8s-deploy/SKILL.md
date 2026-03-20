@@ -124,79 +124,11 @@ KUBECONFIG=~/.kube/config.sdf-k8s01 \
 
 ### vcluster.yaml — configuration
 
-The `vcluster.yaml` config file controls the virtual cluster's behaviour (v0.20+ unified format):
-
-```yaml
-# vcluster.yaml
-controlPlane:
-  distro:
-    k8s:
-      enabled: true          # use upstream Kubernetes (default)
-  statefulSet:
-    resources:
-      requests:
-        cpu: 200m
-        memory: 256Mi
-      limits:
-        cpu: 1000m
-        memory: 1Gi
-
-sync:
-  toHost:
-    ingresses:
-      enabled: true          # sync Ingress objects to host cluster
-    persistentVolumeClaims:
-      enabled: true
-    services:
-      enabled: true
-
-# Resource quotas scoped to this vcluster's workloads
-policies:
-  resourceQuota:
-    enabled: true
-    quota:
-      requests.cpu: "4"
-      requests.memory: 8Gi
-      limits.cpu: "8"
-      limits.memory: 16Gi
-      count/pods: "50"
-```
-
-Deploy or update a vcluster using its config:
+The `vcluster.yaml` config lives at `./infra/vclusters/<project>/vcluster.yaml`. Key sections: `controlPlane.distro`, `sync.toHost` (enable ingresses/PVCs/services), and `policies.resourceQuota`. Deploy or upgrade with:
 
 ```bash
-vcluster create prod \
-  --namespace vclusters-prod \
-  --values ./infra/vclusters/prod/vcluster.yaml \
-  --upgrade    # upgrade if it already exists
-```
-
-### vcluster in the Makefile workflow
-
-Since we use Makefiles for deployments, wire `KUBECONFIG` as a Makefile variable so every `kubectl` call automatically targets the right cluster:
-
-```makefile
-# Connection is just setting KUBECONFIG — no vcluster connect needed
-KUBECONFIG_DIR := $(HOME)/.kube/contexts
-KUBECONFIG      := $(KUBECONFIG_DIR)/$(PROJECT)/$(ENV)
-export KUBECONFIG
-
-# Apply all rendered manifests into the target vcluster/namespace
-.PHONY: deploy
-deploy: render
-	kubectl apply -f deploy/$(ENV)/manifests/
-	kubectl rollout status deployment/$(APP) --namespace $(NAMESPACE) --timeout 5m
-```
-
-### Namespace layout inside a vcluster
-
-Even inside a vcluster, use namespaces per service or tier — vcluster namespaces are fully independent of the host:
-
-```bash
-# Inside the vcluster (after vcluster connect ...)
-kubectl create namespace api
-kubectl create namespace workers
-kubectl create namespace monitoring
+vcluster create prod --namespace vclusters-prod \
+  --values ./infra/vclusters/prod/vcluster.yaml --upgrade
 ```
 
 ---
@@ -284,16 +216,7 @@ render:
 	  > $(MANIFESTS_DIR)/all.yaml
 	@echo "Rendered → $(MANIFESTS_DIR)/all.yaml"
 
-# Split multi-doc YAML into individual files (optional, aids readability)
-.PHONY: render-split
-render-split:
-	mkdir -p $(MANIFESTS_DIR)
-	helm template $(APP) $(CHART) \
-	  -f $(CHART)/values.yaml \
-	  -f $(CHART)/values-$(ENV).yaml \
-	  --set image.tag=$(IMAGE_TAG) \
-	  --namespace $(NAMESPACE) \
-	  --output-dir $(MANIFESTS_DIR)
+# Split multi-doc YAML into individual files (optional): add --output-dir $(MANIFESTS_DIR) instead of > all.yaml
 
 # ---- diff ---------------------------------------------------------
 # Show what would change before applying.
@@ -338,20 +261,10 @@ logs:
 
 ### Reading a project's cluster targeting
 
-When working in an unfamiliar project, **read the Makefile first** to understand which vcluster it belongs to and how environments map to kubeconfig files:
-
 ```bash
-# Quick scan — shows project/cluster identity at a glance
-grep -E '^\s*(PROJECT|APP|NAMESPACE|KUBECONFIG|VCLUSTER)' Makefile
-
-# Example output:
-# PROJECT   := ai-playground
-# APP       := my-service
-# NAMESPACE := my-service
-# KUBECONFIG := $(HOME)/.kube/contexts/ai-playground/$(ENV)
+grep -E '^\s*(PROJECT|APP|NAMESPACE|KUBECONFIG)' Makefile
+# PROJECT   := ai-playground  ← tells you which vcluster dir under ~/.kube/contexts/
 ```
-
-The `PROJECT` value is the key — it tells you which vcluster directory to look under in `~/.kube/contexts/`.
 
 ---
 
@@ -416,23 +329,7 @@ make render ENV=prod + make release ENV=prod
 
 ### vcluster-per-environment isolation
 
-```bash
-# Each environment is a separate vcluster with its own kubeconfig file.
-# Switching environments = setting KUBECONFIG.
-
-export KUBECONFIG=~/.kube/contexts/ai-playground/dev
-kubectl get pods -A     # inside the dev vcluster
-
-export KUBECONFIG=~/.kube/contexts/ai-playground/prod
-kubectl get pods -A     # inside the prod vcluster
-
-# Check the host cluster (e.g. to inspect vcluster StatefulSets)
-export KUBECONFIG=~/.kube/config.sdf-k8s01
-kubectl get pods -n vclusters-ai-playground   # vcluster control plane pods
-
-# Always confirm before deploying
-make whoami ENV=prod    # prints KUBECONFIG path + current-context
-```
+Each environment is a separate vcluster with its own kubeconfig. Switching environments = setting `KUBECONFIG`. Always run `make whoami ENV=prod` to confirm target before deploying.
 
 ---
 
@@ -607,20 +504,11 @@ spec:
 
 ## Secrets Management
 
-**Never commit secret values to git.**
+**Never commit secret values to git.** Use External Secrets Operator (preferred) to sync from Vault/AWS SM/GCP SM into K8s Secrets at runtime:
 
 ```yaml
-# Reference secrets from an external store
-# Option A: Kubernetes Secrets (base64 encoded, use RBAC + encryption at rest)
-apiVersion: v1
-kind: Secret
-metadata:
-  name: api-secrets
-  namespace: prod
-type: Opaque
-stringData:          # plain text — kubectl encodes automatically
-  DATABASE_URL: "$(DATABASE_URL)"    # inject from CI/CD pipeline
-
+# Option A: plain K8s Secret — inject value from CI/CD pipeline at render time
+#   stringData: { DATABASE_URL: "$(DATABASE_URL)" }
 # Option B: External Secrets Operator (preferred for production)
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
@@ -648,9 +536,9 @@ spec:
 charts/api/
 ├── Chart.yaml
 ├── values.yaml              # defaults (non-sensitive)
-├── values-test.yaml         # test overrides
-├── values-staging.yaml      # staging overrides
-├── values-prod.yaml         # prod overrides (replica count, resources)
+├── values-dev.yaml
+├── values-staging.yaml
+├── values-prod.yaml         # override: replicaCount, resources, autoscaling, ingress
 └── templates/
     ├── deployment.yaml
     ├── service.yaml
@@ -661,57 +549,7 @@ charts/api/
     └── _helpers.tpl
 ```
 
-```yaml
-# values.yaml (defaults)
-image:
-  repository: ghcr.io/org/api
-  tag: latest          # overridden in CI with actual SHA
-  pullPolicy: IfNotPresent
-
-replicaCount: 1
-
-resources:
-  requests:
-    cpu: 100m
-    memory: 128Mi
-  limits:
-    cpu: 500m
-    memory: 512Mi
-
-autoscaling:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 10
-
-ingress:
-  enabled: false
-  host: ""
-  tls: false
-
-env: {}            # key: value map injected as ConfigMap
-
----
-# values-prod.yaml
-replicaCount: 3
-
-autoscaling:
-  enabled: true
-  minReplicas: 3
-  maxReplicas: 20
-
-ingress:
-  enabled: true
-  host: api.example.com
-  tls: true
-
-resources:
-  requests:
-    cpu: 250m
-    memory: 256Mi
-  limits:
-    cpu: 1000m
-    memory: 1Gi
-```
+Key `values.yaml` fields: `image.repository`, `image.tag` (overridden in CI with SHA), `replicaCount`, `resources.requests/limits`, `autoscaling.enabled/min/max`, `ingress.enabled/host/tls`, `env` (injected as ConfigMap).
 
 ### Helm deploy commands (reference only)
 
