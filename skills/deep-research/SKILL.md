@@ -43,11 +43,22 @@ Sub-questions to investigate:
 - **Prior art** — has this specific approach been attempted? what was the outcome?
 - **Gap detection** — are there known solutions, patterns, or pitfalls the plan doesn't mention
   that the other reviewers should know about?
+- **Dependency health** — are the libraries, services, or modules the plan depends on actively
+  maintained? any known bugs, CVEs, or breaking changes that would affect this plan?
+- **Obsolescence check** — has a new technology, framework, or method emerged that makes this
+  plan unnecessary, significantly simpler, or worth reconsidering? would the plan be rendered
+  redundant by something already available (open-source, hosted service, platform feature)?
+- **Simplification opportunities** — is there a well-known pattern, existing tool, or standard
+  approach that would make the plan shorter, lower-risk, or easier to maintain?
 
 Output: a findings summary with each claim marked as **confirmed**, **contradicted**, or
 **unverified**. Contradicted or unverified claims that affect design decisions should amend the
 plan, triggering a new board round for the other reviewers to re-evaluate with the corrected
 information.
+
+The highest-value findings are those that would change a decision — a bug in a key dependency,
+a hosted service that replaces 500 lines of custom code, or a newer approach with better
+community support. Surface these prominently.
 
 ---
 
