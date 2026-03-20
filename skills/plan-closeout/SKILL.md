@@ -10,24 +10,14 @@ compatibility: opencode
 ## Workflow position
 
 ```
-── pre-implementation ─────────────────────────────────────────────────────────
-
-/feature-plan            problem framing, requirements, rough system design, ADRs
-/plan-arch-review        structural review → ADR log
-/plan-eng-review         implementation gate → test plan artifact
-/plan-doc-review         documentation planning: identifies which docs change and
-                         ensures that work is in the plan before coding starts
-/security-review         security gate
-
-── feature close-out ──────────────────────────────────────────────────────────
-
+/feature-plan → /full-review → implementation
+      │
+      ▼
 /plan-closeout         ← YOU ARE HERE: feature has landed — close out the task
-                         file, sync TODO.md, apply all doc updates, polish
-                         CHANGELOG voice, bump VERSION
-
-── release ────────────────────────────────────────────────────────────────────
-
-/prod-release            environment promotion, feature flag rollout, rollback procedure
+      │                  file, sync TODO.md, apply all doc updates, polish
+      │                  CHANGELOG voice, bump VERSION
+      ▼
+/prod-release
 ```
 
 **The handoff from `/plan-doc-review`:** That skill identified which docs need updating and added the work to the plan. This skill executes those updates after the code ships. If `plan-doc-review` ran, check its output (look for plan amendments and the deferred-to-doc-release list) — use it as your starting checklist rather than discovering everything from scratch.

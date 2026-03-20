@@ -10,28 +10,13 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/feature-plan            problem framing, requirements, rough system design, ADRs
+/feature-plan → /plan-arch-review → /plan-eng-review → /full-review (gate 3 of 4)
       │
-      ▼
-/plan-arch-review   deep structural review: service boundaries, data ownership,
-      │                  consistency models, failure domains, technology choices → ADR log
-      ▼
-/plan-eng-review         implementation gate: code quality, test coverage, performance,
-      │                  edge cases → test plan artifact
       ▼
 /plan-doc-review ← YOU ARE HERE: documentation planning gate — which docs
       │                  change, what changes in each, who owns it, is it in the plan?
       ▼
-/security-review         security gate: secrets, auth, input validation, injection,
-      │                  supply chain, Kubernetes workload security
-      ▼
-/prod-release            environment promotion, smoke tests, feature flag rollout,
-                         monitoring validation, rollback procedure
-
-── post-ship ──────────────────────────────────────────────────────────────────
-
-/plan-closeout           after merging: diffs what shipped, updates all docs to match,
-                         polishes CHANGELOG voice, bumps VERSION
+/security-review → implementation → /plan-closeout → /prod-release
 ```
 
 **The handoff:** This skill plans what documentation needs to change and ensures that work is called out in the plan. `/plan-closeout` executes those changes after the code ships. If this review is skipped, `plan-closeout` has to reverse-engineer intent from a diff — it will miss context, tone, and the "why" behind changes.

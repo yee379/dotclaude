@@ -12,23 +12,10 @@ A structured approach to planning features and architectural changes before writ
 ## Workflow position
 
 ```
-/feature-plan          ← YOU ARE HERE: problem framing, requirements, rough system design, ADRs
+/feature-plan          ← YOU ARE HERE: problem framing, requirements, system design, ADRs
       │
       ▼
-/plan-arch-review   deep structural review: service boundaries, data ownership,
-      │                  consistency models, failure domains, technology choices → ADR log
-      ▼
-/plan-eng-review         implementation gate: code quality, test coverage, performance,
-      │                  edge cases → test plan artifact
-      ▼
-/plan-doc-review  documentation planning gate: which docs change, what changes
-      │                  in each, breaking change upgrade guides, gaps added to plan
-      ▼
-/security-review         security gate: secrets, auth, input validation, injection,
-      │                  supply chain, Kubernetes workload security
-      ▼
-/prod-release            environment promotion, smoke tests, feature flag rollout,
-                         monitoring validation, rollback procedure
+/full-review → implementation → /plan-closeout → /prod-release
 ```
 
 Use `/feature-plan` first — before architecture review or implementation. Its output (problem statement, requirements, rough design, ADRs) is the input that `plan-arch-review` needs to do a meaningful structural review.

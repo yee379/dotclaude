@@ -10,24 +10,14 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/feature-plan            problem framing, requirements, rough system design, ADRs
+/feature-plan → /full-review (gate 1 of 4)
       │
       ▼
 /plan-arch-review ← YOU ARE HERE: deep structural review: service boundaries,
       │                  data ownership, consistency models, failure domains,
       │                  technology choices → ADR log written to docs/adr/
       ▼
-/plan-eng-review         implementation gate: code quality, test coverage, performance,
-      │                  edge cases → test plan artifact
-      ▼
-/plan-doc-review  documentation planning gate: which docs change, what changes
-      │                  in each, breaking change upgrade guides, gaps added to plan
-      ▼
-/security-review         security gate: secrets, auth, input validation, injection,
-      │                  supply chain, Kubernetes workload security
-      ▼
-/prod-release            environment promotion, smoke tests, feature flag rollout,
-                         monitoring validation, rollback procedure
+/plan-eng-review → /plan-doc-review → /security-review → implementation → /plan-closeout → /prod-release
 ```
 
 Run after `/feature-plan` produces a design and before `/plan-eng-review` locks in the implementation. This skill reviews **structure** — the decisions that are expensive to reverse. `plan-eng-review` reviews **execution** — the decisions that are expensive to ship wrong.
