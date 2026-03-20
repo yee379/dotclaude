@@ -8,6 +8,49 @@ origin: ECC
 
 Produce thorough, cited research reports from multiple web sources using parallel subagents and native fetch — no paid MCPs required.
 
+## Planning Context
+
+When invoked as part of the planning workflow, deep-research operates in one of two modes
+depending on where it's called from:
+
+### Mode 1: Feature research (called from /feature-plan — Phase 0)
+
+Open-ended research *before* the plan exists. Goal: ensure the plan is built on solid ground,
+not assumptions.
+
+Sub-questions to investigate:
+
+- **Prior art** — has this been built before? what did people learn? what failed and why?
+- **Competition & state of the art** — how do others solve this problem today? what's the best
+  known approach? are there open-source solutions worth adopting or adapting?
+- **Trends** — is the chosen approach current, or is it aging out? is something better emerging?
+- **Opposition research** — what are the known failure modes, gotchas, and cautionary tales?
+  what do experienced practitioners warn about?
+- **Technology validation** — are the libraries/services/patterns being considered mature,
+  actively maintained, and fit for the intended scale?
+
+Output saved to `todo/research/<slug>/` and linked from the task file's Design section.
+The findings feed directly into Phase 1 (problem framing) and Phase 3 (ADRs).
+
+### Mode 2: Plan fact-checking (called from /full-review — board member)
+
+Targeted verification *after* the plan exists. Goal: surface factual unknowns that would change
+design decisions if answered.
+
+Sub-questions to investigate:
+
+- **Assumption verification** — the plan asserts X about a technology/library/service; is it true?
+- **Prior art** — has this specific approach been attempted? what was the outcome?
+- **Gap detection** — are there known solutions, patterns, or pitfalls the plan doesn't mention
+  that the other reviewers should know about?
+
+Output: a findings summary with each claim marked as **confirmed**, **contradicted**, or
+**unverified**. Contradicted or unverified claims that affect design decisions should amend the
+plan, triggering a new board round for the other reviewers to re-evaluate with the corrected
+information.
+
+---
+
 ## When to Activate
 
 - User asks to research any topic in depth
