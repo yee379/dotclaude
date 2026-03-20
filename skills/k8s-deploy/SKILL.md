@@ -715,28 +715,11 @@ resources:
 
 ### Helm deploy commands (reference only)
 
-> **Note:** We use `make render` + `make deploy` instead of running Helm directly. See [Makefile-Driven Deployment Workflow](#makefile-driven-deployment-workflow) above. The commands below are for reference or for managing third-party charts you don't own.
-
-```bash
-# Render only (what we actually use in CI — output goes to git)
-helm template api ./charts/api \
-  -f ./charts/api/values.yaml \
-  -f ./charts/api/values-prod.yaml \
-  --set image.tag=$IMAGE_TAG \
-  --namespace api \
-  > ./deploy/prod/manifests/all.yaml
-
-# Diff before applying (useful sanity check)
-helm diff upgrade api ./charts/api \
-  -f ./charts/api/values-prod.yaml \
-  --set image.tag=$IMAGE_TAG
-
-# Direct upgrade (third-party charts only — e.g. cert-manager, ingress-nginx)
-helm upgrade --install cert-manager jetstack/cert-manager \
-  --namespace cert-manager \
-  --create-namespace \
-  --atomic --timeout 5m --wait
-```
+> We use `make render` + `make deploy` (not `helm upgrade` directly). See [Makefile-Driven Deployment Workflow](#makefile-driven-deployment-workflow). The one exception: third-party charts you don't own (cert-manager, ingress-nginx):
+> ```bash
+> helm upgrade --install cert-manager jetstack/cert-manager \
+>   --namespace cert-manager --create-namespace --atomic --timeout 5m --wait
+> ```
 
 ---
 
@@ -890,54 +873,17 @@ Before promoting to production:
 
 ## Deployment Strategy Concepts
 
-### Rolling Deployment (K8s default)
-
-Replace instances gradually — old and new versions run simultaneously during rollout.
-
-```
-Instance 1: v1 → v2  (update first)
-Instance 2: v1        (still running v1)
-Instance 3: v1        (still running v1)
-```
-
-**Pros:** Zero downtime, gradual rollout
-**Cons:** Two versions run simultaneously — requires backward-compatible changes
-**K8s config:** `strategy.type: RollingUpdate` with `maxSurge: 1, maxUnavailable: 0`
-
-### Blue-Green Deployment
-
-Run two identical environments. Switch traffic atomically.
-
-```
-Blue  (v1) ← traffic
-Green (v2)   idle, running new version
-
-# After verification:
-Blue  (v1)   idle (becomes standby)
-Green (v2) ← traffic
-```
-
-**Pros:** Instant rollback (switch back to blue), clean cutover
-**Cons:** Requires 2x pod count during deployment
-**Use when:** Critical services, zero-tolerance for issues
-
-### Canary Deployment
-
-Route a small percentage of traffic to the new version first.
-
-```
-v1: 95% of traffic
-v2:  5% of traffic  (canary)
-
-# If metrics look good → gradual increase → 100%
-```
-
-**Pros:** Catches issues with real traffic before full rollout
-**Use when:** High-traffic services, risky changes
+| Strategy | How it works | K8s config | Use when |
+|----------|-------------|------------|----------|
+| **Rolling** (default) | Replace pods gradually; old+new run simultaneously | `strategy.type: RollingUpdate`, `maxSurge: 1, maxUnavailable: 0` | Standard deploys; changes must be backward-compatible |
+| **Blue-Green** | Two identical envs; switch traffic atomically | Two Deployments; swap Service selector | Zero-tolerance for issues; instant rollback required |
+| **Canary** | Route small % to new version; increase gradually | Two Deployments + weighted Ingress/mesh | High-traffic services; risky changes |
 
 ---
 
 ## Multi-Stage Dockerfiles
+
+Key rules: use specific version tags, run as non-root, copy dependency files first for layer caching, add `.dockerignore` excluding `node_modules/.git/tests`, never store secrets in the image.
 
 ### Node.js
 
@@ -978,8 +924,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /server ./cmd/server
 
 FROM alpine:3.19 AS runner
-RUN apk --no-cache add ca-certificates
-RUN adduser -D -u 1001 appuser
+RUN apk --no-cache add ca-certificates && adduser -D -u 1001 appuser
 USER appuser
 COPY --from=builder /server /server
 EXPOSE 8080
@@ -1010,101 +955,69 @@ HEALTHCHECK --interval=30s --timeout=3s \
 CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "4"]
 ```
 
-**Docker rules:** use specific version tags, run as non-root, copy dependency files first for layer caching, add `.dockerignore` excluding `node_modules/.git/tests`, never store secrets in the image.
-
 ---
 
 ## Health Check Endpoint
 
+Expose `/healthz` (liveness) and `/readyz` (readiness). Readiness checks backing services; liveness does not.
+
 ```typescript
-// Simple check (for K8s liveness/readiness probes)
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok" });
-});
+app.get("/healthz", (_, res) => res.status(200).json({ status: "ok" }));
 
-// Detailed check (for monitoring dashboards)
-app.get("/health/detailed", async (req, res) => {
-  const checks = {
-    database: await checkDatabase(),
-    redis: await checkRedis(),
-  };
-  const allHealthy = Object.values(checks).every(c => c.status === "ok");
-  res.status(allHealthy ? 200 : 503).json({
-    status: allHealthy ? "ok" : "degraded",
-    timestamp: new Date().toISOString(),
-    version: process.env.APP_VERSION || "unknown",
-    uptime: process.uptime(),
-    checks,
-  });
-});
-
-async function checkDatabase(): Promise<HealthCheck> {
+app.get("/readyz", async (_, res) => {
   try {
     await db.query("SELECT 1");
-    return { status: "ok" };
+    res.status(200).json({ status: "ok" });
   } catch {
-    return { status: "error", message: "Database unreachable" };
+    res.status(503).json({ status: "error", message: "Database unreachable" });
   }
-}
+});
 ```
+
+K8s probe config: see the Deployment YAML in the [Manifests section](#deployment-production-ready-baseline) above.
 
 ---
 
-## GitHub Actions CI/CD Template
+## GitHub Actions CI/CD
+
+Pipeline shape: `lint → typecheck → test → build image → make release ENV=staging → make release ENV=prod`
 
 ```yaml
 name: CI/CD
-
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm test -- --coverage
-
+        with: { node-version: 22, cache: npm }
+      - run: npm ci && npm run lint && npm run typecheck && npm test -- --coverage
   build:
     needs: test
-    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
       - uses: docker/build-push-action@v5
         with:
           push: true
           tags: ghcr.io/${{ github.repository }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
   deploy:
     needs: build
-    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
     environment: production
     steps:
       - uses: actions/checkout@v4
-      - name: Render and deploy
-        run: make release ENV=staging IMAGE_TAG=${{ github.sha }}
+      - run: make release ENV=staging IMAGE_TAG=${{ github.sha }}
 ```
-
-**Pipeline stages:**
-- PR: `lint → typecheck → unit tests → integration tests`
-- Merge to main: above + `build image → make release ENV=staging → smoke tests → make release ENV=prod`

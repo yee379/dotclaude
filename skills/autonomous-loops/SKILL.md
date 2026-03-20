@@ -103,34 +103,14 @@ claude -p --allowedTools "Read,Write,Edit,Bash" "Implement the fixes from securi
 
 ## 2. NanoClaw REPL
 
-**ECC's built-in persistent loop.** A session-aware REPL that calls `claude -p` synchronously with full conversation history.
+**ECC's built-in persistent loop.** Calls `claude -p` with full conversation history persisted to `~/.claude/claw/{session}.md`. Best for interactive exploration; use Sequential Pipeline for scripted automation.
 
 ```bash
-# Start the default session
-node scripts/claw.js
-
-# Named session with skill context
+node scripts/claw.js                                                    # default session
 CLAW_SESSION=my-project CLAW_SKILLS=tdd-workflow,security-review node scripts/claw.js
 ```
 
-### How It Works
-
-1. Loads conversation history from `~/.claude/claw/{session}.md`
-2. Each user message is sent to `claude -p` with full history as context
-3. Responses are appended to the session file (Markdown-as-database)
-4. Sessions persist across restarts
-
-### When NanoClaw vs Sequential Pipeline
-
-| Use Case | NanoClaw | Sequential Pipeline |
-|----------|----------|-------------------|
-| Interactive exploration | Yes | No |
-| Scripted automation | No | Yes |
-| Session persistence | Built-in | Manual |
-| Context accumulation | Grows per turn | Fresh each step |
-| CI/CD integration | Poor | Excellent |
-
-See the `/claw` command documentation for full details.
+See the `/claw` command for full documentation.
 
 ---
 
@@ -408,36 +388,17 @@ RFC/PRD Document
 
 ### RFC Decomposition
 
-AI reads the RFC and produces work units:
+AI reads the RFC and produces work units with: `id`, `name`, `rfcSections`, `description`, `deps` (other unit IDs), `acceptance` criteria, and `tier`.
 
-```typescript
-interface WorkUnit {
-  id: string;              // kebab-case identifier
-  name: string;            // Human-readable name
-  rfcSections: string[];   // Which RFC sections this addresses
-  description: string;     // Detailed description
-  deps: string[];          // Dependencies (other unit IDs)
-  acceptance: string[];    // Concrete acceptance criteria
-  tier: "trivial" | "small" | "medium" | "large";
-}
-```
-
-**Decomposition Rules:**
+**Decomposition rules:**
 - Prefer fewer, cohesive units (minimize merge risk)
 - Minimize cross-unit file overlap (avoid conflicts)
 - Keep tests WITH implementation (never separate "implement X" + "test X")
 - Dependencies only where real code dependency exists
 
-The dependency DAG determines execution order:
-```
-Layer 0: [unit-a, unit-b]     ← no deps, run in parallel
-Layer 1: [unit-c]             ← depends on unit-a
-Layer 2: [unit-d, unit-e]     ← depend on unit-c
-```
+DAG determines execution order — units with no deps run in parallel (Layer 0), dependent units run after their deps land.
 
 ### Complexity Tiers
-
-Different tiers get different pipeline depths:
 
 | Tier | Pipeline Stages |
 |------|----------------|
@@ -446,77 +407,11 @@ Different tiers get different pipeline depths:
 | **medium** | research → plan → implement → test → PRD-review + code-review → review-fix |
 | **large** | research → plan → implement → test → PRD-review + code-review → review-fix → final-review |
 
-This prevents expensive operations on simple changes while ensuring architectural changes get thorough scrutiny.
-
-### Separate Context Windows (Author-Bias Elimination)
-
-Each stage runs in its own agent process with its own context window:
-
-| Stage | Model | Purpose |
-|-------|-------|---------|
-| Research | Sonnet | Read codebase + RFC, produce context doc |
-| Plan | Opus | Design implementation steps |
-| Implement | Codex | Write code following the plan |
-| Test | Sonnet | Run build + test suite |
-| PRD Review | Sonnet | Spec compliance check |
-| Code Review | Opus | Quality + security check |
-| Review Fix | Codex | Address review issues |
-| Final Review | Opus | Quality gate (large tier only) |
-
-**Critical design:** The reviewer never wrote the code it reviews. This eliminates author bias — the most common source of missed issues in self-review.
+Each stage runs in its own context window — the reviewer never wrote the code it reviews, eliminating author bias.
 
 ### Merge Queue with Eviction
 
-After quality pipelines complete, units enter the merge queue:
-
-```
-Unit branch
-    │
-    ├─ Rebase onto main
-    │   └─ Conflict? → EVICT (capture conflict context)
-    │
-    ├─ Run build + tests
-    │   └─ Fail? → EVICT (capture test output)
-    │
-    └─ Pass → Fast-forward main, push, delete branch
-```
-
-**File Overlap Intelligence:**
-- Non-overlapping units land speculatively in parallel
-- Overlapping units land one-by-one, rebasing each time
-
-**Eviction Recovery:**
-When evicted, full context is captured (conflicting files, diffs, test output) and fed back to the implementer on the next Ralph pass:
-
-```markdown
-## MERGE CONFLICT — RESOLVE BEFORE NEXT LANDING
-
-Your previous implementation conflicted with another unit that landed first.
-Restructure your changes to avoid the conflicting files/lines below.
-
-{full eviction context with diffs}
-```
-
-### Data Flow Between Stages
-
-```
-research.contextFilePath ──────────────────→ plan
-plan.implementationSteps ──────────────────→ implement
-implement.{filesCreated, whatWasDone} ─────→ test, reviews
-test.failingSummary ───────────────────────→ reviews, implement (next pass)
-reviews.{feedback, issues} ────────────────→ review-fix → implement (next pass)
-final-review.reasoning ────────────────────→ implement (next pass)
-evictionContext ───────────────────────────→ implement (after merge conflict)
-```
-
-### Worktree Isolation
-
-Every unit runs in an isolated worktree (uses jj/Jujutsu, not git):
-```
-/tmp/workflow-wt-{unit-id}/
-```
-
-Pipeline stages for the same unit **share** a worktree, preserving state (context files, plan files, code changes) across research → plan → implement → test → review.
+Units rebase onto main → run tests → land (fast-forward) or get evicted. On eviction, full conflict context (diffs, test output) is fed back to the implementer on the next Ralph pass. Non-overlapping units land in parallel; overlapping units land one-by-one.
 
 ### Key Design Principles
 

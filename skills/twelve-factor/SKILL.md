@@ -289,26 +289,7 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8080)))
 ```
 
-```yaml
-# K8s: container declares its port; Service routes to it
-containers:
-  - name: api
-    image: ghcr.io/org/api:1.2.3
-    ports:
-      - containerPort: 8080
-    env:
-      - name: PORT
-        value: "8080"
----
-apiVersion: v1
-kind: Service
-spec:
-  selector:
-    app: api
-  ports:
-    - port: 80
-      targetPort: 8080
-```
+K8s: container declares `containerPort`; `Service` routes to it. TLS terminated at ingress (cert-manager), not in the app process.
 
 **Checklist:**
 - [ ] Port configurable via `PORT` env var (not hardcoded)
@@ -328,39 +309,8 @@ spec:
 
 ```yaml
 # GOOD — separate Deployments per process type, each scales independently
-# web process
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: api-web
-spec:
-  replicas: 3        # scales on HTTP load
-
-# worker process
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: api-worker
-spec:
-  replicas: 5        # scales on queue depth
-```
-
-```yaml
-# KEDA — scale workers based on queue depth, not just CPU
-apiVersion: keda.sh/v1alpha1
-kind: ScaledObject
-metadata:
-  name: api-worker-scaler
-spec:
-  scaleTargetRef:
-    name: api-worker
-  minReplicaCount: 1
-  maxReplicaCount: 20
-  triggers:
-    - type: rabbitmq
-      metadata:
-        queueName: jobs
-        value: "10"   # scale up when >10 messages per replica
+# web: scales on HTTP load (HPA on CPU/RPS)
+# worker: scales on queue depth (HPA or KEDA)
 ```
 
 **Checklist:**
@@ -488,39 +438,18 @@ services:
 ```python
 # GOOD — structured JSON logging with correlation ID
 import structlog
-
 logger = structlog.get_logger()
 
-# Middleware injects trace context into every log line
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     request_id = request.headers.get("x-request-id", str(uuid4()))
     with structlog.contextvars.bound_contextvars(request_id=request_id):
         response = await call_next(request)
-        logger.info(
-            "request",
-            method=request.method,
-            path=request.url.path,
-            status=response.status_code,
-        )
+        logger.info("request", method=request.method, path=request.url.path, status=response.status_code)
     return response
 ```
 
-```python
-# GOOD — OpenTelemetry instrumentation (logs + traces + metrics unified)
-from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-
-tracer = trace.get_tracer(__name__)
-
-@app.get("/orders/{order_id}")
-async def get_order(order_id: str):
-    with tracer.start_as_current_span("get_order") as span:
-        span.set_attribute("order.id", order_id)
-        order = await db.get_order(order_id)
-        return order
-```
+Use OpenTelemetry for distributed tracing — instrument at the framework level (FastAPI middleware, SQLAlchemy events) so traces propagate automatically across services.
 
 **Checklist:**
 - [ ] All output to `stdout`/`stderr` — no file logging in the container
@@ -600,37 +529,13 @@ Kevin Hoffman's *Beyond the Twelve-Factor App* (O'Reilly, 2016) adds three facto
 
 ### XIII. API First
 
-**Rule:** Design the API contract *before* writing implementation code. The OpenAPI spec, Protobuf definition, or AsyncAPI schema is the source of truth. This enables parallel team development and clear service boundaries.
+**Rule:** Design the API contract *before* writing implementation code. The OpenAPI spec, Protobuf definition, or AsyncAPI schema is the source of truth — enables parallel team development and clear service boundaries.
 
 **Practice:**
-- Write the OpenAPI spec first; generate server stubs and client SDKs from it
-- Use consumer-driven contract testing (Pact) so service changes don't silently break consumers
-- Introspection disabled in production GraphQL (security + performance)
-
-```yaml
-# openapi.yaml committed to repo before any implementation
-openapi: "3.1.0"
-info:
-  title: Orders API
-  version: "1.0.0"
-paths:
-  /orders/{id}:
-    get:
-      operationId: getOrder
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Order found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Order"
-```
+- Commit `openapi.yaml` / `.proto` to the repo before any implementation
+- Generate server stubs and client SDKs from the contract
+- Consumer-driven contract testing (Pact) so service changes don't silently break consumers
+- GraphQL: introspection disabled in production
 
 ---
 

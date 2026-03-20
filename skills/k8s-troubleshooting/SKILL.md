@@ -395,60 +395,7 @@ kubectl get pods -n kube-system -l name=cilium-operator
 kubectl logs -n kube-system -l name=cilium-operator --tail=50
 ```
 
-### 5b — Endpoint and identity inspection
-
-```bash
-# List all Cilium endpoints (one per pod) — check state is "ready"
-kubectl exec -n kube-system ds/cilium -- cilium endpoint list
-
-# Get endpoint detail for a specific pod IP
-kubectl exec -n kube-system ds/cilium -- cilium endpoint get <endpoint-id>
-
-# Check Cilium identity for a pod
-kubectl exec -n kube-system ds/cilium -- cilium identity list | grep <namespace>
-
-# Verify policy verdicts for a specific traffic path
-kubectl exec -n kube-system ds/cilium -- \
-  cilium policy trace \
-    --src-k8s-pod <namespace>/< source-pod> \
-    --dst-k8s-pod <namespace>/<dest-pod> \
-    --dport <port>/TCP \
-    --verbose
-```
-
-### 5c — Flow monitoring with Hubble
-
-```bash
-# Check Hubble status
-hubble status
-cilium hubble enable --ui   # enable if not already on
-
-# Observe all flows in real time
-hubble observe --follow
-
-# Find dropped packets — most useful for NetworkPolicy debugging
-hubble observe --verdict DROPPED --follow
-
-# Filter by pod pair
-hubble observe \
-  --from-pod <namespace>/frontend \
-  --to-pod <namespace>/backend \
-  --follow
-
-# Show only policy-denied drops (NetworkPolicy blocking traffic)
-hubble observe \
-  --verdict DROPPED \
-  --reason POLICY_DENIED \
-  --follow
-
-# Observe flows for a namespace
-hubble observe --namespace <namespace> --follow
-
-# Port-forward Hubble relay for CLI access
-kubectl port-forward -n kube-system svc/hubble-relay 4245:443
-```
-
-### 5d — NetworkPolicy audit
+### 5b — NetworkPolicy audit
 
 ```bash
 # List all NetworkPolicies
@@ -469,35 +416,7 @@ kubectl get networkpolicy -n <namespace> -o json | \
 # Always ensure egress allows UDP/53 to kube-dns namespace
 ```
 
-### 5e — BPF and service maps
-
-```bash
-# Check Cilium's service load-balancer map
-kubectl exec -n kube-system ds/cilium -- cilium service list
-kubectl exec -n kube-system ds/cilium -- cilium bpf lb list
-
-# Check connection tracking table
-kubectl exec -n kube-system ds/cilium -- cilium bpf ct list global | head -30
-
-# Check NAT table
-kubectl exec -n kube-system ds/cilium -- cilium bpf nat list | head -30
-
-# Monitor packet drops in real time
-kubectl exec -n kube-system ds/cilium -- cilium monitor --type drop
-
-# Monitor policy verdicts
-kubectl exec -n kube-system ds/cilium -- cilium monitor --type policy-verdict
-```
-
-### 5f — Collect Cilium diagnostic bundle
-
-```bash
-# Full diagnostic sysdump (file for sharing with Cilium team or for post-mortem)
-cilium sysdump --output-filename cilium-debug-$(date +%Y%m%d-%H%M)
-
-# Quick sysdump
-cilium sysdump --quick
-```
+> For deep Cilium diagnostics (Hubble flow monitoring, endpoint inspection, BPF maps, sysdump), use the Cilium CLI directly: `cilium status`, `hubble observe --verdict DROPPED --follow`, `cilium policy trace --src-k8s-pod <ns>/<pod> --dst-k8s-pod <ns>/<pod> --dport <port>/TCP --verbose`
 
 ---
 
@@ -593,9 +512,6 @@ kubectl get nodes -o json | \
 
 5. kubectl logs <name>-0 -n <ns>
    → read database startup logs for auth errors, data directory issues
-
-6. kubectl exec -it <name>-0 -n <ns> -- pg_isready -U postgres
-   → is the DB process alive inside the pod?
 ```
 
 ### Scenario D — Ingress returning 502/504
@@ -617,31 +533,7 @@ kubectl get nodes -o json | \
    → OOMKilled or CPU throttling causing slow responses → 504s
 ```
 
-### Scenario E — Network policy blocking traffic (Cilium)
-
-```
-1. hubble observe --verdict DROPPED --follow
-   → look for drops between the affected pods
-
-2. kubectl exec -n kube-system ds/cilium -- \
-     cilium policy trace \
-       --src-k8s-pod <ns>/frontend \
-       --dst-k8s-pod <ns>/backend \
-       --dport 8080/TCP --verbose
-   → "DENIED" = policy rule is blocking
-
-3. kubectl get networkpolicy -A
-   kubectl get ciliumnetworkpolicy -A
-   → find the policy applying to the destination pod
-
-4. Check for missing DNS egress (port 53 blocked):
-   hubble observe --from-pod <ns>/pod --to-port 53 --follow
-   → DNS drops cause cascading failures
-
-5. Fix: update NetworkPolicy to allow the required port/namespace selector
-```
-
-### Scenario F — PVC stuck in Pending
+### Scenario E — PVC stuck in Pending
 
 ```
 1. kubectl describe pvc <name> -n <ns>
