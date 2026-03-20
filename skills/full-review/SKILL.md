@@ -1,6 +1,6 @@
 ---
 name: full-review
-description: Orchestrates the complete pre-implementation review pipeline — triage, then sequentially gates through plan-architect-review, plan-eng-review, plan-doc-review, and security-review. Tracks gate status, surfaces a running dashboard, and tells you exactly what to do next. Use when asked to "run a full review", "review everything", or "gate this plan".
+description: Orchestrates the complete pre-implementation review pipeline — triage, then sequentially gates through plan-arch-review, plan-eng-review, plan-doc-review, and security-review. Tracks gate status, surfaces a running dashboard, and tells you exactly what to do next. Use when asked to "run a full review", "review everything", or "gate this plan".
 license: MIT
 compatibility: opencode
 ---
@@ -26,7 +26,7 @@ Orchestrates the complete pre-implementation review pipeline against an existing
   [Triage]         which gates are relevant for this change?
       │
       ▼
-  [Gate 1]  /plan-architect-review   structural decisions, service boundaries,
+  [Gate 1]  /plan-arch-review   structural decisions, service boundaries,
       │                              data ownership, failure domains → ADR log
       ▼
   [Gate 2]  /plan-eng-review         implementation correctness, test coverage,
@@ -70,7 +70,7 @@ For each gate, answer yes/no based on the plan:
 ```
 GATE                        SKIP IF...
 ──────────────────────────────────────────────────────────────────────
-plan-architect-review       change touches only a single existing service with
+plan-arch-review       change touches only a single existing service with
                             no new data stores, no new async channels, no service
                             boundary changes, and no new infrastructure
 plan-eng-review             change is purely documentation or config with no
@@ -89,7 +89,7 @@ Present the triage result:
 ```
 Triage complete
 ───────────────────────────────────────────────
-Gate 1  plan-architect-review    RUN | SKIP (reason)
+Gate 1  plan-arch-review    RUN | SKIP (reason)
 Gate 2  plan-eng-review          RUN | SKIP (reason)
 Gate 3  plan-doc-review RUN | SKIP (reason)
 Gate 4  security-review          RUN | SKIP (reason)
@@ -131,7 +131,7 @@ After each gate, show the running dashboard:
 ```
 Pipeline status
 ───────────────────────────────────────────────────────
-Gate 1  plan-architect-review     ✅ PASS | ⚠️ WARNINGS | ❌ FAIL | ⏳ PENDING | — SKIPPED
+Gate 1  plan-arch-review     ✅ PASS | ⚠️ WARNINGS | ❌ FAIL | ⏳ PENDING | — SKIPPED
 Gate 2  plan-eng-review           ✅ PASS | ⚠️ WARNINGS | ❌ FAIL | ⏳ PENDING | — SKIPPED
 Gate 3  plan-doc-review ✅ PASS | ⚠️ WARNINGS | ❌ FAIL | ⏳ PENDING | — SKIPPED
 Gate 4  security-review           ✅ PASS | ⚠️ WARNINGS | ❌ FAIL | ⏳ PENDING | — SKIPPED
@@ -152,7 +152,7 @@ After all gates have run (or the pipeline has been halted), produce the final su
 ║ Branch:   {branch}                                              ║
 ║ Date:     {date}                                                ║
 ╠══════════════════════════════════════════════════════════════════╣
-║ Gate 1  plan-architect-review     ✅/⚠️/❌/— {N issues}         ║
+║ Gate 1  plan-arch-review     ✅/⚠️/❌/— {N issues}         ║
 ║ Gate 2  plan-eng-review           ✅/⚠️/❌/— {N issues}         ║
 ║ Gate 3  plan-doc-review ✅/⚠️/❌/— {N issues}         ║
 ║ Gate 4  security-review           ✅/⚠️/❌/— {N issues}         ║

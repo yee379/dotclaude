@@ -13,7 +13,7 @@ compatibility: opencode
 ── pre-implementation ─────────────────────────────────────────────────────────
 
 /feature-plan            problem framing, requirements, rough system design, ADRs
-/plan-architect-review   structural review → ADR log
+/plan-arch-review   structural review → ADR log
 /plan-eng-review         implementation gate → test plan artifact
 /plan-doc-review  documentation planning: identifies which docs change and
                          ensures that work is in the plan before coding starts

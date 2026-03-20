@@ -13,7 +13,7 @@ compatibility: opencode
 /feature-plan            problem framing, requirements, rough system design, ADRs
       │
       ▼
-/plan-architect-review   deep structural review: service boundaries, data ownership,
+/plan-arch-review   deep structural review: service boundaries, data ownership,
       │                  consistency models, failure domains, technology choices → ADR log
       ▼
 /plan-eng-review       ← YOU ARE HERE: implementation gate: code quality, test coverage,
@@ -29,7 +29,7 @@ compatibility: opencode
                          monitoring validation, rollback procedure
 ```
 
-Run after `/plan-architect-review` has validated the structural decisions and before writing code. This skill reviews **execution** — whether the implementation plan is correct, testable, and complete. `plan-architect-review` reviews **structure** — the decisions that are expensive to reverse.
+Run after `/plan-arch-review` has validated the structural decisions and before writing code. This skill reviews **execution** — whether the implementation plan is correct, testable, and complete. `plan-arch-review` reviews **structure** — the decisions that are expensive to reverse.
 
 To run all gates in sequence automatically, use `/full-review` instead of invoking each skill individually.
 

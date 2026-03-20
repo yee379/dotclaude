@@ -13,7 +13,7 @@ compatibility: opencode
 /feature-plan            problem framing, requirements, rough system design, ADRs
       │
       ▼
-/plan-architect-review   deep structural review: service boundaries, data ownership,
+/plan-arch-review   deep structural review: service boundaries, data ownership,
       │                  consistency models, failure domains, technology choices → ADR log
       ▼
 /plan-eng-review         implementation gate: code quality, test coverage, performance,
