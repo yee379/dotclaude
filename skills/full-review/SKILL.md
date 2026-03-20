@@ -1,42 +1,45 @@
 ---
 name: full-review
-description: Orchestrates the complete pre-implementation review pipeline — triage, then sequentially gates through plan-arch-review, plan-eng-review, plan-doc-review, and security-review. Tracks gate status, surfaces a running dashboard, and tells you exactly what to do next. Use when asked to "run a full review", "review everything", or "gate this plan".
+description: Orchestrates the board review pipeline — runs plan-arch-review, plan-eng-review, plan-doc-review, and security-review in parallel, then re-runs the full board if any reviewer amends the plan. Iterates until all reviewers pass in the same round with no changes. Use when asked to "run a full review", "review everything", or "gate this plan".
 license: MIT
 compatibility: opencode
 ---
 
 # Full Review
 
-Orchestrates the complete pre-implementation review pipeline against an existing plan. Each gate must pass before the next runs. You get a running dashboard so you always know where you are and what's left.
+Runs the four plan reviewers as a **board** — in parallel, not sequentially. If any reviewer
+amends the plan, the whole board re-reviews the updated plan. The round repeats until all
+reviewers pass in the same round without triggering any further changes. Maximum 3 rounds.
 
-**Model routing:** Triage (Step 1) is Haiku-eligible — it's a classification task. Each gate (Steps 2+) runs at **Opus** — they require deep reasoning, cross-file analysis, and architectural judgment. Do not downgrade gate execution to Sonnet to save cost; the gates exist precisely because the decisions are hard.
+**Model routing:** Triage is Haiku-eligible. Each reviewer runs at **Opus** — they require deep
+reasoning, cross-file analysis, and architectural judgment. Do not downgrade to Sonnet.
 
 **This skill assumes a plan already exists.** If you don't have one yet, run `/feature-plan` first.
 
-**This skill does not implement anything.** It sequences reviews, tracks gate status, and tells you when you're clear to build.
+**This skill does not implement anything.** It convenes the board, tracks rounds, and tells you
+when you're clear to build.
 
 ---
 
-## The pipeline
+## The board model
 
 ```
 /full-review
       │
       ▼
-  [Triage]         which gates are relevant for this change?
+  [Triage]      which reviewers are relevant for this change?
       │
       ▼
-  [Gate 1]  /plan-arch-review   structural decisions, service boundaries,
-      │                              data ownership, failure domains → ADR log
-      ▼
-  [Gate 2]  /plan-eng-review         implementation correctness, test coverage,
-      │                              performance, edge cases → test plan artifact
-      ▼
-  [Gate 3]  /plan-doc-review  which docs change, breaking change
-      │                              upgrade guides, gaps added to plan
-      ▼
-  [Gate 4]  /security-review         secrets, auth, input validation, injection,
-      │                              supply chain, Kubernetes workload security
+  ┌─────────────────────────────────────────────────┐
+  │  ROUND N  (all relevant reviewers in parallel)  │
+  │                                                 │
+  │  plan-arch-review   plan-eng-review             │
+  │  plan-doc-review    security-review             │
+  │                                                 │
+  │  if any reviewer amends the plan ───────────────┤
+  │                                      next round │
+  └─────────────────────────────────────────────────┘
+      │  all pass in same round, no amendments
       ▼
   [Clear to build]
       │
@@ -52,101 +55,95 @@ Before anything else, find what's being reviewed:
 
 1. Check for a plan file: `DESIGN.md`, `design-doc.md`, or any `.md` in `.claude/` describing the feature.
 2. Check git: `git diff $(git merge-base HEAD main 2>/dev/null || git merge-base HEAD master 2>/dev/null || echo HEAD~5)...HEAD --stat 2>/dev/null | head -30` — is there already code on this branch that implicitly defines the scope?
-3. Check `TODOS.md` for the item being worked.
+3. Check `TODO.md` / `todo/` for the item being worked.
 
 If no plan is found, **stop** and tell the user:
 > "No plan found. Run `/feature-plan` first to produce a design document, then come back to `/full-review`."
 
-If a plan is found, summarise it in 2-3 sentences so the user can confirm you've read the right thing before proceeding.
+If a plan is found, summarise it in 2-3 sentences so the user can confirm you've read the right
+thing before proceeding.
 
 ---
 
-## Step 1: Triage — which gates apply?
+## Step 1: Triage — which reviewers apply?
 
-Not every change needs every gate. Run triage first to avoid wasted effort.
-
-For each gate, answer yes/no based on the plan:
+Not every change needs every reviewer. Run triage first to avoid wasted effort.
 
 ```
-GATE                        SKIP IF...
+REVIEWER             SKIP IF...
 ──────────────────────────────────────────────────────────────────────
-plan-arch-review       change touches only a single existing service with
-                            no new data stores, no new async channels, no service
-                            boundary changes, and no new infrastructure
-plan-eng-review             change is purely documentation or config with no
-                            code changes
-plan-doc-review   change is purely internal/infra with no user-facing
-                            surface, no API changes, no new commands or config
-security-review             change has no user input, no auth changes, no new
-                            API endpoints, no secrets, no new K8s workloads
+plan-arch-review     change touches only a single existing service with
+                     no new data stores, no new async channels, no service
+                     boundary changes, and no new infrastructure
+plan-eng-review      change is purely documentation or config with no
+                     code changes
+plan-doc-review      change is purely internal/infra with no user-facing
+                     surface, no API changes, no new commands or config
+security-review      change has no user input, no auth changes, no new
+                     API endpoints, no secrets, no new K8s workloads
 ──────────────────────────────────────────────────────────────────────
 ```
 
-**Default: run all gates.** Only skip a gate if the skip condition is clearly and unambiguously met. When in doubt, run it.
+**Default: run all reviewers.** Only skip if the skip condition is clearly and unambiguously met.
+When in doubt, run it.
 
 Present the triage result:
 
 ```
 Triage complete
 ──────────────────────────────────────────────────────
-Gate 1  plan-arch-review     RUN | SKIP (reason)
-Gate 2  plan-eng-review      RUN | SKIP (reason)
-Gate 3  plan-doc-review      RUN | SKIP (reason)
-Gate 4  security-review      RUN | SKIP (reason)
+plan-arch-review     RUN | SKIP (reason)
+plan-eng-review      RUN | SKIP (reason)
+plan-doc-review      RUN | SKIP (reason)
+security-review      RUN | SKIP (reason)
 ──────────────────────────────────────────────────────
 ```
 
-**STOP.** Ask the user to confirm the triage before proceeding. Use AskUserQuestion if any gate's skip/run decision is debatable. Only proceed after confirmation.
+**STOP.** Ask the user to confirm the triage before proceeding. Only proceed after confirmation.
 
 ---
 
-## Step 2: Run gates sequentially
+## Step 2: Board rounds
 
-Run each gate in order. **Do not start the next gate until the current one is complete and the user has confirmed they are ready to proceed.**
+Run up to **3 rounds**. In each round:
 
-For each gate that is marked RUN:
+1. Announce: "Starting Round N — running all reviewers in parallel."
+2. Invoke all relevant reviewers concurrently — do not run them one at a time.
+3. Collect all results. For each reviewer, record:
+   - Issues found
+   - Issues resolved (user accepted or plan amended)
+   - Issues unresolved
+   - Whether the plan was **amended** this round (any change to the plan doc)
+   - Status: PASS | PASS WITH WARNINGS | FAIL
 
-1. Announce the gate: "Starting Gate N: /skill-name"
-2. Invoke the skill fully — do not abbreviate or summarise the review
-3. When the skill completes, present the gate result:
-
-```
-Gate N complete: /skill-name
-───────────────────────────────────
-Issues found:    N
-Resolved:        N
-Unresolved:      N
-Status:          PASS | FAIL | PASS WITH WARNINGS
-───────────────────────────────────
-```
-
-4. If status is **FAIL** (unresolved blocking issues): **stop the pipeline**. Do not proceed to the next gate. Tell the user which issues must be resolved before continuing.
-
-5. If status is **PASS WITH WARNINGS** (issues raised, user chose to accept risk): note the warnings, proceed, and carry them into the final summary.
-
-6. If status is **PASS**: proceed to the next gate.
-
-After each gate, show the running dashboard:
+4. After all reviewers complete, show the round dashboard:
 
 ```
-Pipeline status
+Round N complete
 ──────────────────────────────────────────────────────
-Gate 1  plan-arch-review     ✅ PASS | ⚠️ WARN | ❌ FAIL | ⏳ PENDING | — SKIP
-Gate 2  plan-eng-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | ⏳ PENDING | — SKIP
-Gate 3  plan-doc-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | ⏳ PENDING | — SKIP
-Gate 4  security-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | ⏳ PENDING | — SKIP
+plan-arch-review     ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N
+plan-eng-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N
+plan-doc-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N
+security-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N
 ──────────────────────────────────────────────────────
+Plan amended this round: YES → starting Round N+1 | NO → board complete
 ```
+
+5. **Decide whether to iterate:**
+   - If **any reviewer amended the plan** this round → start the next round (all reviewers
+     re-review the updated plan, including ones that passed)
+   - If **no reviewer amended the plan** this round → board is complete, proceed to summary
+   - If any reviewer has status **FAIL** (unresolved blocking issues) → **stop**. Do not start
+     another round. Tell the user which issues must be resolved before continuing.
+
+6. If **Round 3 completes with amendments still happening**: stop. Tell the user the plan has
+   not stabilised after 3 rounds and list the outstanding changes still being triggered.
 
 ---
 
 ## Step 3: Final summary
 
-After all gates have run (or the pipeline has been halted), produce the final summary.
-
-Use plain text — do NOT use a Unicode box. Terminals, markdown renderers, and proportional fonts all
-break box-drawing characters differently, which is what causes the misalignment. Use dashes and
-labels instead:
+After the board completes (or is halted), produce the final summary:
 
 ```
 FULL REVIEW — FINAL SUMMARY
@@ -154,11 +151,12 @@ FULL REVIEW — FINAL SUMMARY
 Plan:    {plan file or description}
 Branch:  {branch}
 Date:    {date}
+Rounds:  {N completed}
 ------------------------------------------------------------
-Gate 1  plan-arch-review     {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
-Gate 2  plan-eng-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
-Gate 3  plan-doc-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
-Gate 4  security-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+plan-arch-review     {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+plan-eng-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+plan-doc-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+security-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
 ------------------------------------------------------------
 ADRs written:          {N}  (in docs/adr/)
 Test plan written:     {Y/N}  (in todo/ task file)
@@ -166,15 +164,19 @@ Doc gaps added:        {N}
 Accepted warnings:     {N}
 Blocking issues:       {N}
 ------------------------------------------------------------
-VERDICT:  CLEAR TO BUILD | BLOCKED | CLEAR WITH WARNINGS
+VERDICT:  CLEAR TO BUILD | BLOCKED | CLEAR WITH WARNINGS | UNSTABLE
 ============================================================
 ```
 
-**CLEAR TO BUILD** — all gates passed, no unresolved issues.
+**CLEAR TO BUILD** — all reviewers passed in the final round, no unresolved issues.
 
-**CLEAR WITH WARNINGS** — all gates passed, but the user accepted risk on one or more issues. List the accepted warnings explicitly so they can be revisited post-ship.
+**CLEAR WITH WARNINGS** — all reviewers passed, but the user accepted risk on one or more issues.
+List the accepted warnings explicitly so they can be revisited post-ship.
 
-**BLOCKED** — one or more gates failed with unresolved issues. List the blocking issues and which gate they belong to.
+**BLOCKED** — one or more reviewers failed with unresolved issues. List the blocking issues and
+which reviewer they belong to.
+
+**UNSTABLE** — the plan did not stabilise within 3 rounds. List what was still changing and why.
 
 ---
 
@@ -182,18 +184,24 @@ VERDICT:  CLEAR TO BUILD | BLOCKED | CLEAR WITH WARNINGS
 
 If verdict is **CLEAR TO BUILD** or **CLEAR WITH WARNINGS**:
 
-> "You're clear to implement. When the code is done, run `/plan-closeout` to close out the task, apply the documentation updates identified in Gate 3, and sync TODO.md — then run `/prod-release` to promote through environments."
+> "You're clear to implement. When the code is done, run `/plan-closeout` to close out the task,
+> apply the documentation updates identified by plan-doc-review, and sync TODO.md — then run
+> `/prod-release` to promote through environments."
 
-If verdict is **BLOCKED**:
+If verdict is **BLOCKED** or **UNSTABLE**:
 
-> "Resolve the blocking issues above, then re-run `/full-review` or continue from Gate N using `/skill-name` directly."
+> "Resolve the issues above, then re-run `/full-review`."
 
 ---
 
 ## Formatting rules
 
-- Show the pipeline dashboard after every gate completion — never let the user lose track of where they are.
-- Never batch issues across gates into a single question.
+- Show the round dashboard after every round — never let the user lose track of where they are.
+- Never batch issues across reviewers into a single question.
 - One AskUserQuestion per issue, exactly as each underlying skill requires.
-- If the user asks to skip a gate mid-pipeline, use AskUserQuestion to confirm — skipping a gate is accepting the risk it would have caught.
-- If the user interrupts and resumes later, re-show the dashboard immediately so they can reorient.
+- If the user asks to skip a reviewer mid-round, use AskUserQuestion to confirm — skipping is
+  accepting the risk that reviewer would have caught.
+- If the user interrupts and resumes later, re-show the last round dashboard immediately so they
+  can reorient.
+- When a new round starts because the plan was amended, briefly summarise what changed:
+  "Plan was amended in Round N: {summary of changes}. Starting Round N+1."

@@ -10,7 +10,7 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/feature-plan → /full-review (gate 1 of 4)
+/feature-plan → /full-review (board, parallel with plan-eng-review, plan-doc-review, security-review)
       │
       ▼
 /plan-arch-review ← YOU ARE HERE: deep structural review: service boundaries,
