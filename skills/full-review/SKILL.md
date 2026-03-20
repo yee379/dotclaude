@@ -88,12 +88,12 @@ Present the triage result:
 
 ```
 Triage complete
-───────────────────────────────────────────────
-Gate 1  plan-arch-review    RUN | SKIP (reason)
-Gate 2  plan-eng-review          RUN | SKIP (reason)
-Gate 3  plan-doc-review RUN | SKIP (reason)
-Gate 4  security-review          RUN | SKIP (reason)
-───────────────────────────────────────────────
+──────────────────────────────────────────────────────
+Gate 1  plan-arch-review     RUN | SKIP (reason)
+Gate 2  plan-eng-review      RUN | SKIP (reason)
+Gate 3  plan-doc-review      RUN | SKIP (reason)
+Gate 4  security-review      RUN | SKIP (reason)
+──────────────────────────────────────────────────────
 ```
 
 **STOP.** Ask the user to confirm the triage before proceeding. Use AskUserQuestion if any gate's skip/run decision is debatable. Only proceed after confirmation.
@@ -130,41 +130,44 @@ After each gate, show the running dashboard:
 
 ```
 Pipeline status
-───────────────────────────────────────────────────────
-Gate 1  plan-arch-review     ✅ PASS | ⚠️ WARNINGS | ❌ FAIL | ⏳ PENDING | — SKIPPED
-Gate 2  plan-eng-review           ✅ PASS | ⚠️ WARNINGS | ❌ FAIL | ⏳ PENDING | — SKIPPED
-Gate 3  plan-doc-review ✅ PASS | ⚠️ WARNINGS | ❌ FAIL | ⏳ PENDING | — SKIPPED
-Gate 4  security-review           ✅ PASS | ⚠️ WARNINGS | ❌ FAIL | ⏳ PENDING | — SKIPPED
-───────────────────────────────────────────────────────
+──────────────────────────────────────────────────────
+Gate 1  plan-arch-review     ✅ PASS | ⚠️ WARN | ❌ FAIL | ⏳ PENDING | — SKIP
+Gate 2  plan-eng-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | ⏳ PENDING | — SKIP
+Gate 3  plan-doc-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | ⏳ PENDING | — SKIP
+Gate 4  security-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | ⏳ PENDING | — SKIP
+──────────────────────────────────────────────────────
 ```
 
 ---
 
 ## Step 3: Final summary
 
-After all gates have run (or the pipeline has been halted), produce the final summary:
+After all gates have run (or the pipeline has been halted), produce the final summary.
+
+Use plain text — do NOT use a Unicode box. Terminals, markdown renderers, and proportional fonts all
+break box-drawing characters differently, which is what causes the misalignment. Use dashes and
+labels instead:
 
 ```
-╔══════════════════════════════════════════════════════════════════╗
-║                    FULL REVIEW — FINAL SUMMARY                  ║
-╠══════════════════════════════════════════════════════════════════╣
-║ Plan:     {plan file or description}                            ║
-║ Branch:   {branch}                                              ║
-║ Date:     {date}                                                ║
-╠══════════════════════════════════════════════════════════════════╣
-║ Gate 1  plan-arch-review     ✅/⚠️/❌/— {N issues}         ║
-║ Gate 2  plan-eng-review           ✅/⚠️/❌/— {N issues}         ║
-║ Gate 3  plan-doc-review ✅/⚠️/❌/— {N issues}         ║
-║ Gate 4  security-review           ✅/⚠️/❌/— {N issues}         ║
-╠══════════════════════════════════════════════════════════════════╣
-║ ADRs written:         N  (in docs/adr/)                         ║
-║ Test plan written:    Y/N (in todo/ task file)                  ║
-║ Doc gaps added to plan: N                                       ║
-║ Accepted warnings:    N                                         ║
-║ Blocking issues:      N                                         ║
-╠══════════════════════════════════════════════════════════════════╣
-║ VERDICT:  CLEAR TO BUILD | BLOCKED | CLEAR WITH WARNINGS        ║
-╚══════════════════════════════════════════════════════════════════╝
+FULL REVIEW — FINAL SUMMARY
+============================================================
+Plan:    {plan file or description}
+Branch:  {branch}
+Date:    {date}
+------------------------------------------------------------
+Gate 1  plan-arch-review     {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+Gate 2  plan-eng-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+Gate 3  plan-doc-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+Gate 4  security-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+------------------------------------------------------------
+ADRs written:          {N}  (in docs/adr/)
+Test plan written:     {Y/N}  (in todo/ task file)
+Doc gaps added:        {N}
+Accepted warnings:     {N}
+Blocking issues:       {N}
+------------------------------------------------------------
+VERDICT:  CLEAR TO BUILD | BLOCKED | CLEAR WITH WARNINGS
+============================================================
 ```
 
 **CLEAR TO BUILD** — all gates passed, no unresolved issues.
