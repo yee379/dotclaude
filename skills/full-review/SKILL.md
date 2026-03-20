@@ -237,6 +237,12 @@ which reviewer they belong to.
 
 If verdict is **CLEAR TO BUILD** or **CLEAR WITH WARNINGS**:
 
+Update the task file and `TODO.md` immediately:
+- Set `**Status:**` in the task file to `🔍 Reviewed`
+- Update `TODO.md` — flip the status column to `🔍 Reviewed`
+
+Then tell the user:
+
 > "You're clear to implement. For the implementation phase:
 > - Use `/project-management` to track progress in the task file and keep TODO.md in sync
 > - Use `/tdd-workflow` to drive code quality — tests first, then implementation
