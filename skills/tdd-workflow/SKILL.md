@@ -254,14 +254,16 @@ src/
 
 ## Mocking External Services
 
-### Supabase Mock
+Mock at the module boundary — replace the internal adapter, not the third-party SDK directly.
+
+### Database Mock (generic)
 ```typescript
-jest.mock('@/lib/supabase', () => ({
-  supabase: {
+jest.mock('@/lib/db', () => ({
+  db: {
     from: jest.fn(() => ({
       select: jest.fn(() => ({
         eq: jest.fn(() => Promise.resolve({
-          data: [{ id: 1, name: 'Test Market' }],
+          data: [{ id: '1', name: 'Test Item' }],
           error: null
         }))
       }))
@@ -270,24 +272,29 @@ jest.mock('@/lib/supabase', () => ({
 }))
 ```
 
-### Redis Mock
+### Cache / Vector Store Mock (generic)
 ```typescript
-jest.mock('@/lib/redis', () => ({
-  searchMarketsByVector: jest.fn(() => Promise.resolve([
-    { slug: 'test-market', similarity_score: 0.95 }
+jest.mock('@/lib/cache', () => ({
+  searchByVector: jest.fn(() => Promise.resolve([
+    { id: 'item-1', score: 0.95 }
   ])),
-  checkRedisHealth: jest.fn(() => Promise.resolve({ connected: true }))
+  checkHealth: jest.fn(() => Promise.resolve({ connected: true }))
 }))
 ```
 
-### OpenAI Mock
+### External API / Embedding Mock (generic)
 ```typescript
-jest.mock('@/lib/openai', () => ({
+jest.mock('@/lib/embeddings', () => ({
   generateEmbedding: jest.fn(() => Promise.resolve(
-    new Array(1536).fill(0.1) // Mock 1536-dim embedding
+    new Array(1536).fill(0.1)  // fixed-dimension vector for test isolation
   ))
 }))
 ```
+
+**Rules:**
+- Mock the internal adapter (`@/lib/db`), not the vendor SDK (`@supabase/supabase-js`)
+- Return minimal, stable shapes — don't couple test data to production schema
+- Always provide a failure path mock alongside the success path
 
 ## Test Coverage Verification
 

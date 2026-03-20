@@ -110,12 +110,8 @@ pytest tests/integration/ -m "smoke"
 **Deploy to staging:**
 
 ```bash
-# Helm promotion
-helm upgrade --install api ./charts/api \
-  -n staging \
-  -f charts/api/values-staging.yaml \
-  --set image.tag=$IMAGE_TAG \
-  --atomic --timeout 5m --wait
+# Render manifests, commit, and deploy
+make release ENV=staging IMAGE_TAG=$IMAGE_TAG
 
 # Verify rollout
 kubectl rollout status deployment/api -n staging
@@ -193,28 +189,21 @@ Complete this before every production deployment:
 
 ## Production Deploy
 
-### Standard deploy (Helm)
+### Standard deploy (Makefile-driven)
 
 ```bash
 # 1. Diff first — no surprises
-helm diff upgrade api ./charts/api \
-  -n prod \
-  -f charts/api/values-prod.yaml \
-  --set image.tag=$IMAGE_TAG
+make diff ENV=prod
 
-# 2. Deploy with atomic rollback on failure
-helm upgrade --install api ./charts/api \
-  -n prod \
-  -f charts/api/values-prod.yaml \
-  --set image.tag=$IMAGE_TAG \
-  --atomic \
-  --timeout 10m \
-  --wait
+# 2. Render manifests, commit, and deploy
+make release ENV=prod IMAGE_TAG=$IMAGE_TAG
 
 # 3. Verify immediately
 kubectl rollout status deployment/api -n prod
 kubectl get pods -n prod -l app=api
 ```
+
+> We use `make render` + `make deploy` (not `helm upgrade` directly). See `/k8s-deploy` for the full Makefile workflow.
 
 ### Canary deploy (for high-risk changes)
 
@@ -280,18 +269,11 @@ kubectl logs -n prod -l app=api --since=5m | grep -E "ERROR|CRITICAL|Exception"
 **Rollback procedure:**
 
 ```bash
-# Option 1: Helm rollback (preferred — restores values and image)
-helm rollback api -n prod           # to previous release
-helm history api -n prod            # confirm which revision
+# Preferred: git-based rollback via Makefile
+git log --oneline deploy/prod/manifests/   # find last known-good SHA
+make rollback ENV=prod ROLLBACK_SHA=<sha>
 
-# Option 2: Redeploy previous image
-helm upgrade api ./charts/api \
-  -n prod \
-  -f charts/api/values-prod.yaml \
-  --set image.tag=$PREV_TAG \
-  --atomic --timeout 5m
-
-# Option 3: kubectl rollout undo (image only, not values)
+# Fallback: kubectl rollout undo (emergency — reconcile git state afterwards)
 kubectl rollout undo deployment/api -n prod
 kubectl rollout status deployment/api -n prod
 

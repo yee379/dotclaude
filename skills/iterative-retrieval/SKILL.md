@@ -204,8 +204,40 @@ When retrieving context for this task:
 4. **Stop at "good enough"** - 3 high-relevance files beats 10 mediocre ones
 5. **Exclude confidently** - Low-relevance files won't become relevant
 
+## Concrete Agent Tool Example
+
+Use this pattern when orchestrating subagents in Claude Code:
+
+```typescript
+// Orchestrator: run iterative retrieval then dispatch the real task
+async function runWithContext(task: string) {
+  // Cycle 1: broad search
+  const round1 = await Agent({
+    subagent_type: "general-purpose",
+    prompt: `Search the codebase for files relevant to: "${task}".
+Use Glob and Grep. Return a JSON array: [{path, relevance_0_to_1, reason}]`
+  });
+
+  // Cycle 2: targeted retrieval of gaps identified in round 1
+  const gaps = extractLowCoverageAreas(round1);
+  const round2 = await Agent({
+    subagent_type: "general-purpose",
+    prompt: `Search for files covering these gaps: ${gaps}.
+Return JSON: [{path, relevance_0_to_1, reason}]`
+  });
+
+  // Dispatch real task with only high-relevance context
+  const context = mergeAndFilter([round1, round2], threshold = 0.7);
+  return Agent({
+    subagent_type: "general-purpose",
+    prompt: `Task: ${task}\n\nContext files:\n${context.map(f => f.path).join('\n')}`
+  });
+}
+```
+
+**Key rule:** Cap at 3 retrieval cycles. At cycle 3, proceed with best available context rather than retrying indefinitely.
+
 ## Related
 
-- [The Longform Guide](https://x.com/affaanmustafa/status/2014040193557471352) - Subagent orchestration section
-- `continuous-learning` skill - For patterns that improve over time
+- `autonomous-loops` skill — loop architectures that use iterative retrieval as a context phase
 - Agent definitions bundled with ECC (manual install path: `agents/`)
