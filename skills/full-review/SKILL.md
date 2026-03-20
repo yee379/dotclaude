@@ -24,22 +24,26 @@ when you're clear to build.
 ## The board model
 
 ```
-/full-review
+/full-review (main session)
       │
       ▼
   [Triage]      which reviewers are relevant for this change?
       │
       ▼
-  ┌─────────────────────────────────────────────────┐
-  │  ROUND N  (all relevant reviewers in parallel)  │
-  │                                                 │
-  │  deep-research                                  │
-  │  plan-arch-review   plan-eng-review             │
-  │  plan-doc-review    security-review             │
-  │                                                 │
-  │  if any reviewer amends the plan ───────────────┤
-  │                                      next round │
-  └─────────────────────────────────────────────────┘
+  ┌─────────────────────────────────────────────────────────────────┐
+  │  ROUND N  (all reviewers launched as parallel subagents)        │
+  │                                                                 │
+  │  subagent: deep-research     → todo/review/<slug>/round-N-dr.md │
+  │  subagent: plan-arch-review  → todo/review/<slug>/round-N-ar.md │
+  │  subagent: plan-eng-review   → todo/review/<slug>/round-N-er.md │
+  │  subagent: plan-doc-review   → todo/review/<slug>/round-N-dc.md │
+  │  subagent: security-review   → todo/review/<slug>/round-N-sr.md │
+  │                                                                 │
+  │  main session reads all outputs, consolidates                   │
+  │                                                                 │
+  │  if any subagent amended the plan ──────────────────────────────┤
+  │                                                     next round  │
+  └─────────────────────────────────────────────────────────────────┘
       │  all pass in same round, no amendments
       ▼
   [Clear to build]
@@ -112,18 +116,58 @@ Starting Round 1...
 
 ## Step 2: Board rounds
 
+Each board member runs as a **parallel subagent** — one agent per reviewer, all launched in a
+single message. This gives each reviewer a clean, focused context window and true parallelism.
+
 Run up to **3 rounds**. In each round:
 
-1. Announce: "Starting Round N — running all reviewers in parallel."
-2. Invoke all relevant reviewers concurrently — do not run them one at a time.
-3. Collect all results. For each reviewer, record:
+1. Announce: "Starting Round N — launching board subagents in parallel."
+
+2. Create the output directory: `todo/review/<slug>/` (where `<slug>` is the task file name
+   without extension, e.g. `027-my-feature`).
+
+3. **Launch all relevant reviewers as subagents in a single message.** Each subagent receives:
+
+```
+You are a [REVIEWER NAME] subagent in a board review.
+
+Your role: [one-line role description — see below]
+
+Plan file: <path to task file>
+Plan content:
+<full contents of the task file pasted here>
+
+Your job:
+1. Perform a thorough [REVIEWER NAME] review of this plan using the /[skill-name] skill guidelines.
+2. Write your findings incrementally to: todo/review/<slug>/round-<N>-<reviewer>.md
+   - Write partial findings as you go so progress is not lost if interrupted.
+   - Structure: ## Issues, ## Amendments (changes made to the plan file), ## Status (PASS | PASS WITH WARNINGS | FAIL)
+3. If you identify issues that require changes to the plan, edit the plan file directly.
+4. Return a structured summary:
+   - Issues found (with severity: blocking | warning)
+   - Amendments made (list any edits to the plan file)
+   - Status: PASS | PASS WITH WARNINGS | FAIL
+```
+
+Reviewer roles:
+- **deep-research**: Fact-check plan assumptions, check dependency health, identify obsolescence
+  risks and simplification opportunities. See `/deep-research` Mode 2 guidelines.
+- **plan-arch-review**: Evaluate service boundaries, data ownership, consistency models,
+  technology selection, failure domains. Write ADRs to `docs/adr/` for significant decisions.
+- **plan-eng-review**: Review implementation correctness, test coverage, performance, edge cases.
+  Produce a test plan artifact in the task file.
+- **plan-doc-review**: Identify every doc that needs updating — README, ARCHITECTURE, API docs,
+  runbooks, CHANGELOG, ADRs, CONTRIBUTING. Add gaps to the plan.
+- **security-review**: Check secrets, auth, input validation, injection vectors, supply chain,
+  Kubernetes workload security.
+
+4. **Wait for all subagents to complete**, then read each `todo/review/<slug>/round-N-<reviewer>.md`
+   file and consolidate results. For each reviewer record:
    - Issues found
-   - Issues resolved (user accepted or plan amended)
-   - Issues unresolved
-   - Whether the plan was **amended** this round (any change to the plan doc)
+   - Amendments made to the plan
    - Status: PASS | PASS WITH WARNINGS | FAIL
 
-4. After all reviewers complete, show the round dashboard:
+5. Show the round dashboard:
 
 ```
 Round N complete
@@ -137,14 +181,14 @@ security-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N
 Plan amended this round: YES → starting Round N+1 | NO → board complete
 ```
 
-5. **Decide whether to iterate — automatically, no prompt needed:**
+6. **Decide whether to iterate — automatically, no prompt needed:**
    - If **any reviewer amended the plan** this round → immediately start the next round (all
      reviewers re-review the updated plan, including ones that passed)
    - If **no reviewer amended the plan** this round → board is complete, proceed to summary
    - If any reviewer has status **FAIL** (unresolved blocking issues) → **stop**. Do not start
      another round. Tell the user which issues must be resolved before continuing.
 
-6. If **Round 3 completes with amendments still happening**: stop. Tell the user the plan has
+7. If **Round 3 completes with amendments still happening**: stop. Tell the user the plan has
    not stabilised after 3 rounds and list the outstanding changes still being triggered.
 
 ---
