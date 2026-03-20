@@ -311,6 +311,39 @@ fix(photo-upload): increase presigned URL TTL to 2h [#002]
 test(photo-upload): add integration tests for upload flow [#002]
 ```
 
+### When to commit
+
+Commit after each **logical unit of work** — a self-contained change that could be reviewed,
+reverted, or understood on its own. Do not wait until the end of a task to commit everything.
+
+| Situation | Commit? |
+|-----------|---------|
+| A passing test + the code that makes it pass | ✅ Yes — atomic TDD unit |
+| A refactor with no behaviour change | ✅ Yes — its own commit, not bundled with features |
+| A bug fix | ✅ Yes — immediately, with a `fix:` message explaining what broke |
+| Updating `TODO.md` / task file status | ✅ Yes — same commit as the work that caused the status change |
+| Adding a new task to the backlog | ✅ Yes — `docs(todo): add #<n> <title>` |
+| Half-finished feature, tests failing | ❌ No — finish the unit first |
+| Multiple unrelated changes bundled together | ❌ No — split into separate commits |
+
+**One commit = one concern.** If the commit message needs "and" to describe what it does, split it.
+
+### What to stage
+
+Always stage files **by name**. Never use `git add -A`, `git add .`, or `git add -u` — these
+risk accidentally committing secrets, build artefacts, or unrelated changes.
+
+```bash
+# Good
+git add src/upload.py tests/test_upload.py
+
+# Bad
+git add -A
+git add .
+```
+
+Before committing, run `git diff --cached` to verify exactly what is staged.
+
 ### PRs
 
 A good PR description for a tracked task:
