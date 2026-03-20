@@ -1,13 +1,13 @@
 ---
 name: full-review
-description: Orchestrates the board review pipeline — runs plan-arch-review, plan-eng-review, plan-doc-review, and security-review in parallel, then re-runs the full board if any reviewer amends the plan. Iterates until all reviewers pass in the same round with no changes. Use when asked to "run a full review", "review everything", or "gate this plan".
+description: Orchestrates the board review pipeline — runs deep-research, plan-arch-review, plan-eng-review, plan-doc-review, and security-review in parallel, then re-runs the full board if any reviewer amends the plan. Iterates until all reviewers pass in the same round with no changes. Use when asked to "run a full review", "review everything", or "gate this plan".
 license: MIT
 compatibility: opencode
 ---
 
 # Full Review
 
-Runs the four plan reviewers as a **board** — in parallel, not sequentially. If any reviewer
+Runs the five plan reviewers as a **board** — in parallel, not sequentially. If any reviewer
 amends the plan, the whole board re-reviews the updated plan. The round repeats until all
 reviewers pass in the same round without triggering any further changes. Maximum 3 rounds.
 
@@ -33,6 +33,7 @@ when you're clear to build.
   ┌─────────────────────────────────────────────────┐
   │  ROUND N  (all relevant reviewers in parallel)  │
   │                                                 │
+  │  deep-research                                  │
   │  plan-arch-review   plan-eng-review             │
   │  plan-doc-review    security-review             │
   │                                                 │
@@ -72,6 +73,8 @@ Not every change needs every reviewer. Run triage first to avoid wasted effort.
 ```
 REVIEWER             SKIP IF...
 ──────────────────────────────────────────────────────────────────────
+deep-research        the technology and approach are well-understood —
+                     no unknowns that would make the plan speculative
 plan-arch-review     change touches only a single existing service with
                      no new data stores, no new async channels, no service
                      boundary changes, and no new infrastructure
@@ -92,6 +95,7 @@ Present the triage result:
 ```
 Triage complete
 ──────────────────────────────────────────────────────
+deep-research        RUN | SKIP (reason)
 plan-arch-review     RUN | SKIP (reason)
 plan-eng-review      RUN | SKIP (reason)
 plan-doc-review      RUN | SKIP (reason)
@@ -121,6 +125,7 @@ Run up to **3 rounds**. In each round:
 ```
 Round N complete
 ──────────────────────────────────────────────────────
+deep-research        ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N
 plan-arch-review     ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N
 plan-eng-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N
 plan-doc-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N
@@ -153,6 +158,7 @@ Branch:  {branch}
 Date:    {date}
 Rounds:  {N completed}
 ------------------------------------------------------------
+deep-research        {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
 plan-arch-review     {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
 plan-eng-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
 plan-doc-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}

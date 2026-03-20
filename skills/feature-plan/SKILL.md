@@ -36,6 +36,21 @@ Once the plan exists, run `/full-review` to gate it through the complete review 
 
 ## Planning Workflow
 
+### Phase 0 — Research (if needed)
+
+Before framing the problem, check whether there are unknowns that would make the plan speculative.
+Run `/deep-research` or `/search-first` if any of the following are true:
+
+- The technology, library, or approach is unfamiliar
+- There are competing approaches and you don't know the trade-offs yet
+- You're unsure whether something already exists in the codebase or ecosystem
+- A regulatory, security, or compliance question needs an answer before design can start
+
+Save findings to `todo/research/<slug>/` and link from the task file's **Design** section.
+If everything is well-understood, skip this phase.
+
+---
+
 ### Phase 1 — Problem framing
 
 Before designing anything, agree on the actual problem.

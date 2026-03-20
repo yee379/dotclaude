@@ -214,11 +214,14 @@ git checkout -b feat/<slug>
 
 When asked to plan an item (or when the design section is thin):
 
-1. Read the problem statement carefully
-2. Explore the codebase — find every file the change touches
-3. Draft the Design and Implementation Plan sections in the task file
-4. Add Open Questions for anything that requires a decision
-5. Present the plan for approval before writing code
+1. **Research first if needed** — if the problem involves unfamiliar technology, competing
+   approaches, or open unknowns, run `/deep-research` or `/search-first` before designing.
+   Save findings to `todo/research/<slug>/` and link from the task file's Design section.
+2. Read the problem statement carefully
+3. Explore the codebase — find every file the change touches
+4. Draft the Design and Implementation Plan sections in the task file
+5. Add Open Questions for anything that requires a decision
+6. Present the plan for approval before writing code
 
 The task file *is* the plan. Don't maintain a separate plan document unless the design is complex enough to warrant a linked deep-dive.
 
