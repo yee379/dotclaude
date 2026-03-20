@@ -10,7 +10,7 @@ Maintain a `todo/` directory as a prioritised backlog where every item is a firs
 ## When to Activate
 
 - Starting a new feature or task
-- When asked "what should we work on next?" or "what's left to do?"
+- When asked "what should we work on next?" or "what's left to do?", "what to do with todo <number>?", "tell me more about todo <number>?", "what is the plan for todo <number>?"
 - After running `/feature-plan` or any design/planning skill — persist the output
 - When picking up work that was started in a previous session
 - When a task is completed and needs closing out
