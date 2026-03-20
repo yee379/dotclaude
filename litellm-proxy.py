@@ -277,26 +277,17 @@ def rewrite_model_name(name):
     """
     # 1. Unconditional override
     if _FORCE_MODEL is not None:
-        if _FORCE_MODEL != name:
-            sys.stderr.write("[proxy] force-model: %s -> %s\n" % (name, _FORCE_MODEL))
-            sys.stderr.flush()
         return _FORCE_MODEL
 
     # 2. Explicit map
     if name in _MODEL_MAP:
-        mapped = _MODEL_MAP[name]
-        sys.stderr.write("[proxy] model-map: %s -> %s\n" % (name, mapped))
-        sys.stderr.flush()
-        return mapped
+        return _MODEL_MAP[name]
 
     # 3. Auto hyphen-to-dot
     if not _NO_AUTO_REWRITE:
         m = _MODEL_RE.match(name)
         if m:
-            rewritten = "%s.%s%s" % (m.group(1), m.group(2), m.group(3))
-            sys.stderr.write("[proxy] model rewrite: %s -> %s\n" % (name, rewritten))
-            sys.stderr.flush()
-            return rewritten
+            return "%s.%s%s" % (m.group(1), m.group(2), m.group(3))
 
     return name
 
@@ -453,17 +444,21 @@ def maybe_rewrite_body(body):
       (LiteLLM only understands {"type": "enabled", "budget_tokens": N})
     - Strip cache_control from system / message content blocks (prompt-caching
       annotations that SLAC's LiteLLM/nginx rejects with 400 Bad Request)
+
+    Returns (new_body, notes) where notes is a list of short change strings
+    (empty if nothing changed).  The caller is responsible for logging.
     """
     if not body:
-        return body
+        return body, []
     try:
         obj = json.loads(body)
     except (json.JSONDecodeError, UnicodeDecodeError):
-        return body
+        return body, []
     if not isinstance(obj, dict):
-        return body
+        return body, []
 
     changed = False
+    notes = []
 
     # 1. Rewrite model name
     if "model" in obj:
@@ -471,15 +466,16 @@ def maybe_rewrite_body(body):
         rewritten = rewrite_model_name(original)
         if rewritten != original:
             obj["model"] = rewritten
+            notes.append("model %s->%s" % (original, rewritten))
             changed = True
 
     # 2. Strip unsupported top-level fields
-    for field in _STRIP_BODY_FIELDS:
-        if field in obj:
-            del obj[field]
-            sys.stderr.write("[proxy] stripped unsupported body field: %s\n" % field)
-            sys.stderr.flush()
-            changed = True
+    stripped_fields = [f for f in _STRIP_BODY_FIELDS if f in obj]
+    for field in stripped_fields:
+        del obj[field]
+        changed = True
+    if stripped_fields:
+        notes.append("stripped fields: %s" % ", ".join(stripped_fields))
 
     # 3. Normalize thinking field
     thinking = obj.get("thinking")
@@ -490,14 +486,12 @@ def maybe_rewrite_body(body):
             # doesn't choke — it's semantically equivalent to "don't force
             # thinking" so removing it is safe.
             del obj["thinking"]
-            sys.stderr.write("[proxy] stripped unsupported thinking type=adaptive\n")
-            sys.stderr.flush()
+            notes.append("stripped thinking type=adaptive")
             changed = True
         elif t_type == "enabled" and not thinking.get("budget_tokens"):
             # budget_tokens is required when type=enabled
             obj["thinking"]["budget_tokens"] = 16000
-            sys.stderr.write("[proxy] added missing thinking.budget_tokens=16000\n")
-            sys.stderr.flush()
+            notes.append("added thinking.budget_tokens=16000")
             changed = True
 
     # 4. Strip cache_control from system and message content blocks.
@@ -509,8 +503,7 @@ def maybe_rewrite_body(body):
         cleaned, c = _strip_cache_control_from_blocks(obj["system"])
         if c:
             obj["system"] = cleaned
-            sys.stderr.write("[proxy] stripped cache_control from system block(s)\n")
-            sys.stderr.flush()
+            notes.append("stripped cache_control from system")
             changed = True
     msgs_stripped = 0
     for msg in obj.get("messages", []):
@@ -521,12 +514,11 @@ def maybe_rewrite_body(body):
                 msgs_stripped += 1
                 changed = True
     if msgs_stripped:
-        sys.stderr.write("[proxy] stripped cache_control from %d message(s)\n" % msgs_stripped)
-        sys.stderr.flush()
+        notes.append("stripped cache_control from %d msg(s)" % msgs_stripped)
 
     if changed:
-        return json.dumps(obj).encode("utf-8")
-    return body
+        return json.dumps(obj).encode("utf-8"), notes
+    return body, notes
 
 
 def maybe_rewrite_headers(hdrs):
@@ -540,13 +532,16 @@ def maybe_rewrite_headers(hdrs):
     - anthropic-dangerous-direct-browser-access: CORS-bypass header added
       by the SDK for browser contexts; meaningless (and WAF-triggering)
       when talking to LiteLLM.
+
+    Returns (hdrs, notes) where notes is a list of short change strings
+    (empty if nothing changed).  The caller is responsible for logging.
     """
+    notes = []
     for hk in list(hdrs.keys()):
         lo = hk.lower()
         if lo == "anthropic-dangerous-direct-browser-access":
             del hdrs[hk]
-            sys.stderr.write("[proxy] stripped header: %s\n" % hk)
-            sys.stderr.flush()
+            notes.append("stripped hdr %s" % hk)
         elif lo == "anthropic-beta":
             flags = [b.strip() for b in hdrs[hk].split(",") if b.strip()]
             kept    = [f for f in flags if f in _ANTHROPIC_BETA_PASSTHROUGH]
@@ -554,13 +549,10 @@ def maybe_rewrite_headers(hdrs):
             del hdrs[hk]
             if kept:
                 hdrs[hk] = ", ".join(kept)
-                sys.stderr.write("[proxy] anthropic-beta kept: %s\n" % ", ".join(kept))
-                sys.stderr.flush()
             if dropped:
-                sys.stderr.write("[proxy] anthropic-beta dropped: %s\n" % ", ".join(dropped))
-                sys.stderr.flush()
+                notes.append("beta: kept=%s dropped=%s" % (", ".join(kept) if kept else "none", ", ".join(dropped)))
 
-    return hdrs
+    return hdrs, notes
 
 
 # ── SOCKS5 helper (RFC 1928) ───────────────────────────────────────────────
@@ -686,7 +678,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         sys.stderr.flush()
 
         # Rewrite model names in JSON request bodies
-        body = maybe_rewrite_body(body)
+        body, body_notes = maybe_rewrite_body(body)
         # Update Content-Length after potential rewrite
         if body and isinstance(body, bytes):
             clen = len(body)
@@ -719,7 +711,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
             else "%s:%d" % (TGT_HOST, TGT_PORT)
         )
         # Strip LiteLLM-incompatible headers
-        hdrs = maybe_rewrite_headers(hdrs)
+        hdrs, hdr_notes = maybe_rewrite_headers(hdrs)
+        all_notes = body_notes + hdr_notes
+        if all_notes:
+            sys.stderr.write("%s rewrote: %s\n" % (_P, "; ".join(all_notes)))
+            sys.stderr.flush()
         if body:
             hdrs["Content-Length"] = str(
                 len(body) if isinstance(body, bytes) else len(body.encode("utf-8"))
