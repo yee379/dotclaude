@@ -61,3 +61,21 @@ Track per task:
 - success/failure
 
 Escalate model tier only when lower tier fails with a clear reasoning gap.
+
+## Architecture for Agent-Friendly Systems
+
+Prefer architectures that are agent-friendly:
+- explicit boundaries
+- stable contracts
+- typed interfaces
+- deterministic tests
+
+Avoid implicit behavior spread across hidden conventions.
+
+## Hiring and Evaluation Signals
+
+Strong AI-first engineers:
+- decompose ambiguous work cleanly
+- define measurable acceptance criteria
+- produce high-signal prompts and evals
+- enforce risk controls under delivery pressure
