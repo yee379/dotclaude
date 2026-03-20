@@ -94,7 +94,7 @@ security-review      change has no user input, no auth changes, no new
 **Default: run all reviewers.** Only skip if the skip condition is clearly and unambiguously met.
 When in doubt, run it.
 
-Present the triage result:
+Present the triage result and immediately proceed to Step 2 — no confirmation needed:
 
 ```
 Triage complete
@@ -105,9 +105,8 @@ plan-eng-review      RUN | SKIP (reason)
 plan-doc-review      RUN | SKIP (reason)
 security-review      RUN | SKIP (reason)
 ──────────────────────────────────────────────────────
+Starting Round 1...
 ```
-
-**STOP.** Ask the user to confirm the triage before proceeding. Only proceed after confirmation.
 
 ---
 
@@ -138,9 +137,9 @@ security-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N
 Plan amended this round: YES → starting Round N+1 | NO → board complete
 ```
 
-5. **Decide whether to iterate:**
-   - If **any reviewer amended the plan** this round → start the next round (all reviewers
-     re-review the updated plan, including ones that passed)
+5. **Decide whether to iterate — automatically, no prompt needed:**
+   - If **any reviewer amended the plan** this round → immediately start the next round (all
+     reviewers re-review the updated plan, including ones that passed)
    - If **no reviewer amended the plan** this round → board is complete, proceed to summary
    - If any reviewer has status **FAIL** (unresolved blocking issues) → **stop**. Do not start
      another round. Tell the user which issues must be resolved before continuing.
