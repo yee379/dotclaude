@@ -502,9 +502,7 @@ interactive state issues.
 
 For CSS-only fixes: skip entirely. CSS regressions are caught by re-running /design-review.
 
-If the fix involved JS behavior: follow the same procedure as /qa Phase 8e.5 (study existing
-test patterns, write a regression test encoding the exact bug condition, run it, commit if
-passes or defer if fails). Commit format: `test(design): regression test for FINDING-NNN`.
+If the fix involved JS behavior: write a regression test encoding the exact bug condition (study existing test patterns first), run it, commit if passes or defer if fails. Commit format: `test(design): regression test for FINDING-NNN`.
 
 ### 8f. Self-Regulation (STOP AND EVALUATE)
 

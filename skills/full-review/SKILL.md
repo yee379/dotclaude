@@ -158,7 +158,7 @@ After all gates have run (or the pipeline has been halted), produce the final su
 ║ Gate 4  security-review           ✅/⚠️/❌/— {N issues}         ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║ ADRs written:         N  (in docs/adr/)                         ║
-║ Test plan written:    Y/N (in .claude/test-plans/)              ║
+║ Test plan written:    Y/N (in todo/ task file)                  ║
 ║ Doc gaps added to plan: N                                       ║
 ║ Accepted warnings:    N                                         ║
 ║ Blocking issues:      N                                         ║
