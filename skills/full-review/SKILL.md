@@ -1,6 +1,6 @@
 ---
 name: full-review
-description: Orchestrates the complete pre-implementation review pipeline — triage, then sequentially gates through plan-architect-review, plan-eng-review, plan-documentation-review, and security-review. Tracks gate status, surfaces a running dashboard, and tells you exactly what to do next. Use when asked to "run a full review", "review everything", or "gate this plan".
+description: Orchestrates the complete pre-implementation review pipeline — triage, then sequentially gates through plan-architect-review, plan-eng-review, plan-doc-review, and security-review. Tracks gate status, surfaces a running dashboard, and tells you exactly what to do next. Use when asked to "run a full review", "review everything", or "gate this plan".
 license: MIT
 compatibility: opencode
 ---
@@ -32,7 +32,7 @@ Orchestrates the complete pre-implementation review pipeline against an existing
   [Gate 2]  /plan-eng-review         implementation correctness, test coverage,
       │                              performance, edge cases → test plan artifact
       ▼
-  [Gate 3]  /plan-documentation-review  which docs change, breaking change
+  [Gate 3]  /plan-doc-review  which docs change, breaking change
       │                              upgrade guides, gaps added to plan
       ▼
   [Gate 4]  /security-review         secrets, auth, input validation, injection,
@@ -75,7 +75,7 @@ plan-architect-review       change touches only a single existing service with
                             boundary changes, and no new infrastructure
 plan-eng-review             change is purely documentation or config with no
                             code changes
-plan-documentation-review   change is purely internal/infra with no user-facing
+plan-doc-review   change is purely internal/infra with no user-facing
                             surface, no API changes, no new commands or config
 security-review             change has no user input, no auth changes, no new
                             API endpoints, no secrets, no new K8s workloads
@@ -91,7 +91,7 @@ Triage complete
 ───────────────────────────────────────────────
 Gate 1  plan-architect-review    RUN | SKIP (reason)
 Gate 2  plan-eng-review          RUN | SKIP (reason)
-Gate 3  plan-documentation-review RUN | SKIP (reason)
+Gate 3  plan-doc-review RUN | SKIP (reason)
 Gate 4  security-review          RUN | SKIP (reason)
 ───────────────────────────────────────────────
 ```
@@ -133,7 +133,7 @@ Pipeline status
 ───────────────────────────────────────────────────────
 Gate 1  plan-architect-review     ✅ PASS | ⚠️ WARNINGS | ❌ FAIL | ⏳ PENDING | — SKIPPED
 Gate 2  plan-eng-review           ✅ PASS | ⚠️ WARNINGS | ❌ FAIL | ⏳ PENDING | — SKIPPED
-Gate 3  plan-documentation-review ✅ PASS | ⚠️ WARNINGS | ❌ FAIL | ⏳ PENDING | — SKIPPED
+Gate 3  plan-doc-review ✅ PASS | ⚠️ WARNINGS | ❌ FAIL | ⏳ PENDING | — SKIPPED
 Gate 4  security-review           ✅ PASS | ⚠️ WARNINGS | ❌ FAIL | ⏳ PENDING | — SKIPPED
 ───────────────────────────────────────────────────────
 ```
@@ -154,7 +154,7 @@ After all gates have run (or the pipeline has been halted), produce the final su
 ╠══════════════════════════════════════════════════════════════════╣
 ║ Gate 1  plan-architect-review     ✅/⚠️/❌/— {N issues}         ║
 ║ Gate 2  plan-eng-review           ✅/⚠️/❌/— {N issues}         ║
-║ Gate 3  plan-documentation-review ✅/⚠️/❌/— {N issues}         ║
+║ Gate 3  plan-doc-review ✅/⚠️/❌/— {N issues}         ║
 ║ Gate 4  security-review           ✅/⚠️/❌/— {N issues}         ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║ ADRs written:         N  (in docs/adr/)                         ║

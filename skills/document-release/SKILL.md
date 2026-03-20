@@ -15,7 +15,7 @@ compatibility: opencode
 /feature-plan            problem framing, requirements, rough system design, ADRs
 /plan-architect-review   structural review → ADR log
 /plan-eng-review         implementation gate → test plan artifact
-/plan-documentation-review  documentation planning: identifies which docs change and
+/plan-doc-review  documentation planning: identifies which docs change and
                          ensures that work is in the plan before coding starts
 /security-review         security gate
 /prod-release            environment promotion, feature flag rollout, rollback procedure
@@ -26,7 +26,7 @@ compatibility: opencode
                          all doc updates, polishes CHANGELOG voice, bumps VERSION
 ```
 
-**The handoff from `/plan-documentation-review`:** That skill identified which docs need updating and added the work to the plan. This skill executes those updates after the code ships. If `plan-documentation-review` ran, check its output (look for plan amendments and the deferred-to-doc-release list) — use it as your starting checklist rather than discovering everything from scratch.
+**The handoff from `/plan-doc-review`:** That skill identified which docs need updating and added the work to the plan. This skill executes those updates after the code ships. If `plan-doc-review` ran, check its output (look for plan amendments and the deferred-to-doc-release list) — use it as your starting checklist rather than discovering everything from scratch.
 
 ---
 

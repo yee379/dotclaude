@@ -1,5 +1,5 @@
 ---
-name: plan-documentation-review
+name: plan-doc-review
 description: Pre-implementation documentation planning review. Checks that the plan explicitly identifies every doc that needs updating — README, ARCHITECTURE, API docs, runbooks, CHANGELOG, ADRs, CONTRIBUTING — before any code is written. Pairs with /document-release which applies updates post-ship. Use when asked to "check the docs plan", "what docs need updating", or "documentation review".
 license: MIT
 compatibility: opencode
@@ -19,7 +19,7 @@ compatibility: opencode
 /plan-eng-review         implementation gate: code quality, test coverage, performance,
       │                  edge cases → test plan artifact
       ▼
-/plan-documentation-review ← YOU ARE HERE: documentation planning gate — which docs
+/plan-doc-review ← YOU ARE HERE: documentation planning gate — which docs
       │                  change, what changes in each, who owns it, is it in the plan?
       ▼
 /security-review         security gate: secrets, auth, input validation, injection,
@@ -73,7 +73,7 @@ Before reviewing, answer:
 
 3. **Is there a breaking change?** API changes, config renames, migration requirements, deprecated paths. Breaking changes require upgrade guides, not just doc updates.
 
-4. **Is this a pure internal/infra change with no user-facing or API surface?** If yes, say so explicitly and exit: "This change has no documentation surface. Skipping plan-documentation-review."
+4. **Is this a pure internal/infra change with no user-facing or API surface?** If yes, say so explicitly and exit: "This change has no documentation surface. Skipping plan-doc-review."
 
 Do not proceed to the review sections if Step 0 concludes there is nothing to document.
 
