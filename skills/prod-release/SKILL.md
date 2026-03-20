@@ -331,3 +331,14 @@ For each production release:
 ### On-call notes
 - If upload errors spike: check S3 bucket policy and CloudFront distribution
 ```
+
+---
+
+## After a successful production deployment
+
+Once smoke tests pass and the rollout is complete, update the task tracking:
+
+1. In the task file (`todo/<number>-<slug>.md`): set `**Status:**` to `🚀 Deployed`
+2. In `TODO.md`: flip the status column to `🚀 Deployed`
+
+This is the terminal state — the feature is live in production.

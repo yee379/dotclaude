@@ -58,7 +58,8 @@ The index groups items by priority tier and shows status, branch, and PR at a gl
 - 🔍 Reviewed — plan approved by full-review board, ready to implement
 - 🔄 In Progress — active development
 - 👀 PR Open — PR raised, awaiting code review and merge
-- ✅ Done — merged to main
+- ✅ Merged — merged to main, not yet deployed
+- 🚀 Deployed — live in production
 - ❌ Won't Do — cancelled, reason noted in task file
 ```
 
@@ -256,17 +257,22 @@ decisions, and known issues.
 
 ### Closing a Task
 
-When implementation is complete:
+When the PR is merged:
 
 1. Tick all checklist items in the task file
-2. Change `**Status:**` to `✅ Done` and `**Shipped:**` to today's date
-3. Update `TODO.md` — flip status, update summary count
+2. Change `**Status:**` to `✅ Merged` and `**Shipped:**` to today's date
+3. Update `TODO.md` — flip status to `✅ Merged`, update summary count
 4. Commit everything together:
 
 ```bash
 git add src/ tests/ docs/ todo/
 git commit -m "feat: <title> (TODO #<n>)"
 ```
+
+When production deployment completes (after `/prod-release`):
+
+5. Change `**Status:**` in the task file to `🚀 Deployed`
+6. Update `TODO.md` — flip status to `🚀 Deployed`
 
 The task file is **never deleted** — it becomes a permanent record.
 
@@ -391,7 +397,8 @@ includes design decisions, problems encountered, and trade-offs.
 | full-review passes (CLEAR TO BUILD / CLEAR WITH WARNINGS) | Status → 🔍 Reviewed |
 | Implementation starts (branch created) | Status → 🔄 In Progress in task file and TODO.md, Branch → `feat/<slug>` |
 | PR opened | Status → 👀 PR Open, PR → `#<number>` |
-| PR merged | Status → ✅, note shipped date in task file |
+| PR merged | Status → ✅ Merged, note shipped date in task file |
+| prod-release completes | Status → 🚀 Deployed |
 | Task cancelled | Status → ❌, add reason in task file |
 | Branch renamed or PR number changes | Update Branch/PR columns immediately |
 
