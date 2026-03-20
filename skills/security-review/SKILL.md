@@ -1,6 +1,6 @@
 ---
 name: security-review
-description: Security review checklist for backend APIs, Kubernetes workloads, GraphQL endpoints, Python services, and infrastructure — covering secrets management, input validation, authentication, authorisation, injection prevention, and supply chain security.
+description: Security review checklist for backend APIs, Kubernetes workloads, GraphQL endpoints, Python services, and infrastructure — covering secrets management, input validation, authentication, authorisation, injection prevention, supply chain security, open CVEs, defense in depth, and zero trust architecture.
 license: MIT
 compatibility: opencode
 ---
@@ -417,7 +417,134 @@ def mask_email(email: str) -> str:
 
 ---
 
-## Pre-Release Security Sign-Off
+## 9. Open CVE & Vulnerability Intelligence
+
+**Active CVEs are threat intel, not just CI hygiene.** Beyond scanning dependencies, the reviewer should assess whether any known CVEs are exploitable in the current deployment context.
+
+```bash
+# Scan code dependencies
+pip-audit --format=json --output=audit.json
+npm audit --json > audit.json
+
+# Scan container images — report critical and high
+trivy image --severity CRITICAL,HIGH ghcr.io/org/api:1.4.2
+grype ghcr.io/org/api:1.4.2 --fail-on high
+
+# Check OS packages inside running container
+trivy image --vuln-type os ghcr.io/org/api:1.4.2
+
+# Query NVD/OSV for specific package CVEs
+# https://osv.dev/list   — searchable by package name
+# https://nvd.nist.gov/  — NVD search
+```
+
+**Reviewer tasks:**
+1. **Run a CVE scan** against the feature branch's dependency manifest and container image.
+2. **Triage each critical/high finding** — is it reachable given the app's usage? Document reasoning.
+3. **Check EPSS score** for critical CVEs — Exploit Prediction Scoring System indicates exploitation likelihood. Prioritise EPSS > 0.5.
+4. **Check for newly disclosed CVEs** in frameworks used (FastAPI, Django, Next.js, etc.) against the NVD feed since last review.
+5. **Cross-reference with CISA KEV** (Known Exploited Vulnerabilities catalogue) — any match is an immediate blocker.
+
+**Checklist:**
+- [ ] `pip-audit` / `npm audit` / `trivy` run and output reviewed
+- [ ] All CRITICAL findings either patched, mitigated, or documented as accepted risk with rationale
+- [ ] HIGH findings triaged — exploitability in context assessed
+- [ ] CISA KEV catalogue checked — no matches in production dependencies
+- [ ] CVE scan integrated into CI pipeline (blocks merge on CRITICAL)
+- [ ] Suppression/allowlist file reviewed — no stale suppressions hiding real risk
+
+---
+
+## 10. Defense in Depth & Zero Trust
+
+**Assume breach at every layer.** Defense in depth means no single control failure leads to full compromise. Zero trust means nothing is implicitly trusted — not internal traffic, not service-to-service calls, not the cluster network.
+
+### Zero Trust Principles
+
+```yaml
+# mTLS between services — no implicit trust on internal network
+# (Istio / Linkerd service mesh example)
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: prod
+spec:
+  mtls:
+    mode: STRICT   # reject plaintext — no exceptions
+```
+
+```yaml
+# AuthorizationPolicy — explicit allow, deny by default
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: api-authz
+  namespace: prod
+spec:
+  selector:
+    matchLabels:
+      app: api
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/prod/sa/frontend"]
+      to:
+        - operation:
+            methods: ["GET", "POST"]
+            paths: ["/api/*"]
+```
+
+```python
+# Service-to-service auth — short-lived tokens, not long-lived API keys
+# BAD: long-lived shared secret between services
+headers = {"X-Service-Key": "static-secret-shared-forever"}
+
+# GOOD: workload identity / SPIFFE / short-lived JWT
+import google.auth.transport.requests
+import google.oauth2.id_token
+
+def get_service_token(audience: str) -> str:
+    request = google.auth.transport.requests.Request()
+    return google.oauth2.id_token.fetch_id_token(request, audience)
+```
+
+### Defense in Depth Layers
+
+| Layer | Control | Verify |
+|-------|---------|--------|
+| Network | NetworkPolicy / firewall rules | Egress restricted to known destinations |
+| Transport | mTLS between services | Plaintext internal traffic blocked |
+| Application | Auth + authz on every request | No gateway-only auth assumptions |
+| Data | Encryption at rest + in transit | KMS key rotation policy exists |
+| Identity | Workload identity (SPIFFE/IRSA) | No long-lived static credentials |
+| Observability | Audit logs, anomaly detection | Failed auth attempts alerted |
+| Recovery | Incident response runbook | Blast radius limited by RBAC scope |
+
+### Checklist: Defense in Depth
+- [ ] **Layered controls** — auth enforced at gateway AND service layer (not gateway-only)
+- [ ] **Blast radius scoped** — compromising one service cannot pivot to all services
+- [ ] **Egress restricted** — services can only reach known, required destinations
+- [ ] **Secrets have TTLs** — no eternal API keys; rotation automated
+- [ ] **Audit logging** — all auth decisions logged and queryable
+- [ ] **Alerting** — anomalous auth failure rates trigger on-call
+- [ ] **Backups isolated** — backup storage not accessible from production workloads
+- [ ] **Incident runbook exists** — clear steps for credential compromise, data breach
+
+### Checklist: Zero Trust
+- [ ] **Never trust network position** — internal services authenticate each other
+- [ ] **mTLS enforced** between services (service mesh or manual cert management)
+- [ ] **Workload identity** used instead of static credentials (SPIFFE, IRSA, Workload Identity)
+- [ ] **Least privilege per workload** — ServiceAccounts scoped to minimum required
+- [ ] **Device/client attestation** for sensitive operations (MFA, step-up auth)
+- [ ] **Continuous verification** — tokens short-lived; re-auth required after expiry
+- [ ] **Microsegmentation** — NetworkPolicy or service mesh policy limits lateral movement
+- [ ] **No implicit trust for admin tooling** — kubectl, CI runners, deploy pipelines all use short-lived credentials
+
+---
+
+
 
 Before every production deployment of a security-relevant change:
 
@@ -432,3 +559,6 @@ Before every production deployment of a security-relevant change:
 - [ ] Dependencies: no known CVEs; lock file committed
 - [ ] Logging: no PII or secrets in log output
 - [ ] OWASP Top 10: each item considered and addressed or acknowledged
+- [ ] CVEs: critical/high findings triaged; CISA KEV checked; no active exploits in deps
+- [ ] Defense in depth: auth enforced at gateway AND service layer; blast radius scoped
+- [ ] Zero trust: mTLS between services; workload identity in use; no long-lived static credentials
