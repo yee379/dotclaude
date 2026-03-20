@@ -195,11 +195,13 @@ for 012"): read `todo/<number>-*.md` directly — glob `todo/027-*.md` and open 
 Do not search `TODO.md` or the codebase first; the file is always at that path.
 
 1. Read `TODO.md` in full
-2. Find the highest-priority `⬜ Open` item (P0 before P1 before P2 before P3)
+2. Find the highest-priority `⬜ Open` or `🔍 Reviewed` item (P0 before P1 before P2 before P3)
 3. Read its full task file — understand the problem before the plan
 4. Ask: are there open questions that need answering first?
 5. If yes → resolve them (update the file) before touching code
-6. If no → create the branch and start the implementation checklist
+6. If no → create the branch, then **immediately** update both files:
+   - In the task file: set `**Status:**` to `🔄 In Progress` and `**Branch:**` to `feat/<slug>`
+   - In `TODO.md`: set status → `🔄`, Branch → `feat/<slug>`
 
 ```bash
 git checkout -b feat/<slug>
@@ -387,7 +389,7 @@ includes design decisions, problems encountered, and trade-offs.
 |---------|---------------|
 | New task created | Add row with priority, status ⬜, branch `—`, PR `—` |
 | full-review passes (CLEAR TO BUILD / CLEAR WITH WARNINGS) | Status → 🔍 Reviewed |
-| Task moves to In Progress | Status → 🔄, Branch → `feat/<slug>` |
+| Implementation starts (branch created) | Status → 🔄 In Progress in task file and TODO.md, Branch → `feat/<slug>` |
 | PR opened | Status → 👀, PR → `#<number>` |
 | PR merged | Status → ✅, note shipped date in task file |
 | Task cancelled | Status → ❌, add reason in task file |
