@@ -885,3 +885,226 @@ Before promoting to production:
 - [ ] Database migrations are backward-compatible
 - [ ] Feature flags can disable new code paths without redeployment
 - [ ] Alerts on pod restarts, OOMKills, and error rate spikes
+
+---
+
+## Deployment Strategy Concepts
+
+### Rolling Deployment (K8s default)
+
+Replace instances gradually — old and new versions run simultaneously during rollout.
+
+```
+Instance 1: v1 → v2  (update first)
+Instance 2: v1        (still running v1)
+Instance 3: v1        (still running v1)
+```
+
+**Pros:** Zero downtime, gradual rollout
+**Cons:** Two versions run simultaneously — requires backward-compatible changes
+**K8s config:** `strategy.type: RollingUpdate` with `maxSurge: 1, maxUnavailable: 0`
+
+### Blue-Green Deployment
+
+Run two identical environments. Switch traffic atomically.
+
+```
+Blue  (v1) ← traffic
+Green (v2)   idle, running new version
+
+# After verification:
+Blue  (v1)   idle (becomes standby)
+Green (v2) ← traffic
+```
+
+**Pros:** Instant rollback (switch back to blue), clean cutover
+**Cons:** Requires 2x pod count during deployment
+**Use when:** Critical services, zero-tolerance for issues
+
+### Canary Deployment
+
+Route a small percentage of traffic to the new version first.
+
+```
+v1: 95% of traffic
+v2:  5% of traffic  (canary)
+
+# If metrics look good → gradual increase → 100%
+```
+
+**Pros:** Catches issues with real traffic before full rollout
+**Use when:** High-traffic services, risky changes
+
+---
+
+## Multi-Stage Dockerfiles
+
+### Node.js
+
+```dockerfile
+FROM node:22-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --production=false
+
+FROM node:22-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm run build && npm prune --production
+
+FROM node:22-alpine AS runner
+WORKDIR /app
+RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001
+USER appuser
+COPY --from=builder --chown=appuser:appgroup /app/node_modules ./node_modules
+COPY --from=builder --chown=appuser:appgroup /app/dist ./dist
+COPY --from=builder --chown=appuser:appgroup /app/package.json ./
+ENV NODE_ENV=production
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+CMD ["node", "dist/server.js"]
+```
+
+### Go
+
+```dockerfile
+FROM golang:1.22-alpine AS builder
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /server ./cmd/server
+
+FROM alpine:3.19 AS runner
+RUN apk --no-cache add ca-certificates
+RUN adduser -D -u 1001 appuser
+USER appuser
+COPY --from=builder /server /server
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://localhost:8080/health || exit 1
+CMD ["/server"]
+```
+
+### Python
+
+```dockerfile
+FROM python:3.12-slim AS builder
+WORKDIR /app
+RUN pip install --no-cache-dir uv
+COPY requirements.txt .
+RUN uv pip install --system --no-cache -r requirements.txt
+
+FROM python:3.12-slim AS runner
+WORKDIR /app
+RUN useradd -r -u 1001 appuser
+USER appuser
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+COPY . .
+ENV PYTHONUNBUFFERED=1
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/')" || exit 1
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "4"]
+```
+
+**Docker rules:** use specific version tags, run as non-root, copy dependency files first for layer caching, add `.dockerignore` excluding `node_modules/.git/tests`, never store secrets in the image.
+
+---
+
+## Health Check Endpoint
+
+```typescript
+// Simple check (for K8s liveness/readiness probes)
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
+// Detailed check (for monitoring dashboards)
+app.get("/health/detailed", async (req, res) => {
+  const checks = {
+    database: await checkDatabase(),
+    redis: await checkRedis(),
+  };
+  const allHealthy = Object.values(checks).every(c => c.status === "ok");
+  res.status(allHealthy ? 200 : 503).json({
+    status: allHealthy ? "ok" : "degraded",
+    timestamp: new Date().toISOString(),
+    version: process.env.APP_VERSION || "unknown",
+    uptime: process.uptime(),
+    checks,
+  });
+});
+
+async function checkDatabase(): Promise<HealthCheck> {
+  try {
+    await db.query("SELECT 1");
+    return { status: "ok" };
+  } catch {
+    return { status: "error", message: "Database unreachable" };
+  }
+}
+```
+
+---
+
+## GitHub Actions CI/CD Template
+
+```yaml
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test -- --coverage
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ghcr.io/${{ github.repository }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Render and deploy
+        run: make release ENV=staging IMAGE_TAG=${{ github.sha }}
+```
+
+**Pipeline stages:**
+- PR: `lint → typecheck → unit tests → integration tests`
+- Merge to main: above + `build image → make release ENV=staging → smoke tests → make release ENV=prod`
