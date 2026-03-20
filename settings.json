@@ -1,8 +1,21 @@
 {
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'f=$(echo \"$CLAUDE_TOOL_RESULT\" | jq -r \".filePath // empty\" 2>/dev/null); [[ \"$f\" == */.claude/skills/*/SKILL.md ]] && printf \"{\\\"tool\\\":\\\"Read\\\",\\\"path\\\":\\\"%s\\\",\\\"timestamp\\\":\\\"%s\\\"}\\n\" \"$f\" \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" >> ~/.claude/observations.jsonl || true'"
+          }
+        ]
+      }
+    ]
+  },
   "env": {
     "ANTHROPIC_BASE_URL": "http://127.0.0.1:19999",
     "ANTHROPIC_AUTH_TOKEN": "",
-    "ANTHROPIC_API_KEY": "REDACTED",
+    "ANTHROPIC_API_KEY": "",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
   },
   "delete_env": [
