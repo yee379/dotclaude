@@ -10,26 +10,8 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/feature-plan            problem framing, requirements, rough system design, ADRs
+/feature-plan → /full-review → implementation → /plan-closeout
       │
-      ▼
-/plan-arch-review        deep structural review: service boundaries, data ownership,
-      │                  consistency models, failure domains, technology choices → ADR log
-      ▼
-/plan-eng-review         implementation gate: code quality, test coverage, performance,
-      │                  edge cases → test plan artifact
-      ▼
-/plan-doc-review         documentation planning gate: which docs change, what changes
-      │                  in each, breaking change upgrade guides, gaps added to plan
-      ▼
-/security-review         security gate: secrets, auth, input validation, injection,
-      │                  supply chain, Kubernetes workload security
-      ▼
-  implementation         code, tests, PR, review
-      │
-      ▼
-/plan-closeout           feature close-out: task file done, TODO.md synced, docs
-      │                  updated, CHANGELOG polished, VERSION bumped
       ▼
 /prod-release          ← YOU ARE HERE: environment promotion, smoke tests, feature flag
                          rollout, monitoring validation, rollback procedure
