@@ -189,6 +189,10 @@ Which items does this depend on, unblock, or interact with?
 
 ### Picking the Next Item
 
+**If the user names a task number** (e.g. "work on 027", "tell me about #3", "what's the plan
+for 012"): read `todo/<number>-*.md` directly — glob `todo/027-*.md` and open the first match.
+Do not search `TODO.md` or the codebase first; the file is always at that path.
+
 1. Read `TODO.md` in full
 2. Find the highest-priority `⬜ Open` item (P0 before P1 before P2 before P3)
 3. Read its full task file — understand the problem before the plan

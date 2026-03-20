@@ -54,9 +54,13 @@ when you're clear to build.
 
 Before anything else, find what's being reviewed:
 
-1. Check for a plan file: `DESIGN.md`, `design-doc.md`, or any `.md` in `.claude/` describing the feature.
-2. Check git: `git diff $(git merge-base HEAD main 2>/dev/null || git merge-base HEAD master 2>/dev/null || echo HEAD~5)...HEAD --stat 2>/dev/null | head -30` — is there already code on this branch that implicitly defines the scope?
-3. Check `TODO.md` / `todo/` for the item being worked.
+1. **If the user named a task number** (e.g. "review 027", "full review of #3"): read
+   `todo/<number>-*.md` directly — glob `todo/027-*.md` (or zero-padded equivalent) and open
+   the first match. This is always the right file; do not search elsewhere first.
+2. **Otherwise**, check in order:
+   - `todo/` — find the in-progress task (`🔄 In Progress` in `TODO.md`) and read its file
+   - `DESIGN.md` or `design-doc.md` in the repo root or `.claude/`
+   - `git diff $(git merge-base HEAD main 2>/dev/null || git merge-base HEAD master 2>/dev/null || echo HEAD~5)...HEAD --stat 2>/dev/null | head -30` — code already on the branch may implicitly define scope
 
 If no plan is found, **stop** and tell the user:
 > "No plan found. Run `/feature-plan` first to produce a design document, then come back to `/full-review`."
