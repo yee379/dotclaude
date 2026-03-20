@@ -212,25 +212,29 @@ After auditing each file individually, do a cross-doc consistency pass:
 
 ---
 
-## Step 7: TODOS.md Cleanup
+## Step 7: TODO Cleanup
 
-This is a second pass that complements `/ship`'s Step 5.5. Read `review/TODOS-format.md` (if
-available) for the canonical TODO item format.
+The canonical TODO format is defined by the `/project-management` skill: a `TODO.md` priority
+index plus individual task files in `todo/<n>-<slug>.md`. If neither exists, skip this step.
 
-If TODOS.md does not exist, skip this step.
+1. **Completed task files not yet marked:** Cross-reference the diff against `todo/*.md` files
+   with status `🔄 In Progress` or `👀 In Review`. If a task file is clearly completed by the
+   changes in this branch, update its status to `✅ Done`, set `**Shipped:**` to today's date,
+   and tick any remaining checklist items. Be conservative — only mark done with clear evidence
+   in the diff.
 
-1. **Completed items not yet marked:** Cross-reference the diff against open TODO items. If a
-   TODO is clearly completed by the changes in this branch, move it to the Completed section
-   with `**Completed:** vX.Y.Z.W (YYYY-MM-DD)`. Be conservative — only mark items with clear
-   evidence in the diff.
+2. **Sync `TODO.md`:** For every task file status change made in step 1, update the corresponding
+   row in `TODO.md` to match (status column, PR column if missing). `TODO.md` must never lag the
+   task files.
 
-2. **Items needing description updates:** If a TODO references files or components that were
-   significantly changed, its description may be stale. Use AskUserQuestion to confirm whether
-   the TODO should be updated, completed, or left as-is.
+3. **Stale task file descriptions:** If a task file references files or components that were
+   significantly renamed or restructured by the diff, its description may be stale. Use
+   AskUserQuestion to confirm whether the task file should be updated, completed, or left as-is.
 
-3. **New deferred work:** Check the diff for `TODO`, `FIXME`, `HACK`, and `XXX` comments. For
+4. **New deferred work:** Check the diff for `TODO`, `FIXME`, `HACK`, and `XXX` comments. For
    each one that represents meaningful deferred work (not a trivial inline note), use
-   AskUserQuestion to ask whether it should be captured in TODOS.md.
+   AskUserQuestion to ask whether it should be captured as a new `todo/<n>-<slug>.md` entry and
+   added to `TODO.md`.
 
 ---
 
@@ -340,7 +344,7 @@ Documentation health:
   ARCHITECTURE.md [status] ([details])
   CONTRIBUTING.md [status] ([details])
   CHANGELOG.md    [status] ([details])
-  TODOS.md        [status] ([details])
+  TODO.md         [status] ([details])
   VERSION         [status] ([details])
 ```
 
