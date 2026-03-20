@@ -19,17 +19,15 @@ compatibility: opencode
                          ensures that work is in the plan before coding starts
 /security-review         security gate
 
-── implementation ─────────────────────────────────────────────────────────────
-
-  ... code, tests, PR, review ...
-
-/prod-release            environment promotion, feature flag rollout, rollback procedure
-
 ── feature close-out ──────────────────────────────────────────────────────────
 
 /plan-closeout         ← YOU ARE HERE: feature has landed — close out the task
                          file, sync TODO.md, apply all doc updates, polish
                          CHANGELOG voice, bump VERSION
+
+── release ────────────────────────────────────────────────────────────────────
+
+/prod-release            environment promotion, feature flag rollout, rollback procedure
 ```
 
 **The handoff from `/plan-doc-review`:** That skill identified which docs need updating and added the work to the plan. This skill executes those updates after the code ships. If `plan-doc-review` ran, check its output (look for plan amendments and the deferred-to-doc-release list) — use it as your starting checklist rather than discovering everything from scratch.

@@ -41,7 +41,7 @@ Orchestrates the complete pre-implementation review pipeline against an existing
   [Clear to build]
       │
       ▼  (after implementation)
-  /prod-release → /plan-closeout
+  /plan-closeout → /prod-release
 ```
 
 ---
@@ -182,7 +182,7 @@ VERDICT:  CLEAR TO BUILD | BLOCKED | CLEAR WITH WARNINGS
 
 If verdict is **CLEAR TO BUILD** or **CLEAR WITH WARNINGS**:
 
-> "You're clear to implement. When the code is done, run `/prod-release` to promote through environments, then `/plan-closeout` to close out the task, apply the documentation updates identified in Gate 3, and sync TODO.md."
+> "You're clear to implement. When the code is done, run `/plan-closeout` to close out the task, apply the documentation updates identified in Gate 3, and sync TODO.md — then run `/prod-release` to promote through environments."
 
 If verdict is **BLOCKED**:
 
