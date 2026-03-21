@@ -34,10 +34,60 @@ The findings feed directly into Phase 1 (problem framing) and Phase 3 (ADRs).
 
 ### Mode 2: Plan fact-checking (called from /full-review — board member)
 
-Targeted verification *after* the plan exists. Goal: surface factual unknowns that would change
-design decisions if answered.
+Targeted verification *after* the plan exists. Goal: surface only the factual unknowns that
+would change design decisions if answered. **This mode is deliberately narrow and fast** —
+it is not an open-ended research exercise. Every minute spent on low-value verification is
+context budget stolen from the other four reviewers.
 
-Sub-questions to investigate:
+**Before launching any subagents**, extract the checkable claims from the plan:
+
+1. Read the plan excerpt (Problem Statement, Goals, Design, Open Questions).
+2. List every concrete, verifiable assertion — technology choices, version numbers, library
+   capabilities, scalability claims, compatibility statements, CVE status, API behaviours.
+3. Discard anything that is: (a) obvious/uncontroversial, (b) not checkable via web search,
+   or (c) already cited with a source in the plan.
+4. **Cap at 4 claims.** If more are found, prioritise: claims that if wrong would require
+   redesign > claims that would add a warning > claims that are cosmetic.
+
+If fewer than 2 checkable claims are found, skip web research entirely and return:
+> "No material unverified claims found. Plan assumptions appear reasonable. ✅ PASS"
+
+**Subagent profile for Mode 2** (leaner than Mode 1):
+- 1 subagent per claim (not per sub-question) — up to 4 subagents total
+- Each subagent: 2–3 searches max, 1–2 full page fetches, stop as soon as the claim
+  is confirmed or contradicted — do not continue searching for more nuance
+- Output per subagent: verdict (confirmed / contradicted / unverified) + 1–3 bullet
+  points of evidence + source URL. No prose paragraphs.
+- Total output target: fits in ~200 lines. Stop when done, do not pad.
+
+**Output format for Mode 2:**
+
+```markdown
+## Claim Verdicts
+
+| Claim | Verdict | Evidence | Source |
+|---|---|---|---|
+| Redis Streams supports consumer groups since v5.0 | ✅ confirmed | Redis docs confirm this | https://... |
+| library X is actively maintained | ⚠️ unverified | Last commit 14 months ago | https://... |
+| approach Y is deprecated in favour of Z | ❌ contradicted | Official migration guide recommends Y | https://... |
+
+## Summary
+<2-3 bullets — only the findings that would change a decision>
+
+## Amendments
+<list of edits made to the plan file — only for contradicted/unverified findings
+ that affect design decisions. Do not amend for confirmed claims.>
+
+## Status
+PASS | PASS WITH WARNINGS | FAIL
+```
+
+**Amendment trigger (Mode 2 only):** only amend the plan when a claim is **contradicted**
+or **unverified AND the claim is load-bearing** (removing it would change the design).
+Confirmed claims need no amendment. Unverified cosmetic claims get a warning, not an
+amendment. This keeps the amendment rate low and avoids triggering unnecessary re-rounds.
+
+Sub-questions to investigate (use only those applicable to the actual plan):
 
 - **Assumption verification** — the plan asserts X about a technology/library/service; is it true?
 - **Prior art** — has this specific approach been attempted? what was the outcome?
@@ -46,19 +96,13 @@ Sub-questions to investigate:
 - **Dependency health** — are the libraries, services, or modules the plan depends on actively
   maintained? any known bugs, CVEs, or breaking changes that would affect this plan?
 - **Obsolescence check** — has a new technology, framework, or method emerged that makes this
-  plan unnecessary, significantly simpler, or worth reconsidering? would the plan be rendered
-  redundant by something already available (open-source, hosted service, platform feature)?
+  plan unnecessary, significantly simpler, or worth reconsidering?
 - **Simplification opportunities** — is there a well-known pattern, existing tool, or standard
   approach that would make the plan shorter, lower-risk, or easier to maintain?
 
-Output: a findings summary with each claim marked as **confirmed**, **contradicted**, or
-**unverified**. Contradicted or unverified claims that affect design decisions should amend the
-plan, triggering a new board round for the other reviewers to re-evaluate with the corrected
-information.
-
 The highest-value findings are those that would change a decision — a bug in a key dependency,
 a hosted service that replaces 500 lines of custom code, or a newer approach with better
-community support. Surface these prominently.
+community support. Surface these prominently. Ignore everything else.
 
 ---
 
@@ -79,6 +123,15 @@ community support. Surface these prominently.
 No paid MCPs or external services required.
 
 ## Workflow
+
+**First: identify which mode you are in.**
+
+- If the prompt contains a plan file path, plan content, or says "board review" / "full-review"
+  / "fact-check" → **Mode 2**. Skip Steps 1–3 below entirely. Go directly to the
+  Mode 2 claim-extraction process described above, then use the Mode 2 subagent profile.
+- Otherwise → **Mode 1**. Follow Steps 1–6 below.
+
+---
 
 ### Step 1: Understand the Goal
 
