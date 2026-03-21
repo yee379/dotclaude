@@ -54,7 +54,8 @@ The index groups items by priority tier and shows status, branch, and PR at a gl
 - 🔵 P3 Low — nice to have
 
 ## Status Key
-- ⬜ Open — not started
+- 📋 Preparing — task created, feature-plan not yet run
+- ⬜ Open — feature-plan complete, awaiting /full-review
 - 🔎 In Review — full-review board is actively running
 - 🔍 Reviewed — plan approved by full-review board, ready to implement
 - 🔄 In Progress — active development
@@ -236,7 +237,7 @@ git checkout -b feat/<slug>
 1. Check `TODO.md` — what's the next available number?
 2. Create `todo/<number>-<slug>.md` from the template above
 3. Fill in at minimum: Problem Statement and Goals
-4. **Add a row to `TODO.md` immediately** — priority, status `⬜ Open`, branch `—`, PR `—`
+4. **Add a row to `TODO.md` immediately** — priority, status `📋 Preparing`, branch `—`, PR `—`
 5. **Before touching code, ask:**
    > "Task #N is ready to plan. Shall I run `/feature-plan` now to flesh out the design,
    > or would you like to add more context to the Problem Statement first?"
@@ -246,13 +247,11 @@ git checkout -b feat/<slug>
      (e.g. "add a 30s timeout to one function"). Even then, say so explicitly:
      > "This looks trivial enough to skip feature-plan — proceeding directly. Let me know
      > if you'd like a full plan instead."
-6. Once `/feature-plan` is complete, ask:
+6. **Once `/feature-plan` completes:** set status to `⬜ Open` in both the task file and
+   `TODO.md`. Then ask:
    > "Plan is written. Shall I run `/full-review` now to gate it through the board?"
-7. Only after `/full-review` gives CLEAR TO BUILD: create the branch and begin implementation.
-
-```bash
-git checkout -b feat/<slug>
-```
+7. Only after `/full-review` gives CLEAR TO BUILD (status → `🔍 Reviewed`): create the branch
+   and begin implementation (status → `🔄 In Progress`).
 
 ### Planning a Task
 
@@ -282,13 +281,13 @@ implementation.** Ask first:
 
 **Task file origin → next step:**
 
-| Where the task file came from | Next step |
-|-------------------------------|-----------|
-| `/todo-scout` | Problem Statement already written — run `/feature-plan` directly |
-| Added manually (thin) | Fill Problem Statement first, then run `/feature-plan` |
-| Previous session (partial design) | Resume `/feature-plan` from where the Design section left off |
-| `/feature-plan` already run | Design is complete — run `/full-review` |
-| `/full-review` passed | CLEAR TO BUILD — create branch, begin implementation |
+| Where the task file came from | Status | Next step |
+|-------------------------------|--------|-----------|
+| `/todo-scout` | 📋 Preparing | Problem Statement already written — run `/feature-plan` directly |
+| Added manually (thin) | 📋 Preparing | Fill Problem Statement first, then run `/feature-plan` |
+| Previous session (partial design) | 📋 Preparing | Resume `/feature-plan` from where the Design section left off |
+| `/feature-plan` already run | ⬜ Open | Design is complete — run `/full-review` |
+| `/full-review` passed | 🔍 Reviewed | CLEAR TO BUILD — create branch, begin implementation |
 
 The task file *is* the plan. Don't maintain a separate plan document unless the design is
 complex enough to warrant a linked deep-dive.
@@ -342,10 +341,11 @@ The task file is **never deleted** — it becomes a permanent record.
 2. Create `todo/<n>-<slug>.md` with the template above
 3. Fill in at minimum: Problem Statement and Goals
 4. Assign a priority tier (P0–P3)
-5. Add a row to `TODO.md` with priority and status `⬜ Open`
+5. Add a row to `TODO.md` with priority and status `📋 Preparing`
 6. Commit: `git add TODO.md todo/ && git commit -m "docs(todo): add #<n> <title>"`
-7. **Do not create a branch or begin implementation yet.** The next step is `/feature-plan`,
-   then `/full-review`. A task is not ready to implement until it has passed the board.
+7. **Do not create a branch or begin implementation yet.** The next step is `/feature-plan`
+   (which advances status to `⬜ Open`), then `/full-review` (which advances to `🔍 Reviewed`).
+   A task is not ready to implement until it has passed the board.
 
 ### Reviewing the Backlog
 
@@ -455,10 +455,11 @@ includes design decisions, problems encountered, and trade-offs.
 
 | Trigger | What to update |
 |---------|---------------|
-| New task created | Add row with priority, status ⬜, branch `—`, PR `—` |
+| New task created | Add row with priority, status 📋 Preparing, branch `—`, PR `—` |
+| feature-plan completes | Status → ⬜ Open in task file and TODO.md; prompt user to run /full-review |
 | full-review starts | Status → 🔎 In Review in task file and TODO.md |
 | full-review passes (CLEAR TO BUILD / CLEAR WITH WARNINGS) | Status → 🔍 Reviewed; board review summary merged into task file; `todo/review/<slug>/` deleted |
-| full-review blocked or unstable | Status → ⬜ Open (revert); board review summary merged into task file; `todo/review/<slug>/` deleted; blocking issues noted in Problems & Solutions |
+| full-review blocked or unstable | Status → 📋 Preparing (revert to pre-review); board review summary merged into task file; `todo/review/<slug>/` deleted; blocking issues noted in Problems & Solutions |
 | Implementation starts (branch created) | Status → 🔄 In Progress in task file and TODO.md, Branch → `feat/<slug>` |
 | Implementation complete (all checklist items ticked) | Status → 🏁 Implementation Done in task file and TODO.md |
 | PR opened | Status → 👀 PR Open, PR → `#<number>` |

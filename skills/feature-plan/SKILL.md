@@ -291,6 +291,21 @@ A feature is done when ALL of the following are true:
 
 ---
 
+### Status update on completion
+
+When `/feature-plan` finishes writing the plan into the task file, **immediately**:
+
+1. Set `**Status:**` in the task file to `⬜ Open`
+2. Update the matching row in `TODO.md` to `⬜ Open`
+3. Do **not** set status to `🔍 Reviewed` — that is reserved for after `/full-review` passes.
+
+Then prompt the user:
+
+> "Plan written and status set to ⬜ Open. Ready to run `/full-review` to gate this through
+> the board before implementation?"
+
+---
+
 ## Output Template
 
 When planning a feature, produce a document with these sections:
