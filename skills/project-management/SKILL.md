@@ -215,13 +215,23 @@ git checkout -b feat/<slug>
 2. Create `todo/<number>-<slug>.md` from the template above
 3. Fill in at minimum: Problem Statement and Goals
 4. **Add a row to `TODO.md` immediately** — priority, status `⬜ Open`, branch `—`, PR `—`
-5. Create a git branch: `feat/<slug>` (or `fix/<slug>` for bugs)
-6. **Update `TODO.md`** — set Branch to `feat/<slug>`, status to `🔄 In Progress`
-7. If this is a planned feature, run `/feature-plan` and paste or link the output into the task file's **Design** section
+5. **Always run `/feature-plan` before touching code.** No exceptions for new features or
+   non-trivial tasks. A sparse task file is not ready to implement — it is ready to plan.
+   `/feature-plan` reads the Problem Statement and Goals already written and fills in the
+   Design, Implementation Plan, ADRs, and Open Questions. Do not skip this step.
+   - The only exception: genuinely trivial tasks where the fix is a single obvious change
+     (e.g. "add a 30s timeout to one function"). If in doubt, run `/feature-plan` anyway.
+6. Once `/feature-plan` is complete, run `/full-review` to gate the design.
+7. Only after `/full-review` gives CLEAR TO BUILD: create the branch and begin implementation.
+
+```bash
+git checkout -b feat/<slug>
+```
 
 ### Planning a Task
 
-When asked to plan an item (or when the design section is thin):
+When a task file exists but the Design section is empty or sparse, **do not start
+implementation — run `/feature-plan` first.** This is mandatory, not optional.
 
 1. **Read the task file first** — always start here, never from a blank slate. The problem
    statement and goals are already written (by `/todo-scout`, manually, or from a previous
@@ -235,15 +245,17 @@ When asked to plan an item (or when the design section is thin):
    Save findings to `todo/research/<slug>/` and link from the task file's Design section.
 4. Add Open Questions for anything that requires a decision before implementation starts.
 5. Present the plan for approval before writing code.
+6. Once approved, run `/full-review` to gate the design before implementation begins.
 
-**Task file origin → planning path:**
+**Task file origin → next step:**
 
-| Where the task file came from | What to do |
+| Where the task file came from | Next step |
 |-------------------------------|-----------|
 | `/todo-scout` | Problem Statement already written — run `/feature-plan` directly |
 | Added manually (thin) | Fill Problem Statement first, then run `/feature-plan` |
-| Previous session (partial design) | Resume from where the Design section left off |
-| `/feature-plan` already run | Design is complete — proceed to `/full-review` |
+| Previous session (partial design) | Resume `/feature-plan` from where the Design section left off |
+| `/feature-plan` already run | Design is complete — run `/full-review` |
+| `/full-review` passed | CLEAR TO BUILD — create branch, begin implementation |
 
 The task file *is* the plan. Don't maintain a separate plan document unless the design is
 complex enough to warrant a linked deep-dive.
@@ -299,6 +311,8 @@ The task file is **never deleted** — it becomes a permanent record.
 4. Assign a priority tier (P0–P3)
 5. Add a row to `TODO.md` with priority and status `⬜ Open`
 6. Commit: `git add TODO.md todo/ && git commit -m "docs(todo): add #<n> <title>"`
+7. **Do not create a branch or begin implementation yet.** The next step is `/feature-plan`,
+   then `/full-review`. A task is not ready to implement until it has passed the board.
 
 ### Reviewing the Backlog
 
