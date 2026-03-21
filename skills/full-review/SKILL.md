@@ -304,21 +304,26 @@ Reviewer roles:
    - Do NOT re-run the agent automatically — present the partial findings and ask the user
      whether to re-run that reviewer alone before proceeding
 
-6. Once all agents are complete (or truncated), consolidate results with **minimum reads**:
+6. Once all agents are complete (or truncated), consolidate using the bundled helper script
+   — do not construct ad-hoc bash or read files manually:
 
-   a. Read **only the `## Summary` and `## Status` lines** from each output file first
-      (use `head -40` on each file — summary and status are always at the top and bottom).
-   b. If a reviewer's summary is insufficient to determine severity or next action, read
-      its `## Issues` section only — cap at 60 lines.
-   c. Read `## Decisions Required` in full only for reviewers with `blocking` decisions.
-   d. **Never read the full output file** into the main session context. The files are on
-      disk and can be referenced by path. The main session only needs the digest.
+   ```bash
+   bash ~/.claude/skills/full-review/consolidate-round.sh <review_dir> <round> <reviewer_codes...>
+   # e.g.
+   bash ~/.claude/skills/full-review/consolidate-round.sh todo/review/007-my-feature 1 dr ar er dc sr
+   ```
+
+   The script extracts STATUS, AMENDED, DECISIONS, BLOCKING, and a ≤10-line SUMMARY for
+   each reviewer — the minimum needed to build the round dashboard and surface decisions.
+   Only read a reviewer's full output file directly if the script's SUMMARY is insufficient
+   to determine the next action (e.g. a blocking decision needs its full text). Never read
+   full files speculatively.
 
    For each reviewer record:
-   - Issues found (from ## Summary bullets)
-   - Decisions required (from ## Decisions Required, blocking entries only)
-   - Amendments made to the plan
-   - Status: PASS | PASS WITH WARNINGS | FAIL
+   - Status (from STATUS line)
+   - Decisions required (BLOCKING count > 0 → read ## Decisions Required from that file only)
+   - Amendments made (from AMENDED line)
+   - Summary bullets (from SUMMARY section)
 
 6. **Surface decisions before the round dashboard.** If any reviewer wrote `## Decisions Required`
    entries, present them to the user now — before showing the round dashboard or deciding whether
