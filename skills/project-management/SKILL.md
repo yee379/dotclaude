@@ -215,13 +215,17 @@ git checkout -b feat/<slug>
 2. Create `todo/<number>-<slug>.md` from the template above
 3. Fill in at minimum: Problem Statement and Goals
 4. **Add a row to `TODO.md` immediately** — priority, status `⬜ Open`, branch `—`, PR `—`
-5. **Always run `/feature-plan` before touching code.** No exceptions for new features or
-   non-trivial tasks. A sparse task file is not ready to implement — it is ready to plan.
-   `/feature-plan` reads the Problem Statement and Goals already written and fills in the
-   Design, Implementation Plan, ADRs, and Open Questions. Do not skip this step.
+5. **Before touching code, ask:**
+   > "Task #N is ready to plan. Shall I run `/feature-plan` now to flesh out the design,
+   > or would you like to add more context to the Problem Statement first?"
+   - If the user confirms → run `/feature-plan` immediately.
+   - If the user wants to add context first → wait, then run `/feature-plan` once ready.
    - The only exception: genuinely trivial tasks where the fix is a single obvious change
-     (e.g. "add a 30s timeout to one function"). If in doubt, run `/feature-plan` anyway.
-6. Once `/feature-plan` is complete, run `/full-review` to gate the design.
+     (e.g. "add a 30s timeout to one function"). Even then, say so explicitly:
+     > "This looks trivial enough to skip feature-plan — proceeding directly. Let me know
+     > if you'd like a full plan instead."
+6. Once `/feature-plan` is complete, ask:
+   > "Plan is written. Shall I run `/full-review` now to gate it through the board?"
 7. Only after `/full-review` gives CLEAR TO BUILD: create the branch and begin implementation.
 
 ```bash
@@ -231,7 +235,14 @@ git checkout -b feat/<slug>
 ### Planning a Task
 
 When a task file exists but the Design section is empty or sparse, **do not start
-implementation — run `/feature-plan` first.** This is mandatory, not optional.
+implementation.** Ask first:
+
+> "The design section for #N is sparse. Shall I run `/feature-plan` now to flesh it out
+> before we start building?"
+
+- If yes → run `/feature-plan`, then ask about `/full-review`.
+- If the user wants to add context first → wait, then proceed.
+- Never silently skip to code.
 
 1. **Read the task file first** — always start here, never from a blank slate. The problem
    statement and goals are already written (by `/todo-scout`, manually, or from a previous
