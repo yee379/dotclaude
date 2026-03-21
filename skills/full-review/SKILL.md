@@ -112,6 +112,10 @@ plan-doc-review      change is purely internal/infra with no user-facing
                      surface, no API changes, no new commands or config
 security-review      change has no user input, no auth changes, no new
                      API endpoints, no secrets, no new K8s workloads
+plan-ux-review       change has no direct user-facing surface — pure
+                     internal/infra, backend refactor, or platform-only
+                     work with no new CLI, API, docs, or workflows that
+                     scientists interact with directly
 ──────────────────────────────────────────────────────────────────────
 ```
 
@@ -127,6 +131,7 @@ Present the triage result as plain text (not a code block) and immediately proce
    plan-eng-review      RUN | SKIP (reason)
    plan-doc-review      RUN | SKIP (reason)
    security-review      RUN | SKIP (reason)
+   plan-ux-review       RUN | SKIP (reason)
    ──────────────────────────────────────────────────────
    Starting Round 1...
 
@@ -156,6 +161,7 @@ Run up to **3 rounds**. In each round:
    | plan-eng-review | Problem Statement, Goals, Design (full), Implementation Plan, Implementation Checklist, Open Questions |
    | plan-doc-review | Problem Statement, Goals, Non-Goals, Implementation Plan (step titles only) |
    | security-review | Problem Statement, Design (full), Implementation Plan (step titles only), Open Questions |
+   | plan-ux-review | Problem Statement, Goals, Non-Goals, Design (full), Open Questions |
 
    If the task file has no Design section or it is a stub, include the full file for all
    reviewers — there is nothing to trim.
@@ -269,6 +275,9 @@ Reviewer roles:
   runbooks, CHANGELOG, ADRs, CONTRIBUTING. Add gaps to the plan.
 - **security-review**: Check secrets, auth, input validation, injection vectors, supply chain,
   Kubernetes workload security.
+- **plan-ux-review**: Evaluate the feature through the eyes of an S3DF scientist — discoverability,
+  first-use clarity, documentation quality, error UX, and workflow fit. Only runs when the feature
+  has direct user-facing surface area.
 
 5. **Poll all background agents** until every one completes. Use the bundled helper script
    — do not construct ad-hoc bash commands inline:
@@ -386,6 +395,7 @@ Reviewer roles:
    plan-eng-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
    plan-doc-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
    security-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
+   plan-ux-review       ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
    ──────────────────────────────────────────────────────────────────
    Decisions resolved this round: N blocking / N judgement-call / N defaulted
    Plan amended this round: YES → starting Round N+1 | NO → board complete
@@ -424,6 +434,7 @@ After the board completes (or is halted), produce the final summary as plain tex
    plan-eng-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
    plan-doc-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
    security-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+   plan-ux-review       {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
    ------------------------------------------------------------
    ADRs written:          {N}  (in docs/adr/)
    Test plan written:     {Y/N}  (in todo/ task file)
