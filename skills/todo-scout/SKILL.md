@@ -87,9 +87,19 @@ Before exploring, answer these questions:
    ```
    Recent churn areas are high-signal: files changed often are either important or troubled.
 
-4. **Announce scope** to the user before exploring:
-   > "Scouting [all lenses / named lenses] — will skip items already in the backlog.
-   > Reading codebase now..."
+4. **Announce scope and ask about Lens 7** — unless `--market` or `--market-only` was
+   already passed (in which case the answer is known), always ask before proceeding:
+
+   > "Ready to scout [all lenses / named lenses]. Before I start — do you also want
+   > **Lens 7: Market & ecosystem**? It researches comparable projects and user demand
+   > signals to surface feature ideas grounded in real evidence. It runs in parallel with
+   > the codebase lenses but takes longer due to web research.
+   >
+   > **y** / **n** / **market-only** (skip codebase lenses, just do market research)"
+
+   Wait for the response before launching any subagents. If the user says **y**, add Lens 7
+   to the active set. If **n**, proceed with codebase lenses only. If **market-only**, skip
+   Lenses 1–6 and run Lens 7 alone.
 
 ---
 
