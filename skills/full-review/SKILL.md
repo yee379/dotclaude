@@ -118,19 +118,17 @@ security-review      change has no user input, no auth changes, no new
 **Default: run all reviewers.** Only skip if the skip condition is clearly and unambiguously met.
 When in doubt, run it.
 
-Present the triage result and immediately proceed to Step 2 — no confirmation needed:
+Present the triage result as plain text (not a code block) and immediately proceed to Step 2 — no confirmation needed:
 
-```
-Triage complete
-──────────────────────────────────────────────────────
-deep-research        RUN | SKIP (reason)
-plan-arch-review     RUN | SKIP (reason)
-plan-eng-review      RUN | SKIP (reason)
-plan-doc-review      RUN | SKIP (reason)
-security-review      RUN | SKIP (reason)
-──────────────────────────────────────────────────────
-Starting Round 1...
-```
+   Triage complete
+   ──────────────────────────────────────────────────────
+   deep-research        RUN | SKIP (reason)
+   plan-arch-review     RUN | SKIP (reason)
+   plan-eng-review      RUN | SKIP (reason)
+   plan-doc-review      RUN | SKIP (reason)
+   security-review      RUN | SKIP (reason)
+   ──────────────────────────────────────────────────────
+   Starting Round 1...
 
 ---
 
