@@ -48,97 +48,13 @@ A 4-phase loop that progressively refines context:
 └─────────────────────────────────────────────┘
 ```
 
-### Phase 1: DISPATCH
+**Phase 1 — DISPATCH:** Broad initial search for candidate files using Glob/Grep on likely patterns and keywords.
 
-Initial broad query to gather candidate files:
+**Phase 2 — EVALUATE:** Assess each file: is it directly relevant (0.8–1.0), related (0.5–0.7), tangential (0.2–0.4), or irrelevant (<0.2)?
 
-```javascript
-// Start with high-level intent
-const initialQuery = {
-  patterns: ['src/**/*.ts', 'lib/**/*.ts'],
-  keywords: ['authentication', 'user', 'session'],
-  excludes: ['*.test.ts', '*.spec.ts']
-};
+**Phase 3 — REFINE:** Add terminology discovered in high-relevance files; exclude confirmed-irrelevant paths; add focus areas for identified gaps.
 
-// Dispatch to retrieval agent
-const candidates = await retrieveFiles(initialQuery);
-```
-
-### Phase 2: EVALUATE
-
-Assess retrieved content for relevance:
-
-```javascript
-function evaluateRelevance(files, task) {
-  return files.map(file => ({
-    path: file.path,
-    relevance: scoreRelevance(file.content, task),
-    reason: explainRelevance(file.content, task),
-    missingContext: identifyGaps(file.content, task)
-  }));
-}
-```
-
-Scoring criteria:
-- **High (0.8-1.0)**: Directly implements target functionality
-- **Medium (0.5-0.7)**: Contains related patterns or types
-- **Low (0.2-0.4)**: Tangentially related
-- **None (0-0.2)**: Not relevant, exclude
-
-### Phase 3: REFINE
-
-Update search criteria based on evaluation:
-
-```javascript
-function refineQuery(evaluation, previousQuery) {
-  return {
-    // Add new patterns discovered in high-relevance files
-    patterns: [...previousQuery.patterns, ...extractPatterns(evaluation)],
-
-    // Add terminology found in codebase
-    keywords: [...previousQuery.keywords, ...extractKeywords(evaluation)],
-
-    // Exclude confirmed irrelevant paths
-    excludes: [...previousQuery.excludes, ...evaluation
-      .filter(e => e.relevance < 0.2)
-      .map(e => e.path)
-    ],
-
-    // Target specific gaps
-    focusAreas: evaluation
-      .flatMap(e => e.missingContext)
-      .filter(unique)
-  };
-}
-```
-
-### Phase 4: LOOP
-
-Repeat with refined criteria (max 3 cycles):
-
-```javascript
-async function iterativeRetrieve(task, maxCycles = 3) {
-  let query = createInitialQuery(task);
-  let bestContext = [];
-
-  for (let cycle = 0; cycle < maxCycles; cycle++) {
-    const candidates = await retrieveFiles(query);
-    const evaluation = evaluateRelevance(candidates, task);
-
-    // Check if we have sufficient context
-    const highRelevance = evaluation.filter(e => e.relevance >= 0.7);
-    if (highRelevance.length >= 3 && !hasCriticalGaps(evaluation)) {
-      return highRelevance;
-    }
-
-    // Refine and continue
-    query = refineQuery(evaluation, query);
-    bestContext = mergeContext(bestContext, highRelevance);
-  }
-
-  return bestContext;
-}
-```
+**Phase 4 — LOOP:** Repeat with refined criteria. Stop early if 3+ high-relevance files found with no critical gaps. Hard cap: 3 cycles.
 
 ## Practical Examples
 
@@ -208,36 +124,57 @@ When retrieving context for this task:
 
 Use this pattern when orchestrating subagents in Claude Code:
 
-```typescript
-// Orchestrator: run iterative retrieval then dispatch the real task
-async function runWithContext(task: string) {
-  // Cycle 1: broad search
-  const round1 = await Agent({
-    subagent_type: "general-purpose",
-    prompt: `Search the codebase for files relevant to: "${task}".
-Use Glob and Grep. Return a JSON array: [{path, relevance_0_to_1, reason}]`
-  });
+```
+// Round 1 — broad search
+Agent(
+  subagent_type: "general-purpose",
+  prompt: `Search the codebase for files relevant to: "<task>".
+Use Glob and Grep. Return a JSON array:
+[{"path": "...", "relevance": 0.0-1.0, "reason": "...", "gaps": ["..."]}]`
+)
 
-  // Cycle 2: targeted retrieval of gaps identified in round 1
-  const gaps = extractLowCoverageAreas(round1);
-  const round2 = await Agent({
-    subagent_type: "general-purpose",
-    prompt: `Search for files covering these gaps: ${gaps}.
-Return JSON: [{path, relevance_0_to_1, reason}]`
-  });
+// Round 1 result example:
+// [
+//   {"path": "src/auth/token.ts",   "relevance": 0.9, "reason": "JWT handling", "gaps": ["refresh logic"]},
+//   {"path": "src/auth/session.ts", "relevance": 0.7, "reason": "session store", "gaps": []},
+//   {"path": "src/user/profile.ts", "relevance": 0.2, "reason": "tangential",   "gaps": []}
+// ]
 
-  // Dispatch real task with only high-relevance context
-  const context = mergeAndFilter([round1, round2], threshold = 0.7);
-  return Agent({
-    subagent_type: "general-purpose",
-    prompt: `Task: ${task}\n\nContext files:\n${context.map(f => f.path).join('\n')}`
-  });
-}
+// Extract gaps from high-relevance files (relevance >= 0.7)
+// gaps = ["refresh logic"]
+// Drop low-relevance files: profile.ts excluded
+
+// Round 2 — targeted gap search
+Agent(
+  subagent_type: "general-purpose",
+  prompt: `Search for files covering these gaps: ["refresh logic"].
+Already found (skip): src/auth/token.ts, src/auth/session.ts
+Return JSON: [{"path": "...", "relevance": 0.0-1.0, "reason": "...", "gaps": ["..."]}]`
+)
+
+// Round 2 result example:
+// [{"path": "src/auth/refresh.ts", "relevance": 0.95, "reason": "token refresh endpoint", "gaps": []}]
+
+// Sufficient context — no critical gaps remain. Dispatch real task.
+Agent(
+  subagent_type: "general-purpose",
+  prompt: `Task: <task>
+
+Relevant files (read these first):
+- src/auth/token.ts      (JWT handling)
+- src/auth/session.ts    (session store)
+- src/auth/refresh.ts    (token refresh)
+
+<full task instructions>`
+)
 ```
 
-**Key rule:** Cap at 3 retrieval cycles. At cycle 3, proceed with best available context rather than retrying indefinitely.
+**Key rules:**
+- Pass only absolute file paths (not `~`-prefixed) to subagents
+- Cap at 3 retrieval cycles — at cycle 3, proceed with best available context
+- Only pass files with relevance >= 0.7 to the real task subagent
+- Include the "already found, skip" list in round 2+ to avoid duplicates
 
 ## Related
 
 - `autonomous-loops` skill — loop architectures that use iterative retrieval as a context phase
-- Agent definitions bundled with ECC (manual install path: `agents/`)

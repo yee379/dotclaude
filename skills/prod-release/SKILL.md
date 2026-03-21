@@ -321,7 +321,7 @@ For each production release:
 - `ALTER TABLE users ADD COLUMN photo_url TEXT` (backward-compatible, nullable)
 
 ### Rollback
-- `helm rollback api -n prod` reverts to v1.4.1
+- `make rollback ENV=prod ROLLBACK_SHA=<prev-sha>` reverts to v1.4.1
 - No migration rollback needed (additive only)
 
 ### Monitoring

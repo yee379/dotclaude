@@ -48,10 +48,12 @@ Re-evaluate only skills that have changed since the last run (5–10 min).
          ~/.claude/skills/skill-stocktake/results.json`
    (Project dir is auto-detected from `$PWD/.claude/skills`; pass it explicitly only if needed)
 3. If output is `[]`: report "No changes since last run." and stop
-4. Re-evaluate only those changed files using the same Phase 2 criteria
-5. Carry forward unchanged skills from previous results
-6. Output only the diff
-7. Run: `bash ~/.claude/skills/skill-stocktake/scripts/save-results.sh \
+4. **Expand `~` paths to absolute paths** before passing to subagents — replace `~` with `$HOME`
+   (subagents may resolve `~` as `/root/` rather than the current user's home directory)
+5. Re-evaluate only those changed files using the same Phase 2 criteria
+6. Carry forward unchanged skills from previous results
+7. Output only the diff
+8. Run: `bash ~/.claude/skills/skill-stocktake/scripts/save-results.sh \
          ~/.claude/skills/skill-stocktake/results.json <<< "$EVAL_RESULTS"`
 
 ## Full Stocktake Flow
@@ -74,6 +76,17 @@ Scanning:
 |-------|--------|---------|-------------|
 
 ### Phase 2 — Quality Evaluation
+
+**Path expansion — IMPORTANT:** The scan output uses `~`-prefixed paths (e.g. `~/.claude/skills/foo/SKILL.md`).
+Before passing any paths to a subagent, expand them to absolute paths using `$HOME`:
+
+```bash
+# e.g. replace ~ with $HOME in all paths before including them in a subagent prompt
+echo "$SCAN_OUTPUT" | sed "s|~|$HOME|g"
+```
+
+Subagents run in a different environment where `~` may expand to `/root/` instead of the
+current user's home directory. Always pass absolute paths.
 
 Launch an Agent tool subagent (**general-purpose agent**) with the full inventory and checklist:
 

@@ -54,16 +54,16 @@ ALWAYS write tests first, then implement code to make tests pass.
 As a [role], I want to [action], so that [benefit]
 
 Example:
-As a user, I want to search for markets semantically,
-so that I can find relevant markets even without exact keywords.
+As a user, I want to search for items by keyword,
+so that I can find relevant results even without exact matches.
 ```
 
 ### Step 2: Generate Test Cases
 For each user journey, create comprehensive test cases:
 
 ```typescript
-describe('Semantic Search', () => {
-  it('returns relevant markets for query', async () => {
+describe('Keyword Search', () => {
+  it('returns relevant items for query', async () => {
     // Test implementation
   })
 
@@ -71,11 +71,11 @@ describe('Semantic Search', () => {
     // Test edge case
   })
 
-  it('falls back to substring search when Redis unavailable', async () => {
+  it('falls back to exact match when search index unavailable', async () => {
     // Test fallback behavior
   })
 
-  it('sorts results by similarity score', async () => {
+  it('sorts results by relevance score', async () => {
     // Test sorting logic
   })
 })
@@ -92,7 +92,7 @@ Write minimal code to make tests pass:
 
 ```typescript
 // Implementation guided by tests
-export async function searchMarkets(query: string) {
+export async function searchItems(query: string) {
   // Implementation here
 }
 ```
@@ -150,9 +150,9 @@ describe('Button Component', () => {
 import { NextRequest } from 'next/server'
 import { GET } from './route'
 
-describe('GET /api/markets', () => {
-  it('returns markets successfully', async () => {
-    const request = new NextRequest('http://localhost/api/markets')
+describe('GET /api/items', () => {
+  it('returns items successfully', async () => {
+    const request = new NextRequest('http://localhost/api/items')
     const response = await GET(request)
     const data = await response.json()
 
@@ -162,16 +162,15 @@ describe('GET /api/markets', () => {
   })
 
   it('validates query parameters', async () => {
-    const request = new NextRequest('http://localhost/api/markets?limit=invalid')
+    const request = new NextRequest('http://localhost/api/items?limit=invalid')
     const response = await GET(request)
 
     expect(response.status).toBe(400)
   })
 
   it('handles database errors gracefully', async () => {
-    // Mock database failure
-    const request = new NextRequest('http://localhost/api/markets')
-    // Test error handling
+    const request = new NextRequest('http://localhost/api/items')
+    // Mock db failure and assert 500 + error shape
   })
 })
 ```
@@ -180,52 +179,35 @@ describe('GET /api/markets', () => {
 ```typescript
 import { test, expect } from '@playwright/test'
 
-test('user can search and filter markets', async ({ page }) => {
-  // Navigate to markets page
-  await page.goto('/')
-  await page.click('a[href="/markets"]')
+test('user can search and filter items', async ({ page }) => {
+  await page.goto('/items')
 
   // Verify page loaded
-  await expect(page.locator('h1')).toContainText('Markets')
+  await expect(page.locator('h1')).toContainText('Items')
 
-  // Search for markets
-  await page.fill('input[placeholder="Search markets"]', 'election')
+  // Search
+  await page.fill('input[placeholder="Search"]', 'widget')
+  await page.waitForTimeout(400)  // debounce
 
-  // Wait for debounce and results
-  await page.waitForTimeout(600)
-
-  // Verify search results displayed
-  const results = page.locator('[data-testid="market-card"]')
+  // Verify results
+  const results = page.locator('[data-testid="item-card"]')
   await expect(results).toHaveCount(5, { timeout: 5000 })
+  await expect(results.first()).toContainText('widget', { ignoreCase: true })
 
-  // Verify results contain search term
-  const firstResult = results.first()
-  await expect(firstResult).toContainText('election', { ignoreCase: true })
-
-  // Filter by status
+  // Apply a filter
   await page.click('button:has-text("Active")')
-
-  // Verify filtered results
   await expect(results).toHaveCount(3)
 })
 
-test('user can create a new market', async ({ page }) => {
-  // Login first
-  await page.goto('/creator-dashboard')
+test('user can create a new item', async ({ page }) => {
+  await page.goto('/dashboard')
 
-  // Fill market creation form
-  await page.fill('input[name="name"]', 'Test Market')
+  await page.fill('input[name="name"]', 'Test Item')
   await page.fill('textarea[name="description"]', 'Test description')
-  await page.fill('input[name="endDate"]', '2025-12-31')
-
-  // Submit form
   await page.click('button[type="submit"]')
 
-  // Verify success message
-  await expect(page.locator('text=Market created successfully')).toBeVisible()
-
-  // Verify redirect to market page
-  await expect(page).toHaveURL(/\/markets\/test-market/)
+  await expect(page.locator('[data-testid="success-message"]')).toBeVisible()
+  await expect(page).toHaveURL(/\/items\/test-item/)
 })
 ```
 
@@ -366,6 +348,84 @@ test('updates user', () => {
   // Update logic
 })
 ```
+
+## Python TDD (pytest)
+
+For Python projects, follow the same Red → Green → Refactor cycle using pytest. See `/python-patterns` for full project structure and async fixture patterns.
+
+### Unit Test Pattern (pytest)
+```python
+# tests/unit/test_search.py
+import pytest
+from app.search import search_items
+
+def test_returns_results_for_valid_query():
+    results = search_items("widget")
+    assert len(results) > 0
+    assert all("widget" in r["name"].lower() for r in results)
+
+def test_returns_empty_list_for_no_matches():
+    results = search_items("xyzzy_nonexistent")
+    assert results == []
+
+def test_raises_on_invalid_input():
+    with pytest.raises(ValueError):
+        search_items(None)
+```
+
+### Integration Test Pattern (pytest + httpx)
+```python
+# tests/integration/test_api.py
+import pytest
+from httpx import AsyncClient
+from app.main import app
+
+@pytest.mark.asyncio
+async def test_get_items_returns_200():
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        response = await client.get("/items")
+    assert response.status_code == 200
+    assert isinstance(response.json()["data"], list)
+
+@pytest.mark.asyncio
+async def test_invalid_query_param_returns_400():
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        response = await client.get("/items?limit=bad")
+    assert response.status_code == 400
+```
+
+### Mocking External Services (pytest)
+```python
+# Mock at the internal adapter boundary, not the vendor SDK
+from unittest.mock import AsyncMock, patch
+
+@pytest.fixture
+def mock_db(monkeypatch):
+    mock = AsyncMock(return_value=[{"id": "1", "name": "Test Item"}])
+    monkeypatch.setattr("app.db.fetch_items", mock)
+    return mock
+
+async def test_uses_db_result(mock_db):
+    results = await search_items("test")
+    mock_db.assert_called_once()
+    assert results[0]["name"] == "Test Item"
+```
+
+### Coverage (pytest)
+```bash
+pytest --cov=app --cov-report=term-missing --cov-fail-under=80
+```
+
+```ini
+# pyproject.toml
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.coverage.report]
+fail_under = 80
+```
+
+---
 
 ## Continuous Testing
 
