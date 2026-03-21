@@ -1,6 +1,10 @@
 ---
 name: feature-plan
 description: Structured feature planning and architectural design — problem framing, requirements, ADRs, system design, trade-offs, sequencing, and a definition of done before writing any code.
+triggers:
+  - "plan #\\d+"
+  - "plan \\d+"
+  - "/feature-plan"
 license: MIT
 compatibility: opencode
 ---
@@ -8,6 +12,16 @@ compatibility: opencode
 # Feature Plan
 
 A structured approach to planning features and architectural changes before writing code. Produces a clear spec, design decisions, and delivery sequence.
+
+## When to Trigger
+
+Activate this skill when the user says any of the following:
+- `plan <number>` — e.g. "plan 3", "plan 007"
+- `plan #<number>` — e.g. "plan #3", "plan #007"
+- `/feature-plan` — explicit invocation
+- "plan this out", "let's plan", "run feature-plan" on a task
+
+When a task number is given, glob `todo/<number>-*.md` (zero-padded or not) to find the task file before starting.
 
 ## Workflow position
 
