@@ -82,6 +82,16 @@ thing before proceeding.
 
 This marks the review as in-progress so project status is accurate throughout the board run.
 
+**Main session context discipline — read this once and follow it for the entire run:**
+- Store the plan as a **file path only**. Do not hold the full plan content in the main
+  session's working memory across rounds — subagents read it directly from disk.
+- After launching subagents, **do not re-read the plan file** unless you need to make a
+  specific edit in response to a blocking decision.
+- After consolidating a round, **drop the reviewer output content** from working memory.
+  You only need the round dashboard summary going forward — the files remain on disk.
+- Never paste full file contents into your own reasoning when a file path reference will do.
+  The goal: main session context should grow by ~500 tokens per round, not ~10k.
+
 ---
 
 ## Step 1: Triage — which reviewers apply?
@@ -152,7 +162,16 @@ Run up to **3 rounds**. In each round:
    reviewers — there is nothing to trim.
 
 4. **Launch all relevant reviewers as background subagents in a single message** using
-   `run_in_background: true`. Record each agent's task ID. Each subagent receives:
+   `run_in_background: true`. Record each agent's task ID.
+
+   **Round 1:** paste the trimmed plan excerpt into each subagent prompt (see section table
+   above). This is the only round where content is pasted — subagents have no prior context.
+
+   **Round 2+:** do NOT paste plan content again. Pass only the file path and a one-line
+   summary of what changed. The subagent reads the updated file directly from disk. This
+   keeps the main session from accumulating large pastes across rounds.
+
+   Each subagent receives:
 
 ```
 You are a [REVIEWER NAME] subagent in a board review.
@@ -160,8 +179,11 @@ You are a [REVIEWER NAME] subagent in a board review.
 Your role: [one-line role description — see below]
 
 Plan file: <path to task file>
-Plan excerpt (sections relevant to your review):
+[Round 1 only] Plan excerpt (sections relevant to your review):
 <trimmed plan content — see section table above>
+
+[Round 2+ only] Plan was amended in Round N: <one-line summary of changes>
+Read the plan file directly from disk: <path> — do not rely on any previously pasted content.
 
 Context budget warning: you are running as a background subagent with a finite
 context window. Prioritise ruthlessly:
@@ -291,15 +313,19 @@ security-review      — skipped         —         —
    - Do NOT re-run the agent automatically — present the partial findings and ask the user
      whether to re-run that reviewer alone before proceeding
 
-6. Once all agents are complete (or truncated), read **only the ## Summary and ## Status
-   sections** of each `todo/review/<slug>/round-N-<reviewer>.md` file for consolidation.
-   Read the full ## Issues and ## Decisions Required sections only if the summary is
-   insufficient to determine severity or next action. This keeps the main session's context
-   lean across multiple rounds.
+6. Once all agents are complete (or truncated), consolidate results with **minimum reads**:
+
+   a. Read **only the `## Summary` and `## Status` lines** from each output file first
+      (use `head -40` on each file — summary and status are always at the top and bottom).
+   b. If a reviewer's summary is insufficient to determine severity or next action, read
+      its `## Issues` section only — cap at 60 lines.
+   c. Read `## Decisions Required` in full only for reviewers with `blocking` decisions.
+   d. **Never read the full output file** into the main session context. The files are on
+      disk and can be referenced by path. The main session only needs the digest.
 
    For each reviewer record:
    - Issues found (from ## Summary bullets)
-   - Decisions required (from ## Decisions Required)
+   - Decisions required (from ## Decisions Required, blocking entries only)
    - Amendments made to the plan
    - Status: PASS | PASS WITH WARNINGS | FAIL
 
