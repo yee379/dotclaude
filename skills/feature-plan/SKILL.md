@@ -4,6 +4,7 @@ description: Structured feature planning and architectural design — problem fr
 triggers:
   - "plan #\\d+"
   - "plan \\d+"
+  - "plan todo #?\\d+"
   - "/feature-plan"
 license: MIT
 compatibility: opencode
@@ -18,6 +19,8 @@ A structured approach to planning features and architectural changes before writ
 Activate this skill when the user says any of the following:
 - `plan <number>` — e.g. "plan 3", "plan 007"
 - `plan #<number>` — e.g. "plan #3", "plan #007"
+- `plan todo <number>` — e.g. "plan todo 3", "plan todo 007"
+- `plan todo #<number>` — e.g. "plan todo #3", "plan todo #007"
 - `/feature-plan` — explicit invocation
 - "plan this out", "let's plan", "run feature-plan" on a task
 
