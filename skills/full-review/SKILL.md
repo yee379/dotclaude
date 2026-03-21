@@ -490,16 +490,19 @@ If verdict is **CLEAR TO BUILD** or **CLEAR WITH WARNINGS**:
    git commit -m "docs(todo): merge board review into #NNN task file [full-review]"
    ```
 
-Then tell the user:
+Then tell the user (substituting the actual TODO number and slug):
 
-> "You're clear to implement. For the implementation phase:
-> - Use `/project-management` to track progress in the task file and keep TODO.md in sync
-> - Use `/tdd-workflow` to drive code quality — tests first, then implementation
-> - Use `/code-review` at any point if you want a mid-implementation sanity check
->
-> When the code is done, run `/plan-closeout` to close out the task, apply the documentation
-> updates identified by plan-doc-review, and sync TODO.md — then run `/prod-release` to promote
-> through environments."
+   ✅ #NNN <title> — CLEAR TO BUILD
+
+   #NNN todo/<slug>.md
+        ↓
+   /project-management   ← track progress, keep TODO.md in sync
+        ↓
+   /tdd-workflow         ← tests first, then implementation
+        ↓
+   /plan-closeout #NNN   ← close out task, apply doc updates, sync TODO.md
+        ↓
+   /prod-release         ← promote through environments
 
 If verdict is **BLOCKED** or **UNSTABLE**:
 
