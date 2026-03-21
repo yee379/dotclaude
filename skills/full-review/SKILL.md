@@ -328,24 +328,32 @@ Reviewer             Status            Early signal
    entries, present them to the user now — before showing the round dashboard or deciding whether
    to iterate. Group by severity:
 
-   a. **`blocking` decisions first** — one `AskUserQuestion` per decision. Do not batch. Do not
-      proceed to the round dashboard until all blocking decisions are answered. After each answer,
-      update the plan file to reflect the user's choice, and note the decision in the reviewer's
-      output file.
+   a. **`blocking` decisions first** — work through them one at a time, in order. For each:
 
-      Format each blocking decision visibly so it stands out:
+      1. Present the decision using this format:
 
-      ```
-      🛑 DECISION REQUIRED — <reviewer name>
-      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-      ❓ <the question>
+         ```
+         🛑 BLOCKING DECISION <M> of <total> — <reviewer name>
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+         ❓ <the question>
 
-      Options:
-        A) ...
-        B) ...
+         Options:
+           A) ...
+           B) ...
 
-      ⚠️  The review cannot proceed until this is answered.
-      ```
+         ⚠️  The review cannot proceed until this is answered.
+         ```
+
+      2. Wait for the user's answer.
+      3. **Mark this decision resolved.** Update the plan file to reflect the choice.
+         Note the answer in the reviewer's output file.
+      4. **Do not re-present this decision again.** Move immediately to the next unresolved
+         blocking decision (M+1), or to the judgement-call step if all blocking decisions
+         are answered.
+
+      Never re-show a decision the user has already answered. Track which decisions have
+      been resolved and which remain. If the user has answered decision 1, present decision
+      2 — not decision 1 again.
 
    b. **`judgement-call` decisions** — present all of them together in a single numbered list
       after blocking decisions are resolved. Ask the user to confirm, override, or accept the
