@@ -303,8 +303,10 @@ security-review      — skipped         —         —
    exists and contains partial content, read its last few lines to extract an early signal —
    e.g. "3 issues found so far", "writing ADR", "no amendments". Show this in the table.
 
-   c. Repeat until all agents are `complete`, `skipped`, or `truncated`. There is no fixed
-      sleep between polls — call TaskOutput again immediately after rendering the table.
+   c. Repeat until all agents are `complete`, `skipped`, or `truncated`. Wait **3 minutes**
+      between polls — do not emit a new table on every TaskOutput call. Each status table
+      emitted adds tokens to the main session; polling every few seconds over a 10-minute
+      review produces dozens of redundant tables. Poll, render table, wait 3 minutes, repeat.
 
    **Handling truncated agents:** if an agent's TaskOutput indicates a context/timeout error,
    or its output file ends mid-section without a `## Status` line:
