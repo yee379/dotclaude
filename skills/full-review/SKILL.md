@@ -331,9 +331,8 @@ Reviewer roles:
 
    a. **`blocking` decisions first** — work through them one at a time, in order. For each:
 
-      1. Present the decision using this format:
+      1. Present the decision as plain text (not a code block):
 
-         ```
          🛑 BLOCKING DECISION <M> of <total> — <reviewer name>
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
          ❓ <the question>
@@ -343,7 +342,6 @@ Reviewer roles:
            B) ...
 
          ⚠️  The review cannot proceed until this is answered.
-         ```
 
       2. Wait for the user's answer.
       3. **Mark this decision resolved.** Update the plan file to reflect the choice.
@@ -360,9 +358,8 @@ Reviewer roles:
       after blocking decisions are resolved. Ask the user to confirm, override, or accept the
       defaults. One confirmation call covers all judgement-calls in a round.
 
-      Format the judgement-call group visibly:
+      Format the judgement-call group as plain text (not a code block):
 
-      ```
       🤔 JUDGEMENT CALLS — please confirm or override  (<N> decisions)
       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       1. [<reviewer>] <question> → defaulted to: <assumed>
@@ -370,13 +367,10 @@ Reviewer roles:
       ...
 
       Reply "ok" to accept all defaults, or specify overrides by number.
-      ```
 
-   c. **`defaulted` decisions** — list them in a collapsed summary:
+   c. **`defaulted` decisions** — list them as plain text (not a code block):
 
-      ```
       ℹ️  <N> minor defaults taken — see reviewer output files for details.
-      ```
 
       No user action required unless they want to override.
 
