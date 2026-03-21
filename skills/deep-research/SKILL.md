@@ -58,7 +58,8 @@ If fewer than 2 checkable claims are found, skip web research entirely and retur
   is confirmed or contradicted — do not continue searching for more nuance
 - Output per subagent: verdict (confirmed / contradicted / unverified) + 1–3 bullet
   points of evidence + source URL. No prose paragraphs.
-- Total output target: fits in ~200 lines. Stop when done, do not pad.
+- Total output ceiling: 200 lines. Stop if approaching this — do not pad to reach it.
+  A complete Mode 2 result typically fits in 50–120 lines.
 
 **Output format for Mode 2:**
 
