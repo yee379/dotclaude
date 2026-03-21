@@ -272,41 +272,33 @@ Reviewer roles:
 - **security-review**: Check secrets, auth, input validation, injection vectors, supply chain,
   Kubernetes workload security.
 
-5. **Poll all background agents continuously** until every one completes. After launching, enter
-   a polling loop:
+5. **Poll all background agents** until every one completes. Use the bundled helper script
+   — do not construct ad-hoc bash commands inline:
 
-   a. Call `TaskOutput(task_id, block: false)` for each agent that has not yet completed.
-   b. After each polling pass, emit a **live status table** so the user can see progress in
-      real time:
+   ```bash
+   # SKILL_DIR is the directory containing this SKILL.md file
+   bash $SKILL_DIR/poll-round.sh <review_dir> <round> <active_reviewer_codes...>
+   # e.g.
+   bash ~/.claude/skills/full-review/poll-round.sh todo/review/007-my-feature 1 dr ar er dc
+   ```
+
+   The script prints one status line per reviewer and exits `0` when all are done, `1` if
+   any are still running. Reviewer codes: `dr` deep-research, `ar` plan-arch-review,
+   `er` plan-eng-review, `dc` plan-doc-review, `sr` security-review.
+
+   After each poll, emit the status table using the script's output:
 
 ```
 ⏳ #NNN Round N — in progress  (elapsed: Xs)
 ──────────────────────────────────────────────────────────────
-Reviewer             Status            Elapsed   Early signal
+Reviewer             Status            Early signal
 ──────────────────────────────────────────────────────────────
-deep-research        ✅ complete       1m 43s    no amendments
-plan-arch-review     ⏳ running        2m 01s    1 issue found
-plan-eng-review      ⏳ running        2m 01s    —
-plan-doc-review      🔵 queued         —         —
-security-review      — skipped         —         —
+<poll-round.sh output here>
 ──────────────────────────────────────────────────────────────
 ```
 
-   Status values:
-   - `🔵 queued`     — agent launched but no output yet
-   - `⏳ running`    — agent has produced partial output (output file exists or partial TaskOutput)
-   - `✅ complete`   — TaskOutput returned final result
-   - `— skipped`    — reviewer was triaged out
-   - `⚠️ truncated` — agent hit context limit; partial output saved, main session will note gaps
-
-   Early signal: if the agent's output file (`todo/review/<slug>/round-N-<reviewer>.md`) already
-   exists and contains partial content, read its last few lines to extract an early signal —
-   e.g. "3 issues found so far", "writing ADR", "no amendments". Show this in the table.
-
-   c. Repeat until all agents are `complete`, `skipped`, or `truncated`. Wait **3 minutes**
-      between polls — do not emit a new table on every TaskOutput call. Each status table
-      emitted adds tokens to the main session; polling every few seconds over a 10-minute
-      review produces dozens of redundant tables. Poll, render table, wait 3 minutes, repeat.
+   Wait **3 minutes** between polls. Do not call the script more frequently — each status
+   table emitted costs tokens. Poll → render table → sleep 180 → repeat.
 
    **Handling truncated agents:** if an agent's TaskOutput indicates a context/timeout error,
    or its output file ends mid-section without a `## Status` line:
