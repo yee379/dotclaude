@@ -5,6 +5,7 @@ backups/
 cache/
 debug/
 history.jsonl
+observations.jsonl
 plans/
 plugins/
 projects/
