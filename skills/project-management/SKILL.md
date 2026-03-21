@@ -58,6 +58,7 @@ The index groups items by priority tier and shows status, branch, and PR at a gl
 - 🔎 In Review — full-review board is actively running
 - 🔍 Reviewed — plan approved by full-review board, ready to implement
 - 🔄 In Progress — active development
+- 🏁 Implementation Done — code complete, PR not yet raised
 - 👀 PR Open — PR raised, awaiting code review and merge
 - ✅ Merged — merged to main, not yet deployed
 - 🚀 Deployed — live in production
@@ -303,8 +304,8 @@ complex enough to warrant a linked deep-dive.
 ### Opening a PR
 
 1. Update the task file:
-   - Set `**PR:**` to the PR number/URL
-   - Set `**Status:**` to `👀 PR Open`
+   - Set `**Status:**` to `🏁 Implementation Done` when all checklist items are ticked
+   - Set `**Status:**` to `👀 PR Open` and `**PR:**` to the PR number/URL once the PR is raised
 2. Update `TODO.md` — status and PR column
 3. Reference the task file in the PR description:
 
@@ -459,6 +460,7 @@ includes design decisions, problems encountered, and trade-offs.
 | full-review passes (CLEAR TO BUILD / CLEAR WITH WARNINGS) | Status → 🔍 Reviewed; board review summary merged into task file; `todo/review/<slug>/` deleted |
 | full-review blocked or unstable | Status → ⬜ Open (revert); board review summary merged into task file; `todo/review/<slug>/` deleted; blocking issues noted in Problems & Solutions |
 | Implementation starts (branch created) | Status → 🔄 In Progress in task file and TODO.md, Branch → `feat/<slug>` |
+| Implementation complete (all checklist items ticked) | Status → 🏁 Implementation Done in task file and TODO.md |
 | PR opened | Status → 👀 PR Open, PR → `#<number>` |
 | PR merged | Status → ✅ Merged, note shipped date in task file |
 | prod-release completes | Status → 🚀 Deployed |

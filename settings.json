@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'f=$(echo \"$CLAUDE_TOOL_RESULT\" | jq -r \".filePath // empty\" 2>/dev/null); [[ \"$f\" == */.claude/skills/*/SKILL.md ]] && printf \"{\\\"tool\\\":\\\"Read\\\",\\\"path\\\":\\\"%s\\\",\\\"timestamp\\\":\\\"%s\\\"}\\n\" \"$f\" \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" >> ~/.claude/observations.jsonl || true'"
+            "command": "bash -c 'input=$(cat); f=$(echo \"$input\" | jq -r \".tool_input.file_path // empty\" 2>/dev/null); [[ \"$f\" == */.claude/skills/*/SKILL.md ]] && printf \"{\\\"tool\\\":\\\"Read\\\",\\\"path\\\":\\\"%s\\\",\\\"timestamp\\\":\\\"%s\\\"}\\n\" \"$f\" \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" >> ~/.claude/observations.jsonl || true'"
           }
         ]
       }
