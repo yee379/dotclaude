@@ -13,20 +13,22 @@ ROUND="$2"
 shift 2
 REVIEWERS=("$@")
 
-# Suffix map: short code → display name
-declare -A NAME=(
-  [dr]="deep-research   "
-  [ar]="plan-arch-review"
-  [er]="plan-eng-review "
-  [dc]="plan-doc-review "
-  [sr]="security-review "
-)
+code_to_name() {
+  case "$1" in
+    dr) echo "deep-research   " ;;
+    ar) echo "plan-arch-review" ;;
+    er) echo "plan-eng-review " ;;
+    dc) echo "plan-doc-review " ;;
+    sr) echo "security-review " ;;
+    *)  echo "$1             " ;;
+  esac
+}
 
 all_done=true
 
 for code in "${REVIEWERS[@]}"; do
   file="$REVIEW_DIR/round-${ROUND}-${code}.md"
-  display="${NAME[$code]:-$code}"
+  display=$(code_to_name "$code")
 
   if [[ ! -f "$file" ]]; then
     echo "  🔵 queued      $display  —"
