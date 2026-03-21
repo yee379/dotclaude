@@ -1,6 +1,6 @@
 ---
 name: todo-scout
-description: Proactive backlog generation — reads the codebase, existing TODOs, and project goals to surface prioritised improvement candidates across quality, tech debt, features, security, and production-readiness. Presents candidates for user acceptance, then writes accepted items into todo/ and TODO.md. Use when asked to "find what to work on", "scout for improvements", "what should we do next", "find tech debt", or "build the backlog".
+description: Proactive backlog generation — reads the codebase, existing TODOs, and project goals to surface prioritised improvement candidates across quality, tech debt, features, security, and production-readiness. Presents candidates for user acceptance, then writes accepted items into todo/ and TODO.md. Use when asked to "find what to work on", "scout for improvements", "what should we do next", "find tech debt", "build the backlog", or "what features should we add".
 license: MIT
 compatibility: opencode
 ---
@@ -46,22 +46,26 @@ the backlog that `/project-management` tracks.
 
 ## Lenses
 
-The scout examines the codebase through **six lenses**. Each lens has a different question and
-produces different types of candidates. Run all lenses unless the user narrows scope.
+The scout examines the project through **seven lenses**. Lenses 1–6 are inward-facing: they
+read the codebase and surface problems that already exist. Lens 7 is outward-facing: it
+researches the broader ecosystem and surfaces features worth building. Run lenses 1–6 by
+default; Lens 7 is **opt-in** because it is slower and more speculative.
 
 ```
-LENS                QUESTION
-────────────────────────────────────────────────────────────────────
-1. Code quality     Where is the code fragile, duplicated, or hard to change?
-2. Tech debt        What shortcuts are compounding? What will hurt in 6 months?
-3. Production       What would fail at 3am? What's missing for prod-readiness?
-4. Security         What attack surfaces, secret leaks, or auth gaps exist?
-5. Features         What's obviously missing that users/operators would want?
-6. Developer XP     What slows down working in this codebase day-to-day?
-────────────────────────────────────────────────────────────────────
+LENS                      DEFAULT   QUESTION
+──────────────────────────────────────────────────────────────────────────
+1. Code quality           ✅ on     Where is the code fragile, duplicated, or hard to change?
+2. Tech debt              ✅ on     What shortcuts are compounding? What will hurt in 6 months?
+3. Production             ✅ on     What would fail at 3am? What's missing for prod-readiness?
+4. Security               ✅ on     What attack surfaces, secret leaks, or auth gaps exist?
+5. Features               ✅ on     What's obviously missing that users/operators would want?
+6. Developer XP           ✅ on     What slows down working in this codebase day-to-day?
+7. Market & ecosystem     ⬜ opt-in What do comparable projects do that this one doesn't?
+──────────────────────────────────────────────────────────────────────────
 ```
 
 The user can scope to one or more lenses: `/todo-scout security` or `/todo-scout debt quality`.
+Lens 7 is activated with `--market`, `--features-deep`, or by naming it explicitly.
 
 ---
 
@@ -73,7 +77,8 @@ Before exploring, answer these questions:
    already open or in progress. Note the next available task number.
 
 2. **Read `CLAUDE.md`, `README.md`, `ARCHITECTURE.md`** (if they exist) — understand the
-   project's stated goals, tech stack, and conventions.
+   project's stated goals, tech stack, domain, and target users. This context is especially
+   important for Lens 7 — knowing what the project *is* determines what comparators to research.
 
 3. **Scan the git log** for recent activity:
    ```bash
@@ -93,7 +98,7 @@ Before exploring, answer these questions:
 Launch one subagent per active lens, all in parallel (`run_in_background: true`). Each subagent
 explores the codebase for its specific lens and writes findings to a shared scratch file.
 
-Each subagent receives a prompt of this shape:
+**Lenses 1–6** use this codebase-reading subagent prompt:
 
 ```
 You are a [LENS NAME] scout subagent.
@@ -200,16 +205,90 @@ Return your findings as a structured list.
 
 ---
 
+### Lens 7 — Market & ecosystem (opt-in)
+
+**This lens is different from Lenses 1–6.** It looks *outward* — at comparable projects,
+competitor features, ecosystem trends, and user demand patterns — then cross-references
+inward against the codebase to filter out anything already built. It runs a web research
+subagent rather than a codebase-reading one.
+
+**When to use:** Quarterly "where should this project go?" sessions, pre-roadmap planning,
+when the inward lenses are clean but you want to find the next meaningful feature bets.
+Not suited to sprint-level scouting.
+
+**Subagent prompt for Lens 7:**
+
+```
+You are a market & ecosystem scout subagent for a software project.
+
+Your job: research the broader landscape for this project and surface concrete
+feature or capability gaps — things comparable projects or tools do that this
+one does not, that would be genuinely valuable to users.
+
+Project summary (from README/ARCHITECTURE):
+<paste project description, domain, tech stack, target users>
+
+Already tracked in TODO.md (do not re-suggest):
+<paste existing open items — titles only>
+
+Research approach:
+1. Identify 3-5 directly comparable projects, tools, or products in this domain.
+   For each, use WebSearch + WebFetch to find:
+   - Their feature list / changelog / roadmap
+   - User reviews, GitHub issues, community discussions praising specific features
+   - Recent additions that got strong positive reception
+2. Search for: "[domain] most requested features", "[domain] user pain points",
+   "[tool name] alternatives", "what [tool name] is missing"
+3. Check ecosystem trends: are there patterns in adjacent tools that haven't
+   reached this domain yet?
+4. Cross-reference each candidate against the project summary — discard anything
+   that is clearly already built, out of scope, or architecturally incompatible.
+
+Write findings incrementally to: todo/scout/<run-slug>/market.md
+Write one candidate entry at a time as you find them — do not wait until the end.
+
+Candidate entry format:
+### Candidate: <short title>
+- **Lens:** Market & ecosystem
+- **Priority signal:** P1 | P2 | P3  (P0 is rarely appropriate for market-driven features)
+- **Evidence:** What comparable project has this? Where is user demand documented?
+  (include URL)
+- **Problem:** One sentence — what users cannot do today with this project.
+- **Why it matters:** One sentence — what user need this addresses, grounded in evidence.
+- **Suggested approach:** One sentence — rough direction for implementation.
+- **Effort:** small (half-day) | medium (1-2d) | large (week+) | XL (multi-week)
+- **Already built?** Confirm you checked the project summary — this feature does NOT exist.
+- **Dependencies:** Any other items this depends on or enables.
+
+Aim for 4-8 high-signal candidates grounded in real evidence.
+Every candidate must have a source URL. Do not suggest things without evidence of demand.
+Do NOT suggest things already in TODO.md or clearly present in the project summary.
+```
+
+**Grounding rule:** Every Lens 7 candidate must include a source URL as evidence. Candidates
+without evidence are dropped at consolidation. "It would be nice" is not sufficient — there
+must be a traceable signal (competitor feature, GitHub issue, community post, changelog entry)
+that the feature has real demand.
+
+---
+
 ## Step 2: Poll and collect
 
 Poll all subagents until complete. Show a simple progress line while waiting:
 
 ```
-🔍 Scouting...  quality ✅  debt ⏳  production ⏳  security 🔵  features ✅  devxp 🔵
+🔍 Scouting...  quality ✅  debt ⏳  production ⏳  security 🔵  features ✅  devxp 🔵  market ⏳
 ```
+
+(Market column only shown when Lens 7 is active.)
 
 Once all complete, read each `todo/scout/<run-slug>/<lens-slug>.md` file and consolidate
 all candidates into a single ranked list.
+
+**Lens 7 post-processing:** before mixing market candidates into the ranked list, run a
+quick codebase cross-check on each one — glob and grep for obvious implementations of the
+suggested feature. Drop any candidate where the feature already clearly exists. Mark
+retained candidates with `[market-verified]` to indicate the cross-check passed.
 
 ---
 
@@ -349,14 +428,21 @@ After writing items, always suggest what to do next based on what was found:
 ## Invocation variants
 
 ```
-/todo-scout                   — all lenses, full codebase
-/todo-scout security          — security lens only
-/todo-scout debt quality      — two lenses
-/todo-scout --quick           — surface only P0/P1 candidates, skip P2/P3
-/todo-scout --area src/api    — scope exploration to a subdirectory
+/todo-scout                        — lenses 1–6, full codebase
+/todo-scout security               — security lens only
+/todo-scout debt quality           — two lenses
+/todo-scout --market               — lenses 1–6 plus Lens 7 (market & ecosystem)
+/todo-scout --market-only          — Lens 7 only, skip codebase lenses
+/todo-scout --quick                — surface only P0/P1 candidates, skip P2/P3
+/todo-scout --area src/api         — scope codebase lenses to a subdirectory
 ```
 
-When `--quick` is passed: skip Lens 5 (features) and Lens 6 (devxp), focus on P0/P1 signals
-only, cap at 5 candidates.
+When `--market` or `--market-only` is passed: activate Lens 7 in parallel with other active
+lenses. Announce to the user that it will take longer due to web research.
 
-When `--area` is passed: restrict glob patterns to the specified path.
+When `--quick` is passed: skip Lens 5 (features) and Lens 6 (devxp), focus on P0/P1 signals
+only, cap at 5 candidates. Lens 7 is not compatible with `--quick` — market research is
+inherently P2/P3 territory.
+
+When `--area` is passed: restrict glob patterns for codebase lenses to the specified path.
+Lens 7 is unaffected by `--area`.
