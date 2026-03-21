@@ -341,13 +341,43 @@ security-review      — skipped         —         —
       update the plan file to reflect the user's choice, and note the decision in the reviewer's
       output file.
 
+      Format each blocking decision visibly so it stands out:
+
+      ```
+      🛑 DECISION REQUIRED — <reviewer name>
+      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      ❓ <the question>
+
+      Options:
+        A) ...
+        B) ...
+
+      ⚠️  The review cannot proceed until this is answered.
+      ```
+
    b. **`judgement-call` decisions** — present all of them together in a single numbered list
       after blocking decisions are resolved. Ask the user to confirm, override, or accept the
       defaults. One confirmation call covers all judgement-calls in a round.
 
-   c. **`defaulted` decisions** — list them in a collapsed summary ("Reviewer defaulted on N
-      minor decisions — see `todo/review/<slug>/round-N-<reviewer>.md` for details"). No
-      user action required unless they want to override.
+      Format the judgement-call group visibly:
+
+      ```
+      🤔 JUDGEMENT CALLS — please confirm or override  (<N> decisions)
+      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      1. [<reviewer>] <question> → defaulted to: <assumed>
+      2. [<reviewer>] <question> → defaulted to: <assumed>
+      ...
+
+      Reply "ok" to accept all defaults, or specify overrides by number.
+      ```
+
+   c. **`defaulted` decisions** — list them in a collapsed summary:
+
+      ```
+      ℹ️  <N> minor defaults taken — see reviewer output files for details.
+      ```
+
+      No user action required unless they want to override.
 
    Only after all blocking decisions are answered and judgement-calls are confirmed, proceed to
    the round dashboard.
