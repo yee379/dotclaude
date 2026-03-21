@@ -141,7 +141,8 @@ single message. This gives each reviewer a clean, focused context window and tru
 
 Run up to **3 rounds**. In each round:
 
-1. Announce: "Starting Round N — launching board subagents in parallel."
+1. Announce: "#NNN — Starting Round N — launching board subagents in parallel."
+   (where NNN is the zero-padded TODO number, e.g. `#027 — Starting Round 1`)
 
 2. Create the output directory: `todo/review/<slug>/` (where `<slug>` is the task file name
    without extension, e.g. `027-my-feature`).
@@ -279,7 +280,7 @@ Reviewer roles:
       real time:
 
 ```
-⏳ Round N — in progress  (elapsed: Xs)
+⏳ #NNN Round N — in progress  (elapsed: Xs)
 ──────────────────────────────────────────────────────────────
 Reviewer             Status            Elapsed   Early signal
 ──────────────────────────────────────────────────────────────
@@ -352,7 +353,7 @@ security-review      — skipped         —         —
 7. Show the round dashboard:
 
 ```
-Round N complete
+#NNN Round N complete
 ──────────────────────────────────────────────────────────────────
 deep-research        ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
 plan-arch-review     ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
@@ -387,7 +388,7 @@ Plan amended this round: YES → starting Round N+1 | NO → board complete
 After the board completes (or is halted), produce the final summary:
 
 ```
-FULL REVIEW — FINAL SUMMARY
+FULL REVIEW — FINAL SUMMARY  #NNN Round N
 ============================================================
 Plan:    {plan file or description}
 Branch:  {branch}
