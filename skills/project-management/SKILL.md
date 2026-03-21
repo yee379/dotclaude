@@ -40,12 +40,15 @@ The index groups items by priority tier and shows status, branch, and PR at a gl
 
 | #   | Title                         | Priority   | Status          | Branch                 | PR   |
 |-----|-------------------------------|------------|-----------------|------------------------|------|
-| 001 | User authentication           | 🔴 P0      | ✅ Done         | feat/user-auth         | #42  |
-| 002 | Photo upload                  | 🟠 P1      | 🔄 In Progress  | feat/photo-upload      | #51  |
-| 003 | Billing integration           | 🟡 P2      | ⬜ Open         | —                      | —    |
-| 004 | Search refactor               | 🔵 P3      | ⬜ Open         | —                      | —    |
+| [001](todo/001-user-authentication.md) | User authentication | 🔴 P0 | ✅ Done | feat/user-auth | #42  |
+| [002](todo/002-photo-upload.md) | Photo upload        | 🟠 P1 | 🔄 In Progress | feat/photo-upload | #51 |
+| [003](todo/003-billing-integration.md) | Billing integration | 🟡 P2 | ⬜ Open | —             | —    |
+| [004](todo/004-search-refactor.md) | Search refactor     | 🔵 P3 | ⬜ Open         | —              | —    |
 
 **Summary:** 1 done · 1 in progress · 2 open
+
+> The `#` column must always be a markdown link to the task file:
+> `[001](todo/001-slug.md)` — never a bare number.
 
 ## Priority Key
 - 🔴 P0 Critical — blocking, do immediately
