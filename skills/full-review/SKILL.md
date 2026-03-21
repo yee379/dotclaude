@@ -286,16 +286,14 @@ Reviewer roles:
    any are still running. Reviewer codes: `dr` deep-research, `ar` plan-arch-review,
    `er` plan-eng-review, `dc` plan-doc-review, `sr` security-review.
 
-   After each poll, emit the status table using the script's output:
+   After each poll, emit the status table as plain text (not a code block):
 
-```
-⏳ #NNN Round N — in progress  (elapsed: Xs)
-──────────────────────────────────────────────────────────────
-Reviewer             Status            Early signal
-──────────────────────────────────────────────────────────────
-<poll-round.sh output here>
-──────────────────────────────────────────────────────────────
-```
+   ⏳ #NNN Round N — in progress  (elapsed: Xs)
+   ──────────────────────────────────────────────────────────────
+   Reviewer             Status            Early signal
+   ──────────────────────────────────────────────────────────────
+   <poll-round.sh output here>
+   ──────────────────────────────────────────────────────────────
 
    Wait **3 minutes** between polls. Do not call the script more frequently — each status
    table emitted costs tokens. Poll → render table → sleep 180 → repeat.
@@ -382,20 +380,18 @@ Reviewer             Status            Early signal
    Only after all blocking decisions are answered and judgement-calls are confirmed, proceed to
    the round dashboard.
 
-7. Show the round dashboard:
+7. Show the round dashboard as plain text (not a code block):
 
-```
-#NNN Round N complete
-──────────────────────────────────────────────────────────────────
-deep-research        ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
-plan-arch-review     ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
-plan-eng-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
-plan-doc-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
-security-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
-──────────────────────────────────────────────────────────────────
-Decisions resolved this round: N blocking / N judgement-call / N defaulted
-Plan amended this round: YES → starting Round N+1 | NO → board complete
-```
+   #NNN Round N complete
+   ──────────────────────────────────────────────────────────────────
+   deep-research        ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
+   plan-arch-review     ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
+   plan-eng-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
+   plan-doc-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
+   security-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
+   ──────────────────────────────────────────────────────────────────
+   Decisions resolved this round: N blocking / N judgement-call / N defaulted
+   Plan amended this round: YES → starting Round N+1 | NO → board complete
 
 `✂️ TRUNC` — agent hit context limit; note which sections were reached vs missed.
 
@@ -417,34 +413,32 @@ Plan amended this round: YES → starting Round N+1 | NO → board complete
 
 ## Step 3: Final summary
 
-After the board completes (or is halted), produce the final summary:
+After the board completes (or is halted), produce the final summary as plain text (not a code block):
 
-```
-FULL REVIEW — FINAL SUMMARY  #NNN Round N
-============================================================
-Plan:    {plan file or description}
-Branch:  {branch}
-Date:    {date}
-Rounds:  {N completed}
-------------------------------------------------------------
-deep-research        {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
-plan-arch-review     {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
-plan-eng-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
-plan-doc-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
-security-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
-------------------------------------------------------------
-ADRs written:          {N}  (in docs/adr/)
-Test plan written:     {Y/N}  (in todo/ task file)
-Doc gaps added:        {N}
-Accepted warnings:     {N}
-Blocking issues:       {N}
-------------------------------------------------------------
-Decisions resolved:    {N blocking} / {N judgement-call} / {N defaulted}
-Unresolved decisions:  {N}  ← non-zero means the plan has open assumptions
-------------------------------------------------------------
-VERDICT:  CLEAR TO BUILD | BLOCKED | CLEAR WITH WARNINGS | UNSTABLE
-============================================================
-```
+   FULL REVIEW — FINAL SUMMARY  #NNN Round N
+   ============================================================
+   Plan:    {plan file or description}
+   Branch:  {branch}
+   Date:    {date}
+   Rounds:  {N completed}
+   ------------------------------------------------------------
+   deep-research        {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+   plan-arch-review     {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+   plan-eng-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+   plan-doc-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+   security-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+   ------------------------------------------------------------
+   ADRs written:          {N}  (in docs/adr/)
+   Test plan written:     {Y/N}  (in todo/ task file)
+   Doc gaps added:        {N}
+   Accepted warnings:     {N}
+   Blocking issues:       {N}
+   ------------------------------------------------------------
+   Decisions resolved:    {N blocking} / {N judgement-call} / {N defaulted}
+   Unresolved decisions:  {N}  ← non-zero means the plan has open assumptions
+   ------------------------------------------------------------
+   VERDICT:  CLEAR TO BUILD | BLOCKED | CLEAR WITH WARNINGS | UNSTABLE
+   ============================================================
 
 **CLEAR TO BUILD** — all reviewers passed in the final round, no unresolved issues.
 
