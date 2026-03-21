@@ -39,7 +39,11 @@ when you're clear to build.
   │  subagent: plan-doc-review   → todo/review/<slug>/round-N-dc.md │
   │  subagent: security-review   → todo/review/<slug>/round-N-sr.md │
   │                                                                 │
-  │  main session reads all outputs, consolidates                   │
+  │  main session reads all outputs, collects Decisions Required    │
+  │                                                                 │
+  │  blocking decisions? ──────────────────── AskUserQuestion (×N) │
+  │  judgement-calls?   ──────────────────── AskUserQuestion (×1) │
+  │  defaulted?         ──────────────────── listed, no action    │
   │                                                                 │
   │  if any subagent amended the plan ──────────────────────────────┤
   │                                                     next round  │
@@ -71,6 +75,12 @@ If no plan is found, **stop** and tell the user:
 
 If a plan is found, summarise it in 2-3 sentences so the user can confirm you've read the right
 thing before proceeding.
+
+**Immediately after confirming the plan**, update the task file and `TODO.md`:
+- Set `**Status:**` in the task file to `🔎 In Review`
+- Update `TODO.md` — flip the status column to `🔎 In Review`
+
+This marks the review as in-progress so project status is accurate throughout the board run.
 
 ---
 
@@ -142,12 +152,38 @@ Your job:
 1. Perform a thorough [REVIEWER NAME] review of this plan using the /[skill-name] skill guidelines.
 2. Write your findings incrementally to: todo/review/<slug>/round-<N>-<reviewer>.md
    - Write partial findings as you go so progress is not lost if interrupted.
-   - Structure: ## Issues, ## Amendments (changes made to the plan file), ## Status (PASS | PASS WITH WARNINGS | FAIL)
+   - Structure: ## Issues, ## Decisions Required, ## Amendments (changes made to the plan file), ## Status (PASS | PASS WITH WARNINGS | FAIL)
 3. If you identify issues that require changes to the plan, edit the plan file directly.
 4. Return a structured summary:
    - Issues found (with severity: blocking | warning)
+   - Decisions required (see below)
    - Amendments made (list any edits to the plan file)
    - Status: PASS | PASS WITH WARNINGS | FAIL
+
+IMPORTANT — you are running as a background subagent. You cannot interact with the user.
+Do NOT call AskUserQuestion. Instead, for any point where you would normally stop and ask
+the user to decide, write a structured entry in the ## Decisions Required section of your
+output file and continue with the best-default option, documenting your assumption explicitly.
+
+## Decisions Required format
+
+For each decision point, write:
+
+### Decision: <short title>
+- **Severity:** blocking | judgement-call | defaulted
+- **Question:** The exact question the user needs to answer.
+- **Options:** A) ... B) ... (C) ... if applicable)
+- **Assumed:** Which option you proceeded with and why.
+- **Impact if wrong:** What changes in the plan if the user picks a different option.
+
+Severity levels:
+- `blocking` — you cannot proceed or make a safe default; you have written a FAIL status
+  and stopped reviewing this section. The main session MUST get a human answer before
+  the next round.
+- `judgement-call` — you made a reasonable default but the user should consciously accept
+  it; different teams would answer differently. Does not block the round.
+- `defaulted` — you made an obvious/safe default; flagging for transparency only. User
+  does not need to respond unless they disagree.
 ```
 
 Reviewer roles:
@@ -198,20 +234,42 @@ security-review      — skipped         —         —
 5. Once all agents are complete, read each `todo/review/<slug>/round-N-<reviewer>.md` file in
    full and consolidate results. For each reviewer record:
    - Issues found
+   - Decisions required (see below)
    - Amendments made to the plan
    - Status: PASS | PASS WITH WARNINGS | FAIL
 
-6. Show the round dashboard:
+6. **Surface decisions before the round dashboard.** If any reviewer wrote `## Decisions Required`
+   entries, present them to the user now — before showing the round dashboard or deciding whether
+   to iterate. Group by severity:
+
+   a. **`blocking` decisions first** — one `AskUserQuestion` per decision. Do not batch. Do not
+      proceed to the round dashboard until all blocking decisions are answered. After each answer,
+      update the plan file to reflect the user's choice, and note the decision in the reviewer's
+      output file.
+
+   b. **`judgement-call` decisions** — present all of them together in a single numbered list
+      after blocking decisions are resolved. Ask the user to confirm, override, or accept the
+      defaults. One confirmation call covers all judgement-calls in a round.
+
+   c. **`defaulted` decisions** — list them in a collapsed summary ("Reviewer defaulted on N
+      minor decisions — see `todo/review/<slug>/round-N-<reviewer>.md` for details"). No
+      user action required unless they want to override.
+
+   Only after all blocking decisions are answered and judgement-calls are confirmed, proceed to
+   the round dashboard.
+
+7. Show the round dashboard:
 
 ```
 Round N complete
 ──────────────────────────────────────────────────────
-deep-research        ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N
-plan-arch-review     ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N
-plan-eng-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N
-plan-doc-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N
-security-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N
+deep-research        ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N   decisions: N
+plan-arch-review     ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N   decisions: N
+plan-eng-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N   decisions: N
+plan-doc-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N   decisions: N
+security-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N   decisions: N
 ──────────────────────────────────────────────────────
+Decisions resolved this round: N blocking / N judgement-call / N defaulted
 Plan amended this round: YES → starting Round N+1 | NO → board complete
 ```
 
@@ -251,6 +309,9 @@ Doc gaps added:        {N}
 Accepted warnings:     {N}
 Blocking issues:       {N}
 ------------------------------------------------------------
+Decisions resolved:    {N blocking} / {N judgement-call} / {N defaulted}
+Unresolved decisions:  {N}  ← non-zero means the plan has open assumptions
+------------------------------------------------------------
 VERDICT:  CLEAR TO BUILD | BLOCKED | CLEAR WITH WARNINGS | UNSTABLE
 ============================================================
 ```
@@ -287,6 +348,13 @@ Then tell the user:
 > through environments."
 
 If verdict is **BLOCKED** or **UNSTABLE**:
+
+Update the task file and `TODO.md` immediately:
+- Set `**Status:**` in the task file back to `⬜ Open`
+- Update `TODO.md` — flip the status column back to `⬜ Open`
+- Add a note in the task file's Problems & Solutions section describing what blocked the review and which issues must be resolved
+
+Then tell the user:
 
 > "Resolve the issues above, then re-run `/full-review`."
 

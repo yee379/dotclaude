@@ -55,6 +55,7 @@ The index groups items by priority tier and shows status, branch, and PR at a gl
 
 ## Status Key
 - ⬜ Open — not started
+- 🔎 In Review — full-review board is actively running
 - 🔍 Reviewed — plan approved by full-review board, ready to implement
 - 🔄 In Progress — active development
 - 👀 PR Open — PR raised, awaiting code review and merge
@@ -394,7 +395,9 @@ includes design decisions, problems encountered, and trade-offs.
 | Trigger | What to update |
 |---------|---------------|
 | New task created | Add row with priority, status ⬜, branch `—`, PR `—` |
+| full-review starts | Status → 🔎 In Review in task file and TODO.md |
 | full-review passes (CLEAR TO BUILD / CLEAR WITH WARNINGS) | Status → 🔍 Reviewed |
+| full-review blocked or unstable | Status → ⬜ Open (revert), note outcome in task file |
 | Implementation starts (branch created) | Status → 🔄 In Progress in task file and TODO.md, Branch → `feat/<slug>` |
 | PR opened | Status → 👀 PR Open, PR → `#<number>` |
 | PR merged | Status → ✅ Merged, note shipped date in task file |
