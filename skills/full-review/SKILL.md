@@ -453,9 +453,42 @@ which reviewer they belong to.
 
 If verdict is **CLEAR TO BUILD** or **CLEAR WITH WARNINGS**:
 
-Update the task file and `TODO.md` immediately:
-- Set `**Status:**` in the task file to `🔍 Reviewed`
-- Update `TODO.md` — flip the status column to `🔍 Reviewed`
+1. **Merge review artefacts into the task file.** Append a `## Board Review` section to
+   `todo/<slug>.md` with a condensed summary of the board's findings:
+
+   ```markdown
+   ## Board Review
+
+   **Verdict:** CLEAR TO BUILD | CLEAR WITH WARNINGS
+   **Date:** YYYY-MM-DD
+   **Rounds:** N
+
+   | Reviewer | Result | Amended | Key findings |
+   |---|---|---|---|
+   | deep-research | ✅ PASS | N | <one-line summary> |
+   | plan-arch-review | ✅ PASS | Y | <one-line summary> |
+   | plan-eng-review | ✅ PASS | N | <one-line summary> |
+   | plan-doc-review | ✅ PASS | N | <one-line summary> |
+   | security-review | ⚠️ WARN | N | <one-line summary> |
+
+   **Accepted warnings:** <list any warnings the user accepted, or "none">
+   **ADRs written:** <N> (in docs/adr/)
+   ```
+
+2. **Delete the review artefact directory:**
+   ```bash
+   rm -rf todo/review/<slug>/
+   ```
+
+3. **Update the task file and `TODO.md`:**
+   - Set `**Status:**` in the task file to `🔍 Reviewed`
+   - Update `TODO.md` — flip the status column to `🔍 Reviewed`
+
+4. **Commit everything together:**
+   ```bash
+   git add todo/<slug>.md TODO.md
+   git commit -m "docs(todo): merge board review into #NNN task file [full-review]"
+   ```
 
 Then tell the user:
 
@@ -470,10 +503,25 @@ Then tell the user:
 
 If verdict is **BLOCKED** or **UNSTABLE**:
 
-Update the task file and `TODO.md` immediately:
-- Set `**Status:**` in the task file back to `⬜ Open`
-- Update `TODO.md` — flip the status column back to `⬜ Open`
-- Add a note in the task file's Problems & Solutions section describing what blocked the review and which issues must be resolved
+1. **Merge review artefacts into the task file.** Append a `## Board Review` section as above,
+   but with verdict BLOCKED or UNSTABLE and a clear list of blocking issues.
+
+2. **Delete the review artefact directory:**
+   ```bash
+   rm -rf todo/review/<slug>/
+   ```
+
+3. **Update the task file and `TODO.md`:**
+   - Set `**Status:**` in the task file back to `⬜ Open`
+   - Update `TODO.md` — flip the status column back to `⬜ Open`
+   - Add a note in the task file's Problems & Solutions section describing what blocked the
+     review and which issues must be resolved before re-running.
+
+4. **Commit everything together:**
+   ```bash
+   git add todo/<slug>.md TODO.md
+   git commit -m "docs(todo): merge blocked board review into #NNN task file [full-review]"
+   ```
 
 Then tell the user:
 

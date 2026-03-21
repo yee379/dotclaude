@@ -178,6 +178,27 @@ Include a recommended answer so they can be resolved quickly.
 
 ---
 
+## Board Review
+
+> *Populated by `/full-review` after the board completes. Do not fill manually.*
+
+**Verdict:** CLEAR TO BUILD | CLEAR WITH WARNINGS | BLOCKED | UNSTABLE
+**Date:** YYYY-MM-DD
+**Rounds:** N
+
+| Reviewer | Result | Amended | Key findings |
+|---|---|---|---|
+| deep-research | — | — | — |
+| plan-arch-review | — | — | — |
+| plan-eng-review | — | — | — |
+| plan-doc-review | — | — | — |
+| security-review | — | — | — |
+
+**Accepted warnings:** none
+**ADRs written:** 0
+
+---
+
 ## Relationship to Other Tasks
 
 Which items does this depend on, unblock, or interact with?
@@ -435,8 +456,8 @@ includes design decisions, problems encountered, and trade-offs.
 |---------|---------------|
 | New task created | Add row with priority, status ⬜, branch `—`, PR `—` |
 | full-review starts | Status → 🔎 In Review in task file and TODO.md |
-| full-review passes (CLEAR TO BUILD / CLEAR WITH WARNINGS) | Status → 🔍 Reviewed |
-| full-review blocked or unstable | Status → ⬜ Open (revert), note outcome in task file |
+| full-review passes (CLEAR TO BUILD / CLEAR WITH WARNINGS) | Status → 🔍 Reviewed; board review summary merged into task file; `todo/review/<slug>/` deleted |
+| full-review blocked or unstable | Status → ⬜ Open (revert); board review summary merged into task file; `todo/review/<slug>/` deleted; blocking issues noted in Problems & Solutions |
 | Implementation starts (branch created) | Status → 🔄 In Progress in task file and TODO.md, Branch → `feat/<slug>` |
 | PR opened | Status → 👀 PR Open, PR → `#<number>` |
 | PR merged | Status → ✅ Merged, note shipped date in task file |
