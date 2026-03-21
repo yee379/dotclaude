@@ -223,16 +223,30 @@ git checkout -b feat/<slug>
 
 When asked to plan an item (or when the design section is thin):
 
-1. **Research first if needed** — if the problem involves unfamiliar technology, competing
-   approaches, or open unknowns, run `/deep-research` or `/search-first` before designing.
+1. **Read the task file first** — always start here, never from a blank slate. The problem
+   statement and goals are already written (by `/todo-scout`, manually, or from a previous
+   session). Do not re-derive them; build on what's there.
+2. **Run `/feature-plan`** to fill in the design — it will read the task file's Problem
+   Statement and Goals as its Phase 1 input, skipping the problem-identification step.
+   All output (requirements, architecture, ADRs, delivery slices) gets written back into
+   the task file's **Design** and **Implementation Plan** sections.
+3. **Research first if needed** — if the Design section is empty *and* the technology is
+   unfamiliar, run `/deep-research` or `/search-first` before calling `/feature-plan`.
    Save findings to `todo/research/<slug>/` and link from the task file's Design section.
-2. Read the problem statement carefully
-3. Explore the codebase — find every file the change touches
-4. Draft the Design and Implementation Plan sections in the task file
-5. Add Open Questions for anything that requires a decision
-6. Present the plan for approval before writing code
+4. Add Open Questions for anything that requires a decision before implementation starts.
+5. Present the plan for approval before writing code.
 
-The task file *is* the plan. Don't maintain a separate plan document unless the design is complex enough to warrant a linked deep-dive.
+**Task file origin → planning path:**
+
+| Where the task file came from | What to do |
+|-------------------------------|-----------|
+| `/todo-scout` | Problem Statement already written — run `/feature-plan` directly |
+| Added manually (thin) | Fill Problem Statement first, then run `/feature-plan` |
+| Previous session (partial design) | Resume from where the Design section left off |
+| `/feature-plan` already run | Design is complete — proceed to `/full-review` |
+
+The task file *is* the plan. Don't maintain a separate plan document unless the design is
+complex enough to warrant a linked deep-dive.
 
 ### During Development
 

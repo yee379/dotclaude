@@ -36,6 +36,30 @@ Once the plan exists, run `/full-review` to gate it through the complete review 
 
 ## Planning Workflow
 
+### Pre-flight: Check for an existing task file
+
+Before starting, check whether a task file already exists for this item:
+
+1. **If a task number was given** (e.g. "plan #007"): glob `todo/007-*.md` and read it.
+2. **If working from the current branch**: check `TODO.md` for a matching `🔄 In Progress`
+   or `⬜ Open` item and read its task file.
+3. **If no task file exists**: create one now via `/project-management` before continuing —
+   the task file is the plan's home.
+
+**If a task file already exists** (e.g. created by `/todo-scout` or added manually):
+- Use its **Problem Statement** as Phase 1 input — do not re-derive the problem from scratch.
+- Use its **Goals** as the starting point for Phase 2 requirements.
+- Check whether a **Design** section is already partially filled — if so, start from there
+  rather than a blank slate.
+- **Phase 0 research** can usually be skipped unless the Design section is empty *and* the
+  technology is unfamiliar. The scout or whoever created the file has already done the
+  problem-identification work.
+
+All output from the planning phases below should be written back into the task file's
+**Design** and **Implementation Plan** sections — not into a separate document.
+
+---
+
 ### Phase 0 — Research (if needed)
 
 Before framing the problem, check whether there are unknowns that would make the plan speculative.
