@@ -136,7 +136,22 @@ Run up to **3 rounds**. In each round:
 2. Create the output directory: `todo/review/<slug>/` (where `<slug>` is the task file name
    without extension, e.g. `027-my-feature`).
 
-3. **Launch all relevant reviewers as background subagents in a single message** using
+3. **Prepare a trimmed plan excerpt for each reviewer.** Do not paste the full task file
+   into every subagent — each reviewer only needs the sections relevant to its lens. This
+   is the single most effective way to reduce subagent context pressure.
+
+   | Reviewer | Sections to include |
+   |---|---|
+   | deep-research | Problem Statement, Goals, Design (full), Open Questions |
+   | plan-arch-review | Problem Statement, Goals, Design (full), Non-Goals, Open Questions |
+   | plan-eng-review | Problem Statement, Goals, Design (full), Implementation Plan, Implementation Checklist, Open Questions |
+   | plan-doc-review | Problem Statement, Goals, Non-Goals, Implementation Plan (step titles only) |
+   | security-review | Problem Statement, Design (full), Implementation Plan (step titles only), Open Questions |
+
+   If the task file has no Design section or it is a stub, include the full file for all
+   reviewers — there is nothing to trim.
+
+4. **Launch all relevant reviewers as background subagents in a single message** using
    `run_in_background: true`. Record each agent's task ID. Each subagent receives:
 
 ```
@@ -145,14 +160,50 @@ You are a [REVIEWER NAME] subagent in a board review.
 Your role: [one-line role description — see below]
 
 Plan file: <path to task file>
-Plan content:
-<full contents of the task file pasted here>
+Plan excerpt (sections relevant to your review):
+<trimmed plan content — see section table above>
+
+Context budget warning: you are running as a background subagent with a finite
+context window. Prioritise ruthlessly:
+- Complete your highest-value review sections first (see Priority hierarchy below)
+- Write findings in bullet points, not prose — one line per issue
+- Stop adding new findings once your output file exceeds ~800 lines
+- If you must choose between covering more ground shallowly or fewer sections
+  deeply, choose fewer sections deeply — shallow coverage adds noise, not signal
+
+Priority hierarchy (most important first — never skip these):
+- plan-arch-review: Step 0 scope assessment → service boundary diagram → ADRs
+- plan-eng-review: Step 0 scope challenge → test diagram → critical gaps
+- deep-research: assumption verification → dependency health → obsolescence
+- plan-doc-review: mandatory doc list → gaps
+- security-review: auth/authz → injection → secrets
 
 Your job:
-1. Perform a thorough [REVIEWER NAME] review of this plan using the /[skill-name] skill guidelines.
+1. Perform a thorough [REVIEWER NAME] review using the /[skill-name] skill guidelines,
+   following the priority hierarchy above.
 2. Write your findings incrementally to: todo/review/<slug>/round-<N>-<reviewer>.md
-   - Write partial findings as you go so progress is not lost if interrupted.
-   - Structure: ## Issues, ## Decisions Required, ## Amendments (changes made to the plan file), ## Status (PASS | PASS WITH WARNINGS | FAIL)
+   - Write partial findings as you go — after each section — so progress is not lost.
+   - Use this exact structure (do not add extra sections):
+
+     ## Summary
+     <3-5 bullet points — the most important findings, written last>
+
+     ## Issues
+     <one line per issue: SEVERITY | area | description>
+     e.g. blocking | auth | JWT expiry not validated on refresh endpoint
+
+     ## Decisions Required
+     <structured entries — see format below>
+
+     ## Amendments
+     <list of edits made to the plan file, one line each>
+
+     ## Status
+     PASS | PASS WITH WARNINGS | FAIL
+
+   - Write ## Summary last, after all other sections are complete.
+   - Keep each issue to one line. Save prose for the ## Decisions Required entries only.
+
 3. If you identify issues that require changes to the plan, edit the plan file directly.
 4. Return a structured summary:
    - Issues found (with severity: blocking | warning)
@@ -198,7 +249,7 @@ Reviewer roles:
 - **security-review**: Check secrets, auth, input validation, injection vectors, supply chain,
   Kubernetes workload security.
 
-4. **Poll all background agents continuously** until every one completes. After launching, enter
+5. **Poll all background agents continuously** until every one completes. After launching, enter
    a polling loop:
 
    a. Call `TaskOutput(task_id, block: false)` for each agent that has not yet completed.
@@ -223,18 +274,32 @@ security-review      — skipped         —         —
    - `⏳ running`    — agent has produced partial output (output file exists or partial TaskOutput)
    - `✅ complete`   — TaskOutput returned final result
    - `— skipped`    — reviewer was triaged out
+   - `⚠️ truncated` — agent hit context limit; partial output saved, main session will note gaps
 
    Early signal: if the agent's output file (`todo/review/<slug>/round-N-<reviewer>.md`) already
    exists and contains partial content, read its last few lines to extract an early signal —
    e.g. "3 issues found so far", "writing ADR", "no amendments". Show this in the table.
 
-   c. Repeat until all agents are `complete` or `skipped`. There is no fixed sleep between polls —
-      call TaskOutput again immediately after rendering the table.
+   c. Repeat until all agents are `complete`, `skipped`, or `truncated`. There is no fixed
+      sleep between polls — call TaskOutput again immediately after rendering the table.
 
-5. Once all agents are complete, read each `todo/review/<slug>/round-N-<reviewer>.md` file in
-   full and consolidate results. For each reviewer record:
-   - Issues found
-   - Decisions required (see below)
+   **Handling truncated agents:** if an agent's TaskOutput indicates a context/timeout error,
+   or its output file ends mid-section without a `## Status` line:
+   - Mark it `⚠️ truncated` in the table
+   - Read whatever partial output exists in its file
+   - Note in the round dashboard which sections were completed vs missed
+   - Do NOT re-run the agent automatically — present the partial findings and ask the user
+     whether to re-run that reviewer alone before proceeding
+
+6. Once all agents are complete (or truncated), read **only the ## Summary and ## Status
+   sections** of each `todo/review/<slug>/round-N-<reviewer>.md` file for consolidation.
+   Read the full ## Issues and ## Decisions Required sections only if the summary is
+   insufficient to determine severity or next action. This keeps the main session's context
+   lean across multiple rounds.
+
+   For each reviewer record:
+   - Issues found (from ## Summary bullets)
+   - Decisions required (from ## Decisions Required)
    - Amendments made to the plan
    - Status: PASS | PASS WITH WARNINGS | FAIL
 
@@ -262,23 +327,29 @@ security-review      — skipped         —         —
 
 ```
 Round N complete
-──────────────────────────────────────────────────────
-deep-research        ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N   decisions: N
-plan-arch-review     ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N   decisions: N
-plan-eng-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N   decisions: N
-plan-doc-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N   decisions: N
-security-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP   amended: Y/N   decisions: N
-──────────────────────────────────────────────────────
+──────────────────────────────────────────────────────────────────
+deep-research        ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
+plan-arch-review     ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
+plan-eng-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
+plan-doc-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
+security-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
+──────────────────────────────────────────────────────────────────
 Decisions resolved this round: N blocking / N judgement-call / N defaulted
 Plan amended this round: YES → starting Round N+1 | NO → board complete
 ```
 
+`✂️ TRUNC` — agent hit context limit; note which sections were reached vs missed.
+
 8. **Decide whether to iterate — automatically, no prompt needed:**
-   - If **any reviewer amended the plan** this round → immediately start the next round (all
-     reviewers re-review the updated plan, including ones that passed)
+   - If **any reviewer amended the plan** this round → start the next round. In Round 2+,
+     only re-run reviewers that either **amended the plan** or **were truncated** in the
+     previous round — reviewers that passed cleanly do not need to re-review unless the
+     amendments touch their domain. State which reviewers are being skipped and why.
    - If **no reviewer amended the plan** this round → board is complete, proceed to summary
    - If any reviewer has status **FAIL** (unresolved blocking issues) → **stop**. Do not start
      another round. Tell the user which issues must be resolved before continuing.
+   - If any reviewer is **truncated** → ask the user whether to re-run it alone before
+     deciding on the round outcome. A truncated reviewer is not a pass.
 
 9. If **Round 3 completes with amendments still happening**: stop. Tell the user the plan has
    not stabilised after 3 rounds and list the outstanding changes still being triggered.
