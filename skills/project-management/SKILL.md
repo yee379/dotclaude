@@ -441,6 +441,7 @@ When asked "what are we working on?" or "show me project status", always read `T
 
 | Skill | How it integrates |
 |-------|------------------|
+| `/todo-scout` | Run to proactively generate backlog candidates; writes task files directly into `todo/` |
 | `/feature-plan` | Run first; paste or link the output into the task file's **Design** section |
 | `/full-review` | Run the review pipeline against the design before starting implementation |
 | `/deep-research` | Research findings saved to `todo/research/<slug>/`; linked from task file |
