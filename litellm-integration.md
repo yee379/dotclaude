@@ -31,15 +31,24 @@ Everything lives in settings.json. Only `env -u` needed at launch.
 **settings.json:**
 ```json
 {
-  "model": "copilot-claude-sonnet-4.5",
+  "model": "copilot-claude-sonnet-4.6",
+  "apiKeyHelper": "cat ~/.claude/.token",
   "env": {
     "ANTHROPIC_BASE_URL": "https://sdf-llm.slac.stanford.edu",
-    "ANTHROPIC_API_KEY": "<jwt from ~/.claude/.token>",
+    "ANTHROPIC_SMALL_FAST_MODEL": "copilot-claude-haiku-4.5",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "copilot-claude-haiku-4.5",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "copilot-claude-sonnet-4.6",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "copilot-claude-opus-4.6",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
-    "NO_PROXY": "sdf-llm.slac.stanford.edu"
+    "NO_PROXY": "sdf-llm.slac.stanford.edu,localhost,127.0.0.1",
+    "npm_config_proxy": ""
   }
 }
 ```
+
+> ⚠️ **No `//` comments inside the `env` object!** JSONC comments inside
+> `env` silently break `apiKeyHelper` (and the entire auth flow). See
+> Finding 10 below.
 
 `model` is a top-level settings key (not inside `env`). This is cleaner than
 `ANTHROPIC_MODEL` in the `env` block — both work, but `model` is the proper
@@ -58,10 +67,10 @@ Claude Code setting. It sets the default but does **not** prevent switching —
 claude
 ```
 
-⚠️ The JWT in settings.json expires (~12h). Must be refreshed manually or
-via `apiKeyHelper` (see §5 — not yet tested). Do NOT add
-`ANTHROPIC_AUTH_TOKEN` to settings.json — an empty string causes hangs
-(see Finding 2), and there's no advantage over `ANTHROPIC_API_KEY` here.
+`apiKeyHelper` reads a fresh JWT from `~/.claude/.token` on each
+invocation, so the 12h token expiry is handled automatically — just
+refresh the token file via the Dex device flow when it expires.
+`ANTHROPIC_AUTH_TOKEN` is no longer needed in settings.json (see §5).
 
 #### Option B: Minimal settings.json + shell ENV
 
@@ -183,6 +192,25 @@ items 3–9 are additional observations.
    + `ANTHROPIC_MODEL` + `DISABLE_TRAFFIC` all in settings.json `env`,
    no shell ENV at all (only `env -u` for proxy vars) — PASS.
 
+10. **JSONC comments (`//`) inside the `env` object silently break auth
+    (2026-03-22, v2.1.79).** Having even a single `//` comment line inside
+    the `"env"` object causes `apiKeyHelper` to be completely ignored —
+    `claude auth status` reports `"authMethod": "none"`, and the CLI shows
+    "Not logged in · Please run /login" (Zed Agent shows "Authentication
+    required"). The JSONC parser handles comments correctly elsewhere in
+    settings.json (hooks, permissions, etc.), but the `env` block
+    validation silently rejects the entire block when comments are present.
+    **No error is logged** — not even with `--debug-file`. The only
+    symptom is auth failure.
+    **Fix:** Remove all `//` comments from the `env` object. Commented-out
+    env vars should be deleted entirely or moved to external notes.
+    **Diagnosis:**
+    ```bash
+    claude auth status
+    # Broken:   "authMethod": "none"
+    # Expected: "authMethod": "api_key_helper"
+    ```
+
 ---
 
 ## 1. LiteLLM Service
@@ -298,6 +326,90 @@ box without requiring `--model` or `ANTHROPIC_MODEL`.
 
 Ideally, also map other standard Anthropic IDs that Claude Code may use
 in future versions (e.g., `claude-opus-4-20250514`, `claude-haiku-4-20250414`).
+
+### Internal model routing env vars (v2.1.79)
+
+Claude Code uses **multiple internal model slots** beyond the main
+conversation model. Each slot defaults to a standard Anthropic model ID
+that is **not mapped on sdf-llm** — causing silent 400 errors for
+WebFetch preflight, prompt hooks, `/model sonnet` shortcuts, and
+subagent spawns.
+
+#### Env var → default → sdf-llm override
+
+| Env var | Internal function | Default (firstParty) | sdf-llm override |
+|---------|-------------------|----------------------|------------------|
+| `ANTHROPIC_SMALL_FAST_MODEL` | `getSmallFastModel()` — WebFetch preflight, tool search, prompt hooks | `claude-haiku-4-5-20251001` (falls through to haiku default) | `copilot-claude-haiku-4.5` |
+| `ANTHROPIC_DEFAULT_HAIKU_MODEL` | `getDefaultHaikuModel()` — resolves `/model haiku`, prompt hook `model: "haiku"` | `claude-haiku-4-5-20251001` | `copilot-claude-haiku-4.5` |
+| `ANTHROPIC_DEFAULT_SONNET_MODEL` | `getDefaultSonnetModel()` — resolves `/model sonnet`, subagent alias `"sonnet"` | `claude-sonnet-4-6` | `copilot-claude-sonnet-4.6` |
+| `ANTHROPIC_DEFAULT_OPUS_MODEL` | `getDefaultOpusModel()` — resolves `/model opus`, subagent alias `"opus"` | `claude-opus-4-6` | `copilot-claude-opus-4.6` |
+| `ANTHROPIC_MODEL` | Direct env override for the main loop model | Falls to `getDefaultMainLoopModel()` → Sonnet | Not needed — use top-level `model` key instead |
+| `CLAUDE_CODE_SUBAGENT_MODEL` | Subagent model override | `"inherit"` (uses main model) | Not needed — inherits `model` |
+
+#### How the defaults chain
+
+```
+getSmallFastModel()
+  └─ ANTHROPIC_SMALL_FAST_MODEL || getDefaultHaikuModel()
+                                      └─ ANTHROPIC_DEFAULT_HAIKU_MODEL || "claude-haiku-4-5-20251001"
+
+getDefaultSonnetModel()
+  └─ ANTHROPIC_DEFAULT_SONNET_MODEL || "claude-sonnet-4-6" (firstParty)
+
+getDefaultOpusModel()
+  └─ ANTHROPIC_DEFAULT_OPUS_MODEL || "claude-opus-4-6"
+
+getDefaultMainLoopModel()
+  └─ Max/Team subscribers → getDefaultOpusModel()
+     Everyone else        → getDefaultSonnetModel()
+```
+
+#### Which to set in settings.json `env`
+
+**Required:**
+
+| Env var | Value | Why |
+|---------|-------|-----|
+| `ANTHROPIC_SMALL_FAST_MODEL` | `copilot-claude-haiku-4.5` | Without this, WebFetch preflight, tool search, and prompt hooks send `claude-haiku-4-5-20251001` → 400 |
+
+**Recommended** (makes `/model` shortcuts and skill `model:` overrides work):
+
+| Env var | Value | Why |
+|---------|-------|-----|
+| `ANTHROPIC_DEFAULT_HAIKU_MODEL` | `copilot-claude-haiku-4.5` | `/model haiku` and skill hooks with `model: "haiku"` |
+| `ANTHROPIC_DEFAULT_SONNET_MODEL` | `copilot-claude-sonnet-4.6` | `/model sonnet` and skill hooks with `model: "sonnet"` |
+| `ANTHROPIC_DEFAULT_OPUS_MODEL` | `copilot-claude-opus-4.6` | `/model opus` and skill hooks with `model: "opus"` |
+
+**Not needed:**
+
+| Env var | Why not |
+|---------|---------|
+| `ANTHROPIC_MODEL` | Top-level `model` key in settings.json is preferred and already set |
+| `CLAUDE_CODE_SUBAGENT_MODEL` | Defaults to `"inherit"` — uses main model, which is already a `copilot-claude-*` alias |
+
+#### Standard Anthropic IDs used internally (v2.1.79)
+
+These are the model IDs Claude Code sends to the API when no override
+env var is set. All fail on sdf-llm with 400:
+
+| Slot | Standard Anthropic ID | sdf-llm status |
+|------|-----------------------|---------------|
+| Haiku default | `claude-haiku-4-5-20251001` | ❌ 400 |
+| Sonnet default | `claude-sonnet-4-6` | ❌ 400 |
+| Opus default | `claude-opus-4-6` | ❌ 400 |
+
+If the sdf-llm admin adds aliases for these standard IDs, the override
+env vars become unnecessary.
+
+#### Verified: `/model` shortcuts after overrides (2026-03-22)
+
+With all three `ANTHROPIC_DEFAULT_*` env vars set, the shortcuts work:
+
+| Command | Resolves to | sdf-llm |
+|---------|-------------|---------|
+| `/model haiku` | `copilot-claude-haiku-4.5` | ✅ |
+| `/model sonnet` | `copilot-claude-sonnet-4.6` | ✅ |
+| `/model opus` | `copilot-claude-opus-4.6` | ✅ |
 
 ---
 
@@ -618,8 +730,14 @@ Tested with shell ENV overrides and proxy vars unset (`env -u`):
 | `ANTHROPIC_API_KEY` | JWT token (sent as both `x-api-key` and `Authorization: Bearer`) |
 | `ANTHROPIC_AUTH_TOKEN` | Alternative auth token — can also carry the JWT. ⚠️ Do not set to `""` in settings.json |
 | `ANTHROPIC_MODEL` | Override default model name (prefer top-level `model` key in settings.json instead) |
+| `ANTHROPIC_SMALL_FAST_MODEL` | Override internal "small fast" model (WebFetch preflight, tool search, prompt hooks). Default `claude-haiku-4-5-20251001` is not mapped on sdf-llm. Set to `copilot-claude-haiku-4.5`. See §1 "Internal model routing". |
+| `ANTHROPIC_DEFAULT_HAIKU_MODEL` | Override haiku default. Resolves `/model haiku` and skill `model: "haiku"`. Set to `copilot-claude-haiku-4.5`. |
+| `ANTHROPIC_DEFAULT_SONNET_MODEL` | Override sonnet default. Resolves `/model sonnet`. Set to `copilot-claude-sonnet-4.6`. |
+| `ANTHROPIC_DEFAULT_OPUS_MODEL` | Override opus default. Resolves `/model opus`. Set to `copilot-claude-opus-4.6`. |
+| `CLAUDE_CODE_SUBAGENT_MODEL` | Override subagent model. Defaults to `"inherit"` (main model). Not needed with sdf-llm. |
 | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | Prevents calls to Anthropic's servers |
 | `NO_PROXY` | Comma-separated hostnames to bypass proxy (preferred fix for SOCKS proxy hangs) |
+| `npm_config_proxy: ""` | Blanks out the `npm_config_proxy` env var. Zed injects this (alongside `HTTP_PROXY`) when its `"proxy"` setting is active, and the shell may also set it via `.zshrc`/`.npmrc`. Node.js HTTP libraries honour it, so a stale `socks5://…` value causes hangs. Setting it to `""` ensures it is cleared for the CLI; for Zed ACP it is belt-and-suspenders (the subprocess may die before loading settings.json if Zed's proxy is active). |
 | `ANTHROPIC_CUSTOM_HEADERS` | Custom headers to add to API requests (e.g., Host header override) |
 
 ### ✅ ANSWERED: settings.json + Shell ENV Matrix
@@ -846,22 +964,28 @@ each run and restores it afterwards.
 
 14. *(none — all key questions answered)*
 
-### apiKeyHelper (future)
+### ✅ VERIFIED: apiKeyHelper (2026-03-22)
 
 `apiKeyHelper` is a top-level settings.json key that points to a command.
 Claude Code runs it and uses its stdout as the API key. This decouples
 token management from settings.json — the token file can be refreshed
 independently without editing settings.
 
-**Simplest approach — read from token file:**
+**Verified working config:**
 
 ```json
 {
-  "model": "copilot-claude-sonnet-4.5",
+  "model": "copilot-claude-sonnet-4.6",
   "apiKeyHelper": "cat ~/.claude/.token",
   "env": {
     "ANTHROPIC_BASE_URL": "https://sdf-llm.slac.stanford.edu",
-    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+    "ANTHROPIC_SMALL_FAST_MODEL": "copilot-claude-haiku-4.5",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "copilot-claude-haiku-4.5",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "copilot-claude-sonnet-4.6",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "copilot-claude-opus-4.6",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "NO_PROXY": "sdf-llm.slac.stanford.edu,localhost,127.0.0.1",
+    "npm_config_proxy": ""
   }
 }
 ```
@@ -870,11 +994,16 @@ With this config, settings.json is fully static — no JWT embedded in it.
 You refresh `~/.claude/.token` however you like (device flow, cron job,
 manual paste) and Claude Code picks it up automatically via the helper.
 
-This is cleaner than Option A (JWT in `ANTHROPIC_API_KEY`) because
-settings.json never needs editing when the token expires (~12h).
+This is cleaner than Option A's original approach (JWT in
+`ANTHROPIC_API_KEY`) because settings.json never needs editing when the
+token expires (~12h).
 
-**Status:** Not yet tested. Needs verification that Claude Code actually
-calls the helper and uses its output as the API key.
+**Status: ✅ Verified working (2026-03-22, v2.1.79).** Confirmed via
+`claude auth status` → `"authMethod": "api_key_helper"`. Works in both
+CLI and Zed Agent contexts.
+
+> ⚠️ **No `//` comments inside the `env` object!** JSONC comments inside
+> `env` silently break `apiKeyHelper` — see Finding 10.
 
 **Future enhancement — refresh token support:**
 If Dex issues refresh tokens (via `offline_access` scope — requested but

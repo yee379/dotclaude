@@ -35,16 +35,26 @@ hitting Anthropic's API directly.
 **`~/.claude/settings.json`** — fully self-contained, no patches needed:
 ```json
 {
-  "model": "copilot-claude-haiku-4.5",
+  "model": "copilot-claude-sonnet-4.6",
   "apiKeyHelper": "cat ~/.claude/.token",
   "env": {
     "ANTHROPIC_BASE_URL": "https://sdf-llm.slac.stanford.edu",
-    "ANTHROPIC_AUTH_TOKEN": "",
+    "ANTHROPIC_SMALL_FAST_MODEL": "copilot-claude-haiku-4.5",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "copilot-claude-haiku-4.5",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "copilot-claude-sonnet-4.6",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "copilot-claude-opus-4.6",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
-    "NO_PROXY": "sdf-llm.slac.stanford.edu"
+    "NO_PROXY": "sdf-llm.slac.stanford.edu,localhost,127.0.0.1",
+    "npm_config_proxy": ""
   }
 }
 ```
+
+> ⚠️ **No `//` comments inside the `env` object!** JSONC comments inside
+> `env` silently break `apiKeyHelper`. See Critical Finding below.
+>
+> `ANTHROPIC_AUTH_TOKEN: ""` is no longer needed as of v2.1.79 —
+> `apiKeyHelper` alone is sufficient to bypass the login gate.
 
 **`~/.config/zed/settings.json`** — two changes required:
 
@@ -73,7 +83,7 @@ no patches, no `launchctl`, no shell wrappers.
 > settings.json faster and has a different HTTP stack. Only `node cli.js`
 > (the ACP runtime) is affected.
 
-### Critical Finding: Zed's `"proxy"` Setting Is the Root Cause
+### Critical Finding: Zed's `"proxy"` Setting Is the Root Cause (2026-03-22)
 
 The previous investigation in `zed-claude-acp-launch-chain.md` tested
 two hypotheses for the Zed Agent failure (auth token timing, inherited
@@ -92,6 +102,48 @@ This is why:
 - `NO_PROXY` in `~/.claude/settings.json` didn't help (subprocess dies before loading it)
 - The patches' `delete_env` worked (deletes the var from `process.env` inside the node process, after Zed injected it, before subprocess spawn)
 - Commenting out `"proxy"` in Zed settings works (prevents injection entirely)
+
+---
+
+### Critical Finding: JSONC Comments in `env` Silently Break Auth (2026-03-22, v2.1.79)
+
+`//` comment lines inside the `"env"` object in `~/.claude/settings.json`
+cause `apiKeyHelper` to silently fail. The JSONC parser handles comments
+correctly elsewhere in the file (hooks, permissions, model, etc.), but
+the `env` block validation rejects the entire block when comments are
+present — **with no error, no warning, and no debug log entry**.
+
+| Symptom | Where |
+|---------|-------|
+| `Not logged in · Please run /login` | CLI (`claude -p ...`) |
+| `Authentication required` | Zed Agent panel |
+| `"authMethod": "none"` | `claude auth status` |
+| `has Authorization header: false` → `Could not resolve authentication method` | `--debug-file` log |
+
+**Reproduction** — a single `//` line inside `env` is enough:
+
+```jsonc
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://sdf-llm.slac.stanford.edu",
+    "NO_PROXY": "sdf-llm.slac.stanford.edu"
+    // "HTTP_PROXY": ""          ← THIS BREAKS apiKeyHelper
+  }
+```
+
+**Fix:** Remove all `//` comments from the `env` object. Move commented-out
+env vars into a separate note outside the JSON, or delete them entirely.
+
+**Diagnosis:**
+
+```bash
+# Quick check — if this says "none", the env block is broken:
+claude auth status
+# Expected: "authMethod": "api_key_helper"
+
+# Full debug:
+claude -p "say PASS" --debug-file /tmp/claude-debug.log 2>&1
+grep -E "auth|apiKey" /tmp/claude-debug.log
+```
 
 ---
 
@@ -407,16 +459,22 @@ the SDK harness:
 
 ```json
 {
-  "model": "copilot-claude-haiku-4.5",
+  "model": "copilot-claude-sonnet-4.6",
   "apiKeyHelper": "cat ~/.claude/.token",
   "env": {
     "ANTHROPIC_BASE_URL": "https://sdf-llm.slac.stanford.edu",
-    "ANTHROPIC_AUTH_TOKEN": "",
+    "ANTHROPIC_SMALL_FAST_MODEL": "copilot-claude-haiku-4.5",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "copilot-claude-haiku-4.5",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "copilot-claude-sonnet-4.6",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "copilot-claude-opus-4.6",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
-    "NO_PROXY": "sdf-llm.slac.stanford.edu"
+    "NO_PROXY": "sdf-llm.slac.stanford.edu,localhost,127.0.0.1",
+    "npm_config_proxy": ""
   }
 }
 ```
+
+> ⚠️ **No `//` comments inside the `env` object!** See §2 Critical Finding.
 
 This config is shared by both the CLI and the Zed Agent. The `claude`
 subprocess reads it on startup and self-configures — no env vars need to
@@ -427,13 +485,18 @@ reach it from the parent process.
 | Key | Required? | Purpose |
 |-----|-----------|---------|
 | `ANTHROPIC_BASE_URL` | ✅ Yes | Routes to sdf-llm instead of api.anthropic.com |
-| `ANTHROPIC_AUTH_TOKEN: ""` | ✅ Yes (for ACP) | Bypasses interactive login gate in headless mode (see §1.4). The empty string is intentional — it tells the binary "auth is handled, skip login". The actual API credential comes from `apiKeyHelper`. |
+| `ANTHROPIC_SMALL_FAST_MODEL` | ✅ Yes | Overrides the internal "small fast model" used by WebFetch preflight, tool search, and prompt hooks. Defaults to `claude-haiku-4-5-20251001` which is **not mapped** on sdf-llm — causes "internal haiku submodel invalid" errors. Set to `copilot-claude-haiku-4.5`. |
+| `ANTHROPIC_DEFAULT_HAIKU_MODEL` | Recommended | Resolves `/model haiku` and skill hooks with `model: "haiku"`. Defaults to `claude-haiku-4-5-20251001` (not mapped). Set to `copilot-claude-haiku-4.5`. |
+| `ANTHROPIC_DEFAULT_SONNET_MODEL` | Recommended | Resolves `/model sonnet` and subagent alias `"sonnet"`. Defaults to `claude-sonnet-4-6` (not mapped). Set to `copilot-claude-sonnet-4.6`. |
+| `ANTHROPIC_DEFAULT_OPUS_MODEL` | Recommended | Resolves `/model opus` and subagent alias `"opus"`. Defaults to `claude-opus-4-6` (not mapped). Set to `copilot-claude-opus-4.6`. |
+| `ANTHROPIC_AUTH_TOKEN: ""` | ❌ Removed | Previously required to bypass the login gate in headless ACP mode. As of v2.1.79, `apiKeyHelper` alone is sufficient. Keeping it is harmless but unnecessary. |
 | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | Recommended | Suppresses background calls to Anthropic servers (telemetry, updates). Not strictly required but good hygiene. |
 | `NO_PROXY` | Recommended | Bypasses proxy for sdf-llm, localhost, and 127.0.0.1. **Required for CLI** when shell has `ALL_PROXY`/`HTTP_PROXY` set — without it, the CLI hangs. Does NOT help the Zed ACP subprocess (dies before loading settings.json). Include all three: `sdf-llm.slac.stanford.edu,localhost,127.0.0.1`. |
+| `npm_config_proxy: ""` | Recommended | Blanks out the `npm_config_proxy` env var. Zed injects this (alongside `HTTP_PROXY`) when its `"proxy"` setting is active, and the shell may also set it via `.zshrc`/`.npmrc`. Node.js HTTP libraries honour it, so a stale `socks5://…` value causes hangs. Setting it to `""` in the `env` block ensures it is cleared for the CLI path; for the Zed ACP subprocess it is a belt-and-suspenders measure (the subprocess may die before loading settings.json if Zed's `"proxy"` is active — see §2 Critical Finding on Zed proxy). |
 | `apiKeyHelper` | ✅ Yes | Reads fresh JWT from `~/.claude/.token` on each invocation. Preferred over hardcoding `ANTHROPIC_API_KEY` because the Dex JWT expires every ~12h. |
 | `model` | ✅ Yes | Default `claude-sonnet-4-6` is not mapped on sdf-llm. Must use a `copilot-claude-*` alias. |
 
-Verified working in both CLI and Zed Agent contexts (2026-03-22).
+Verified working in both CLI and Zed Agent contexts (2026-03-22, v2.1.79).
 
 ### `~/.config/zed/settings.json`
 
@@ -538,14 +601,36 @@ Most likely cause: **proxy vars in the subprocess environment**.
 3. **Check token validity.** Expired JWT → 401 → subprocess may exit
    immediately.
 
+### Agent panel shows "Authentication required"
+
+The `apiKeyHelper` is silently failing. Most common cause: **JSONC
+comments (`//`) inside the `"env"` object in `~/.claude/settings.json`**.
+
+1. **Remove all `//` comments from the `env` block.** Even a single
+   comment line breaks the env parser and causes `apiKeyHelper` to be
+   ignored entirely — with zero log output. See §2 Critical Finding.
+
+2. **Check token validity.** Expired JWT → 401 → "Authentication required".
+   ```bash
+   python3 -c "import json,base64,time; t=open('$HOME/.claude/.token').read(); \
+     p=json.loads(base64.urlsafe_b64decode(t.split('.')[1]+'==')); \
+     print('VALID' if p['exp']>time.time() else 'EXPIRED', f'({(p[\"exp\"]-time.time())/3600:.1f}h)')"
+   ```
+
+3. **Verify from CLI:**
+   ```bash
+   claude auth status
+   # Expected: "authMethod": "api_key_helper"
+   # Broken:   "authMethod": "none"
+   ```
+
 ### Agent panel shows spinner / hangs indefinitely
 
-1. **Check `ANTHROPIC_AUTH_TOKEN` in settings.json.** It should be `""`
-   (empty string to bypass login gate). If absent, the binary may attempt
-   an interactive OAuth flow and hang in headless ACP mode.
-
-2. **Check `ANTHROPIC_BASE_URL`.** If missing, the subprocess tries
+1. **Check `ANTHROPIC_BASE_URL`.** If missing, the subprocess tries
    `api.anthropic.com` which won't accept the Dex JWT.
+
+2. **Check for proxy vars.** Inherited proxy vars or Zed's `"proxy"`
+   setting may cause the subprocess to hang connecting through SOCKS.
 
 ### Agent returns 400 errors
 
@@ -556,8 +641,12 @@ Most likely cause: **proxy vars in the subprocess environment**.
 ### Agent returns 401 errors
 
 - **Token expired.** Refresh via device flow (§6).
-- **Token not reaching subprocess.** Verify `apiKeyHelper` or
-  `ANTHROPIC_API_KEY` is correctly configured in `~/.claude/settings.json`.
+- **Token not reaching subprocess.** Verify `apiKeyHelper` is configured
+  in `~/.claude/settings.json` and that there are **no `//` comments
+  inside the `env` object** (see §2 Critical Finding — this silently
+  disables `apiKeyHelper`).
+- **Quick check:** `claude auth status` — if `"authMethod": "none"`,
+  the settings.json `env` block is broken.
 
 ### Agent works in CLI but not in Zed
 

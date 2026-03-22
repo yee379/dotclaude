@@ -1,11 +1,14 @@
 {
   "env": {
     "ANTHROPIC_BASE_URL": "https://sdf-llm.slac.stanford.edu",
-    "ANTHROPIC_AUTH_TOKEN": "",
+    "ANTHROPIC_SMALL_FAST_MODEL": "copilot-claude-haiku-4.5",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "copilot-claude-haiku-4.5",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "copilot-claude-sonnet-4.6",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "copilot-claude-opus-4.6",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
-    "NO_PROXY": "sdf-llm.slac.stanford.edu,localhost,127.0.0.1"
+    "NO_PROXY": "sdf-llm.slac.stanford.edu,localhost,127.0.0.1",
+    "npm_config_proxy": ""
   },
-  "model": "copilot-claude-sonnet-4.6",
   "hooks": {
     "PreToolUse": [
       {
@@ -44,5 +47,6 @@
     "allow": [
       "WebFetch(*)"
     ]
-  }
+  },
+  "skipWebFetchPreflight": true
 }
