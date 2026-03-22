@@ -503,6 +503,32 @@ When asked "what are we working on?" or "show me project status", always read `T
 
 ---
 
+## Where Standards Fit in the Workflow
+
+A common question is where skills like `tdd-standards`, `code-standards`, `agentic-standards`,
+and `twelve-factor-standards` belong. The answer: they belong in the **plan**, not the implementation.
+
+```
+plan-draft → plan-board-review → implementation → plan-closeout → prod-release
+     ↑                ↑                  ↑
+  standards       standards          just execute
+  inform the      enforced by        the plan;
+  design          plan-eng-review    standards
+                  and others         already baked in
+```
+
+- **Standards** are inputs to `plan-draft` and enforced during `plan-board-review`. By the time
+  you're writing code, the approach should already comply — the plan was reviewed against them.
+- **`code-review`** is the implementation **exit gate** — run it before marking a task
+  `🏁 Implementation Done`. It catches drift from the plan and anything the reviewers missed.
+- **Implementation itself is execution** — follow the plan, tick the checklist, run `code-review`
+  when done. There is no separate "implementation workflow" skill because the plan *is* the workflow.
+
+If you find yourself wanting to apply a standard during implementation, that's a signal the plan
+was underspecified — update the task file's Design section and note it in Problems & Solutions.
+
+---
+
 ## Integration with Other Skills
 
 | Skill | How it integrates |
