@@ -683,11 +683,21 @@ Look for `[API:auth]`, `[API:request]`, and `[STARTUP]` entries.
 
 ### The core constraint
 
-Node.js (undici) **cannot speak SOCKS**. It only supports HTTP CONNECT
-proxies via its `EnvHttpProxyAgent`. When `HTTP_PROXY=socks5://...` is in
-the process environment, undici tries to speak HTTP to a SOCKS endpoint
-and the process hangs or dies. This is why Zed's
-`"proxy": "socks5://..."` kills the Claude ACP subprocess.
+Node.js (undici) **cannot natively speak SOCKS via env vars**. When
+`HTTP_PROXY=socks5://...` is in the process environment, undici tries to
+speak HTTP to a SOCKS endpoint and the process hangs or crashes
+(`UND_ERR_INVALID_ARG`). This is why Zed's `"proxy": "socks5://..."` kills
+the Claude ACP subprocess.
+
+> **Upstream status (2026-03-22):** undici merged native SOCKS5 support
+> ([PR #4385](https://github.com/nodejs/undici/pull/4385), Mar 6, 2026)
+> via a new experimental `Socks5ProxyAgent` class. However, it is **not**
+> wired into `EnvHttpProxyAgent` — `ALL_PROXY=socks5://...` is still not
+> auto-read from the environment. Claude Code has not adopted this fix,
+> and Anthropic has closed all related issues as "Not Planned"
+> ([#3387](https://github.com/anthropics/claude-code/issues/3387),
+> [#19167](https://github.com/anthropics/claude-code/issues/19167)).
+> The constraint below remains current until Anthropic acts on undici PR #4385.
 
 Additionally, the `node cli.js` subprocess dies **before** reading
 `~/.claude/settings.json`, so `NO_PROXY` in settings.json cannot help
@@ -970,9 +980,13 @@ it spawns the same `claude` binary:
 
 - [ ] **Does the Zed Agent model selector override settings.json `model`?**
   If Zed sends an unmapped model name via ACP, the request will fail with 400.
-- [ ] **Can Zed's `"proxy"` coexist with Claude Agent?** Test Option C
-  (HTTP CONNECT proxy instead of SOCKS) or a minimal `delete_env`-only
-  patch for environments where the SOCKS proxy is needed.
+- [x] ~~**Can Zed's `"proxy"` coexist with Claude Agent?**~~ **Answered (2026-03-22):**
+  Not natively — SOCKS env vars crash Claude Code before it reads settings.json.
+  Options: (A) comment out Zed `"proxy"` (current working setup); (B) HTTP-to-SOCKS
+  bridge (privoxy/glider) so undici sees an HTTP proxy; (C) `delete_env` patch to
+  strip proxy vars from the ACP subprocess; (D) TUN-mode proxy (system-wide, no
+  per-app config). Native SOCKS support via undici is merged upstream but not yet
+  adopted by Claude Code. See §8 for full option matrix.
 - [ ] **Which env vars in `~/.claude/settings.json` are truly required?**
   Minimal testing (CLI only) showed `ANTHROPIC_BASE_URL` + `apiKeyHelper`
   + `model` is sufficient. `ANTHROPIC_AUTH_TOKEN: ""` and

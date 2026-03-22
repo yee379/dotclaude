@@ -543,8 +543,16 @@ If your shell has global `*_PROXY` env vars (`ALL_PROXY`, `HTTPS_PROXY`,
 `HTTP_PROXY`, and lowercase variants) pointing at a SOCKS proxy, Node.js
 will try to route through it but **cannot speak SOCKS** — causing hangs.
 Node.js's built-in fetch (undici) only supports HTTP CONNECT proxies via
-its `EnvHttpProxyAgent`
-([nodejs/undici#2994](https://github.com/nodejs/undici/pull/2994)).
+its `EnvHttpProxyAgent`.
+
+> **Upstream status (2026-03-22):** undici merged native SOCKS5 support
+> ([PR #4385](https://github.com/nodejs/undici/pull/4385), Mar 6, 2026)
+> via a new `Socks5ProxyAgent` class. However, it is **not** wired into
+> `EnvHttpProxyAgent` — `ALL_PROXY=socks5://...` is still not auto-read.
+> Claude Code has not adopted this fix. Anthropic closed all related
+> issues as "Not Planned"
+> ([#3387](https://github.com/anthropics/claude-code/issues/3387)).
+> Best workaround remains `NO_PROXY` bypass or an HTTP-to-SOCKS bridge.
 
 **Preferred fix** — add `NO_PROXY` to settings.json `env`:
 ```json
@@ -1079,11 +1087,12 @@ perl -e 'alarm 30; exec @ARGV' -- env \
 
 ### Nice to have
 
-- [ ] Build `apiKeyHelper` script for automatic token management
+- [x] ~~Build `apiKeyHelper` script for automatic token management~~ **VERIFIED** — `apiKeyHelper: "cat ~/.claude/.token"` works. See §5 "apiKeyHelper".
 - [ ] Test if refresh tokens work (from `offline_access` scope)
 - [x] ~~Investigate why extended thinking blocks are stripped by the proxy~~ **Two causes:** (1) LiteLLM strips/ignores the `thinking` param — token counts identical with and without it; (2) Claude Code doesn't even attempt thinking on non-Anthropic hosts. See §3 "API features". No client-side fix.
 - [ ] Request model alias additions on sdf-llm for other standard Anthropic IDs (covered by §1 alias request)
-- [x] ~~Test `/model` switching in interactive mode~~ **Verified.** `/model copilot-claude-sonnet-4.6` works. Built-in shortcuts (`sonnet`, `opus`, `haiku`) do NOT work — they resolve to unmapped standard Anthropic IDs. Must use full `copilot-claude-*` alias. See §1 "Model switching in Claude Code".
+- [x] ~~Test `/model` switching in interactive mode~~ **Verified.** `/model haiku/sonnet/opus` shortcuts work once `ANTHROPIC_DEFAULT_*_MODEL` env vars are set in settings.json. See §1 "Verified: /model shortcuts after overrides".
 - [x] ~~Test `modelOverrides` in settings.json for mapping standard IDs → copilot aliases~~ **Tested as `modelAliases` — does not work.** Use top-level `model` key to set default model. No client-side remapping exists; request server-side aliases instead (see §1).
 - [x] ~~Confirm the correct debug/verbose env var for Claude Code~~ **Not env vars.** Use `--debug-file <path>` (recommended) or `-d` / `--debug` CLI flags. See §5 "Debug/Verbose Logging".
 - [ ] Create a launch wrapper script (e.g., `~/.local/bin/claude-sdf`) that handles `env -u`, token loading, `BASE_URL`, and `--model` automatically
+- [ ] **SOCKS proxy support in Claude Code.** undici merged native SOCKS5 ([PR #4385](https://github.com/nodejs/undici/pull/4385), Mar 6, 2026) but `ALL_PROXY` is still not auto-read and Claude Code has not adopted the fix. Anthropic closed all related issues "Not Planned" ([#3387](https://github.com/anthropics/claude-code/issues/3387)). Current best path: HTTP-to-SOCKS bridge (privoxy/glider) or `NO_PROXY` bypass. Track undici adoption by Anthropic.
