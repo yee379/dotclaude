@@ -7,7 +7,7 @@ compatibility: opencode
 
 # Plan Board Review
 
-Runs the five plan reviewers as a **board** — in parallel, not sequentially. If any reviewer
+Runs five board reviewers — `deep-research`, `plan-arch-review`, `plan-eng-review`, `plan-doc-review`, and `security-review` — in parallel, not sequentially. If any reviewer
 amends the plan, the whole board re-reviews the updated plan. The round repeats until all
 reviewers pass in the same round without triggering any further changes. Maximum 3 rounds.
 
