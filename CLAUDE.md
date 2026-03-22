@@ -9,5 +9,5 @@
 
 ## Terminal Commands
 
-- Always use relative paths in terminal commands (e.g. `ls src/` not `ls /Users/ytl/project/src/`).
+- NEVER use absolute paths in terminal commands — always use relative paths, even in complex or multi-part commands (e.g. `ls src/` not `ls /Users/ytl/project/src/`).
 - Only use absolute paths when a command explicitly requires one, and only with user-provided paths.
