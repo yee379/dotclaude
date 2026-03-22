@@ -1,6 +1,6 @@
 ---
 name: plan-ux-review
-description: "User experience plan review through the eyes of a typical S3DF SLAC scientist. Evaluates discoverability, onboarding clarity, documentation quality, error UX, and workflow fit before implementation. Opt-in reviewer — invoke explicitly when a feature has significant user-facing surface area. Use when asked to 'ux review', 'user experience review', or 'review from a user perspective'."
+description: "User experience plan review through the eyes of a typical S3DF SLAC scientist. Evaluates discoverability, onboarding clarity, documentation quality, error UX, and workflow fit before implementation. Triage-gated board member — /plan-board-review includes it automatically when the change has user-facing surface area. Invoke explicitly with 'ux review', 'user experience review', or 'review from a user perspective'."
 ---
 
 # /plan-ux-review: User Experience Plan Review
@@ -37,9 +37,9 @@ You think and evaluate through the lens of a **SLAC S3DF scientist**:
 
 ## When to Use This Skill
 
-This skill is **opt-in** — it is NOT a default member of the `/plan-board-review` board.
+This skill is **triage-gated** — `/plan-board-review` evaluates at triage whether the change has user-facing surface area and includes it automatically if so. It is skipped for pure internal/infra changes with no user-facing surface.
 
-Invoke it explicitly when the feature has significant user-facing surface area:
+Invoke it directly when the feature has significant user-facing surface area:
 - New CLI tools, APIs, or services that scientists will directly interact with
 - Changes to existing workflows (SLURM integration, storage, auth, data access)
 - New documentation, onboarding flows, or self-service portals

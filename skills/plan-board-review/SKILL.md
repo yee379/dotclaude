@@ -1,13 +1,13 @@
 ---
 name: plan-board-review
-description: Orchestrates the board review pipeline — runs deep-research, plan-arch-review, plan-eng-review, plan-doc-review, and security-review in parallel, then re-runs the full board if any reviewer amends the plan. Iterates until all reviewers pass in the same round with no changes. Use when asked to "run a full review", "review everything", "board review", or "gate this plan".
+description: Orchestrates the board review pipeline — runs deep-research, plan-arch-review, plan-eng-review, plan-doc-review, security-review, and plan-ux-review (triage-gated) in parallel, then re-runs the full board if any reviewer amends the plan. Iterates until all reviewers pass in the same round with no changes. Use when asked to "run a full review", "review everything", "board review", or "gate this plan".
 license: MIT
 compatibility: opencode
 ---
 
 # Plan Board Review
 
-Runs five board reviewers — `deep-research`, `plan-arch-review`, `plan-eng-review`, `plan-doc-review`, and `security-review` — in parallel, not sequentially. If any reviewer
+Runs up to six board reviewers — `deep-research`, `plan-arch-review`, `plan-eng-review`, `plan-doc-review`, `security-review`, and `plan-ux-review` — in parallel, not sequentially. Triage determines which reviewers apply; `plan-ux-review` is included when the change has direct user-facing surface area and skipped for pure infra/backend work. If any reviewer
 amends the plan, the whole board re-reviews the updated plan. The round repeats until all
 reviewers pass in the same round without triggering any further changes. Maximum 3 rounds.
 
@@ -37,6 +37,8 @@ when you're clear to build.
   │  subagent: plan-eng-review   → todo/review/<slug>/round-N-er.md │
   │  subagent: plan-doc-review   → todo/review/<slug>/round-N-dc.md │
   │  subagent: security-review   → todo/review/<slug>/round-N-sr.md │
+  │  subagent: plan-ux-review    → todo/review/<slug>/round-N-ux.md │
+  │                               (triage: skip if no user-facing surface) │
   │                                                                 │
   │  main session reads all outputs, collects Decisions Required    │
   │                                                                 │
