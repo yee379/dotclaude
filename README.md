@@ -39,6 +39,7 @@ Rules and best practices to follow when writing code.
 | `code-standards` | TypeScript/JS/React naming, patterns, anti-patterns |
 | `tdd-standards` | Test-driven development rules, 80%+ coverage requirement |
 | `agentic-standards` | Principles for agentic engineering: eval-first, decomposition, model routing |
+| `twelve-factor-standards` | 12-factor app methodology for cloud-native services |
 
 ### Workflows
 Active processes that orchestrate a sequence of steps.
@@ -95,7 +96,6 @@ Language/framework best-practice guides.
 | `python-patterns` | Pythonic idioms, async, testing, project structure |
 | `react-patterns` | React components, hooks, state, Apollo/urql, RTL |
 | `graphql-design` | Schema design, resolvers, N+1, pagination, federation |
-| `twelve-factor` | 12-factor app methodology for cloud-native services |
 
 ### Infrastructure
 Kubernetes and cloud operations.
