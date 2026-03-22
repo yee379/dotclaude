@@ -1,4 +1,5 @@
 # Claude Code runtime state — not version controlled
+.token
 __pycache__/
 .claude/
 backups/
@@ -16,3 +17,6 @@ telemetry/
 
 # skill-stocktake results cache (regenerated on each run)
 skills/skill-stocktake/results.json
+
+# skill tracking
+observations.jsonl
