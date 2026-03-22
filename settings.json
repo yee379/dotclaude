@@ -39,5 +39,10 @@
       }
     ]
   },
-  "apiKeyHelper": "cat ~/.claude/.token"
+  "apiKeyHelper": "cat ~/.claude/.token",
+  "permissions": {
+    "allow": [
+      "WebFetch(*)"
+    ]
+  }
 }
