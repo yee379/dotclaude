@@ -191,7 +191,7 @@ Architecture does not end at the service boundary diagram. Evaluate:
 - **Dev/prod parity:** Can a developer run the full system locally? If not, what is the gap and what bugs will it hide?
 - **Scaling topology:** Which services need to scale horizontally? Are they stateless? Is there a shared resource (DB, cache) that will become the bottleneck first?
 
-**12-factor check:** Run `/twelve-factor` if the plan introduces new services, changes how config/secrets are managed, touches the build/release/run pipeline, or modifies backing service topology. The 12-factor methodology is the canonical checklist for cloud-native operational correctness — config externalisation, stateless processes, log treatment, and disposability are all architectural properties, not deployment details.
+**12-factor check:** Run `/twelve-factor-standards` if the plan introduces new services, changes how config/secrets are managed, touches the build/release/run pipeline, or modifies backing service topology. The 12-factor methodology is the canonical checklist for cloud-native operational correctness — config externalisation, stateless processes, log treatment, and disposability are all architectural properties, not deployment details.
 
 **STOP.** One AskUserQuestion per issue. Only proceed after ALL issues resolved.
 

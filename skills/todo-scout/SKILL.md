@@ -397,7 +397,7 @@ After writing items, always suggest what to do next based on what was found:
 - If any P0 items were added: "There's a P0 item — recommend picking it up immediately with
   `/codebase-workflow`."
 - If security items were added: "Consider running `/security-review` for a deeper pass."
-- If production-readiness items were added: "Consider running `/twelve-factor` for a
+- If production-readiness items were added: "Consider running `/twelve-factor-standards` for a
   systematic audit."
 - If the backlog is now well-stocked: "Run `/codebase-workflow` to review the full backlog
   and pick the highest-value item."
@@ -430,7 +430,7 @@ After writing items, always suggest what to do next based on what was found:
 | `/plan-draft` | Scout writes thin task files; `/plan-draft` fills in the design when the item is picked |
 | `/plan-board-review` | Scout does not gate items — that happens later when a design exists |
 | `/security-review` | Scout's security lens is a quick pass; `/security-review` is the deep audit |
-| `/twelve-factor` | Scout's production lens overlaps; `/twelve-factor` is the systematic checklist |
+| `/twelve-factor-standards` | Scout's production lens overlaps; `/twelve-factor-standards` is the systematic checklist |
 | `/code-review` | Scout finds structural patterns; `/code-review` reviews specific changes |
 
 ---

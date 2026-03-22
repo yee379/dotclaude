@@ -1,5 +1,5 @@
 ---
-name: twelve-factor
+name: twelve-factor-standards
 description: Audit and implement the 12-factor app methodology for cloud-native services — codebase, config, dependencies, backing services, build/release/run, processes, port binding, concurrency, disposability, dev/prod parity, logs, and admin processes. Covers modern extensions (API-first, telemetry, auth) and Kubernetes implementations.
 license: MIT
 compatibility: opencode
