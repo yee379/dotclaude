@@ -11,8 +11,7 @@ Runs the five plan reviewers as a **board** — in parallel, not sequentially. I
 amends the plan, the whole board re-reviews the updated plan. The round repeats until all
 reviewers pass in the same round without triggering any further changes. Maximum 3 rounds.
 
-**Model routing:** Triage is Haiku-eligible. Each reviewer runs at **Opus** — they require deep
-reasoning, cross-file analysis, and architectural judgment. Do not downgrade to Sonnet.
+**Model routing:** Triage is `copilot-claude-haiku-4.5`-eligible. Each reviewer runs at **`copilot-claude-opus-4.6`** — they require deep reasoning, cross-file analysis, and architectural judgment. Do not downgrade to Sonnet. Use the full alias — shorthands (`opus`, `haiku`) resolve to standard Anthropic IDs not mapped on the sdf-llm proxy.
 
 **This skill assumes a plan already exists.** If you don't have one yet, run `/feature-plan` first.
 

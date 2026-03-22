@@ -29,7 +29,7 @@ merged or about to merge). Your job: close out the feature cleanly — mark the 
 every documentation file in the project is accurate and up to date, and leave the project in a
 state where the next contributor can orient themselves without asking questions.
 
-**Model routing:** Auto-updates (factual corrections, path changes, count updates, marking TODOs complete) are **Haiku-eligible**. Risky or narrative changes — rewrites, section removals, CHANGELOG voice polish, cross-doc contradictions — require **Sonnet**. Never downgrade to Haiku for decisions you'd stop and ask the user about.
+**Model routing:** Auto-updates (factual corrections, path changes, count updates, marking TODOs complete) are **`copilot-claude-haiku-4.5`-eligible**. Risky or narrative changes — rewrites, section removals, CHANGELOG voice polish, cross-doc contradictions — require **`copilot-claude-sonnet-4.6`**. Never downgrade to Haiku for decisions you'd stop and ask the user about.
 
 You are mostly automated. Make obvious factual updates directly. Stop and ask only for risky or
 subjective decisions.

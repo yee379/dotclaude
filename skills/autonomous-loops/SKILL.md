@@ -72,14 +72,14 @@ claude -p "Create a conventional commit for all staged changes. Use 'feat: add O
 
 **With model routing:**
 ```bash
-# Research with Opus (deep reasoning)
-claude -p --model opus "Analyze the codebase architecture and write a plan for adding caching..."
+# Research with copilot-claude-opus-4.6 (deep reasoning)
+claude -p --model copilot-claude-opus-4.6 "Analyze the codebase architecture and write a plan for adding caching..."
 
-# Implement with Sonnet (fast, capable)
+# Implement with copilot-claude-sonnet-4.6 (fast, capable)
 claude -p "Implement the caching layer according to the plan in docs/caching-plan.md..."
 
-# Review with Opus (thorough)
-claude -p --model opus "Review all changes for security issues, race conditions, and edge cases..."
+# Review with copilot-claude-opus-4.6 (thorough)
+claude -p --model copilot-claude-opus-4.6 "Review all changes for security issues, race conditions, and edge cases..."
 ```
 
 **With environment context:**
@@ -462,10 +462,10 @@ These patterns compose well:
 
 3. **Any loop + Verification** — Use ECC's `/verify` command as a quality gate before commits.
 
-4. **Ralphinho's tiered approach in simpler loops** — Even in a sequential pipeline, you can route simple tasks to Haiku and complex tasks to Opus:
+4. **Ralphinho's tiered approach in simpler loops** — Even in a sequential pipeline, you can route simple tasks to `copilot-claude-haiku-4.5` and complex tasks to `copilot-claude-opus-4.6`:
    ```bash
    # Simple formatting fix
-   claude -p --model haiku "Fix the import ordering in src/utils.ts"
+   claude -p --model copilot-claude-haiku-4.5 "Fix the import ordering in src/utils.ts"
 
    # Complex architectural change
    claude -p --model opus "Refactor the auth module to use the strategy pattern"

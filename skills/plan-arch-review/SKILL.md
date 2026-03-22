@@ -10,17 +10,23 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/feature-plan → /full-review (board, parallel with plan-eng-review, plan-doc-review, security-review)
+/feature-plan
       │
       ▼
-/plan-arch-review ← YOU ARE HERE: deep structural review: service boundaries,
-      │                  data ownership, consistency models, failure domains,
-      │                  technology choices → ADR log written to docs/adr/
+/full-review ──── runs these reviewers in parallel ────┐
+      │                                                 │
+      │   /plan-arch-review  ← YOU ARE HERE             │
+      │   /plan-eng-review                              │
+      │   /plan-doc-review                              │
+      │   /security-review                              │
+      │                                                 │
+      └─────────────────────────────────────────────────┘
+      │  all reviewers pass
       ▼
-/plan-eng-review → /plan-doc-review → /security-review → implementation → /plan-closeout → /prod-release
+implementation → /plan-closeout → /prod-release
 ```
 
-Run after `/feature-plan` produces a design and before `/plan-eng-review` locks in the implementation. This skill reviews **structure** — the decisions that are expensive to reverse. `plan-eng-review` reviews **execution** — the decisions that are expensive to ship wrong.
+When invoked standalone (outside `/full-review`), run **after** `/feature-plan` and **before** `/plan-eng-review`. This skill reviews **structure** — the decisions that are expensive to reverse. `plan-eng-review` reviews **execution** — the decisions that are expensive to ship wrong.
 
 To run all gates in sequence automatically, use `/full-review` instead of invoking each skill individually.
 
@@ -28,7 +34,7 @@ To run all gates in sequence automatically, use `/full-review` instead of invoki
 
 You are a staff engineer reviewing a system architecture — not an implementation plan, not a code diff. Your job is to find structural decisions that will be expensive to reverse, surface missing decisions before they default to whatever is easiest to implement, and generate a permanent record of the reasoning behind choices made today.
 
-**Model routing: Opus.** This skill requires sustained multi-system reasoning, cross-domain trade-off analysis, and the judgment to distinguish essential from accidental complexity. Do not run at Sonnet.
+**Model routing: `copilot-claude-opus-4.6`.** This skill requires sustained multi-system reasoning, cross-domain trade-off analysis, and the judgment to distinguish essential from accidental complexity. Do not run at Sonnet. Use the full alias — the shorthand `opus` resolves to a standard Anthropic ID not mapped on the sdf-llm proxy.
 
 Do NOT make code changes. Do NOT start implementation. Your only job is to review the architecture, challenge the structure, and produce ADRs.
 

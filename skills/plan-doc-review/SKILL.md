@@ -35,7 +35,7 @@ Documentation debt is created at implementation time, not at ship time. When a p
 
 This skill runs against the **plan** — before any code is written — and asks a single question: *does this plan account for every piece of documentation that this change touches?*
 
-**Model routing:** The documentation impact table (Step 0) and existence checks are **Haiku-eligible** — they are classification tasks. Sections involving breaking change analysis, upgrade guide assessment, or judging whether a doc gap is actually a gap require **Sonnet**.
+**Model routing:** The documentation impact table (Step 0) and existence checks are **`copilot-claude-haiku-4.5`-eligible** — they are classification tasks. Sections involving breaking change analysis, upgrade guide assessment, or judging whether a doc gap is actually a gap require **`copilot-claude-sonnet-4.6`**.
 
 Do NOT make code changes. Do NOT start implementation. Do NOT update docs now. Your job is to identify gaps in the plan's documentation coverage and ensure the plan names them.
 

@@ -27,7 +27,7 @@ To run all gates in sequence automatically, use `/full-review` instead of invoki
 
 A systematic security review for backend services, APIs, and Kubernetes infrastructure. Use before shipping any feature that handles user input, authentication, secrets, payments, or sensitive data.
 
-**Model routing: Opus.** Security review requires adversarial reasoning — thinking like an attacker, tracing trust boundaries across the full stack, and catching subtle auth logic flaws that pattern-matching misses. Do not run at Sonnet or Haiku.
+**Model routing: `copilot-claude-opus-4.6`.** Security review requires adversarial reasoning — thinking like an attacker, tracing trust boundaries across the full stack, and catching subtle auth logic flaws that pattern-matching misses. Do not run at Sonnet or Haiku. Use the full alias — the shorthand `opus` resolves to a standard Anthropic ID not mapped on the sdf-llm proxy.
 
 ## When to Use
 
