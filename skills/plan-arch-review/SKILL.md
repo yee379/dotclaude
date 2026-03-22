@@ -10,7 +10,7 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/feature-plan
+/plan-draft
       │
       ▼
 /plan-board-review ──── runs these reviewers in parallel ────┐
@@ -26,7 +26,7 @@ compatibility: opencode
 implementation → /plan-closeout → /prod-release
 ```
 
-When invoked standalone (outside `/plan-board-review`), run **after** `/feature-plan` and **before** `/plan-eng-review`. This skill reviews **structure** — the decisions that are expensive to reverse. `plan-eng-review` reviews **execution** — the decisions that are expensive to ship wrong.
+When invoked standalone (outside `/plan-board-review`), run **after** `/plan-draft` and **before** `/plan-eng-review`. This skill reviews **structure** — the decisions that are expensive to reverse. `plan-eng-review` reviews **execution** — the decisions that are expensive to ship wrong.
 
 To run all gates in sequence automatically, use `/plan-board-review` instead of invoking each skill individually.
 

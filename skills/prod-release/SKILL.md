@@ -10,7 +10,7 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/feature-plan → /plan-board-review → implementation → /plan-closeout
+/plan-draft → /plan-board-review → implementation → /plan-closeout
       │
       ▼
 /prod-release          ← YOU ARE HERE: environment promotion, smoke tests, feature flag

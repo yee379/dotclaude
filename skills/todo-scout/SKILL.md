@@ -11,7 +11,7 @@ Explore the codebase and project state to surface prioritised improvement candid
 write accepted ones into the backlog as first-class task files.
 
 This skill is **generative and exploratory**, not evaluative. It asks "what *should* we build
-or fix?" rather than "is this plan safe to build?". It runs before `/feature-plan`, feeding
+or fix?" rather than "is this plan safe to build?". It runs before `/plan-draft`, feeding
 the backlog that `/project-management` tracks.
 
 ## Workflow position
@@ -23,7 +23,7 @@ the backlog that `/project-management` tracks.
 /project-management    ← user picks an item, task file already exists
       │
       ▼
-/feature-plan          ← turns thin task file into a full design
+/plan-draft          ← turns thin task file into a full design
       │
       ▼
 /plan-board-review → implementation → /plan-closeout → /prod-release
@@ -367,7 +367,7 @@ For each accepted candidate:
    - Priority and Status (`⬜ Open`)
    - Source: `> *Surfaced by /todo-scout on <date> — <lens> lens*`
    - Leave Design and Implementation Plan sections as stubs — those get filled by
-     `/feature-plan` when the item is picked up.
+     `/plan-draft` when the item is picked up.
 
 3. **Add a row to `TODO.md`** with the correct priority, `⬜ Open` status, branch `—`, PR `—`.
 
@@ -427,7 +427,7 @@ After writing items, always suggest what to do next based on what was found:
 | Skill | How it integrates |
 |-------|------------------|
 | `/project-management` | Scout writes task files in the same format; `/project-management` picks them up |
-| `/feature-plan` | Scout writes thin task files; `/feature-plan` fills in the design when the item is picked |
+| `/plan-draft` | Scout writes thin task files; `/plan-draft` fills in the design when the item is picked |
 | `/plan-board-review` | Scout does not gate items — that happens later when a design exists |
 | `/security-review` | Scout's security lens is a quick pass; `/security-review` is the deep audit |
 | `/twelve-factor` | Scout's production lens overlaps; `/twelve-factor` is the systematic checklist |

@@ -10,7 +10,7 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/feature-plan → /plan-board-review (board, parallel with plan-arch-review, plan-eng-review, plan-doc-review)
+/plan-draft → /plan-board-review (board, parallel with plan-arch-review, plan-eng-review, plan-doc-review)
       │
       ▼
 /security-review       ← YOU ARE HERE: security gate: secrets, auth, input validation,

@@ -13,7 +13,7 @@ reviewers pass in the same round without triggering any further changes. Maximum
 
 **Model routing:** Triage is `copilot-claude-haiku-4.5`-eligible. Each reviewer runs at **`copilot-claude-opus-4.6`** — they require deep reasoning, cross-file analysis, and architectural judgment. Do not downgrade to Sonnet. Use the full alias — shorthands (`opus`, `haiku`) resolve to standard Anthropic IDs not mapped on the sdf-llm proxy.
 
-**This skill assumes a plan already exists.** If you don't have one yet, run `/feature-plan` first.
+**This skill assumes a plan already exists.** If you don't have one yet, run `/plan-draft` first.
 
 **This skill does not implement anything.** It convenes the board, tracks rounds, and tells you
 when you're clear to build.
@@ -72,7 +72,7 @@ Before anything else, find what's being reviewed:
    - `git diff $(git merge-base HEAD main 2>/dev/null || git merge-base HEAD master 2>/dev/null || echo HEAD~5)...HEAD --stat 2>/dev/null | head -30` — code already on the branch may implicitly define scope
 
 If no plan is found, **stop** and tell the user:
-> "No plan found. Run `/feature-plan` first to produce a design document, then come back to `/plan-board-review`."
+> "No plan found. Run `/plan-draft` first to produce a design document, then come back to `/plan-board-review`."
 
 If a plan is found, summarise it in 2-3 sentences so the user can confirm you've read the right
 thing before proceeding.

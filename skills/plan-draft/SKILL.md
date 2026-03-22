@@ -1,16 +1,16 @@
 ---
-name: feature-plan
+name: plan-draft
 description: Structured feature planning and architectural design — problem framing, requirements, ADRs, system design, trade-offs, sequencing, and a definition of done before writing any code.
 triggers:
   - "plan #\\d+"
   - "plan \\d+"
   - "plan todo #?\\d+"
-  - "/feature-plan"
+  - "/plan-draft"
 license: MIT
 compatibility: opencode
 ---
 
-# Feature Plan
+# Plan Draft
 
 A structured approach to planning features and architectural changes before writing code. Produces a clear spec, design decisions, and delivery sequence.
 
@@ -21,21 +21,21 @@ Activate this skill when the user says any of the following:
 - `plan #<number>` — e.g. "plan #3", "plan #007"
 - `plan todo <number>` — e.g. "plan todo 3", "plan todo 007"
 - `plan todo #<number>` — e.g. "plan todo #3", "plan todo #007"
-- `/feature-plan` — explicit invocation
-- "plan this out", "let's plan", "run feature-plan" on a task
+- `/plan-draft` — explicit invocation
+- "plan this out", "let's plan", "run plan-draft" on a task
 
 When a task number is given, glob `todo/<number>-*.md` (zero-padded or not) to find the task file before starting.
 
 ## Workflow position
 
 ```
-/feature-plan          ← YOU ARE HERE: problem framing, requirements, system design, ADRs
+/plan-draft            ← YOU ARE HERE: problem framing, requirements, system design, ADRs
       │
       ▼
 /plan-board-review → implementation → /plan-closeout → /prod-release
 ```
 
-Use `/feature-plan` first — before architecture review or implementation. Its output (problem statement, requirements, rough design, ADRs) is the input that `plan-arch-review` needs to do a meaningful structural review.
+Use `/plan-draft` first — before architecture review or implementation. Its output (problem statement, requirements, rough design, ADRs) is the input that `plan-arch-review` needs to do a meaningful structural review.
 
 Once the plan exists, run `/plan-board-review` to gate it through the complete review pipeline in one go.
 
@@ -310,7 +310,7 @@ A feature is done when ALL of the following are true:
 
 ### Status update on completion
 
-When `/feature-plan` finishes writing the plan into the task file, **immediately**:
+When `/plan-draft` finishes writing the plan into the task file, **immediately**:
 
 1. Set `**Status:**` in the task file to `⬜ Open`
 2. Update the matching row in `TODO.md` to `⬜ Open`

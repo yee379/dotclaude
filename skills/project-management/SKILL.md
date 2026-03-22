@@ -11,7 +11,7 @@ Maintain a `todo/` directory as a prioritised backlog where every item is a firs
 
 - Starting a new feature or task
 - When asked "what should we work on next?" or "what's left to do?", "what to do with todo <number>?", "tell me more about todo <number>?", "what is the plan for todo <number>?"
-- After running `/feature-plan` or any design/planning skill — persist the output
+- After running `/plan-draft` or any design/planning skill — persist the output
 - When picking up work that was started in a previous session
 - When a task is completed and needs closing out
 - When asked to add a new item to the backlog
@@ -57,8 +57,8 @@ The index groups items by priority tier and shows status, branch, and PR at a gl
 - 🔵 P3 Low — nice to have
 
 ## Status Key
-- 📋 Preparing — task created, feature-plan not yet run
-- ⬜ Open — feature-plan complete, awaiting /plan-board-review
+- 📋 Preparing — task created, plan-draft not yet run
+- ⬜ Open — plan-draft complete, awaiting /plan-board-review
 - 🔎 In Review — plan-board-review board is actively running
 - 🔍 Reviewed — plan approved by plan-board-review board, ready to implement
 - 🔄 In Progress — active development
@@ -242,15 +242,15 @@ git checkout -b feat/<slug>
 3. Fill in at minimum: Problem Statement and Goals
 4. **Add a row to `TODO.md` immediately** — priority, status `📋 Preparing`, branch `—`, PR `—`
 5. **Before touching code, ask:**
-   > "Task #N is ready to plan. Shall I run `/feature-plan` now to flesh out the design,
+   > "Task #N is ready to plan. Shall I run `/plan-draft` now to flesh out the design,
    > or would you like to add more context to the Problem Statement first?"
-   - If the user confirms → run `/feature-plan` immediately.
-   - If the user wants to add context first → wait, then run `/feature-plan` once ready.
+   - If the user confirms → run `/plan-draft` immediately.
+   - If the user wants to add context first → wait, then run `/plan-draft` once ready.
    - The only exception: genuinely trivial tasks where the fix is a single obvious change
      (e.g. "add a 30s timeout to one function"). Even then, say so explicitly:
-     > "This looks trivial enough to skip feature-plan — proceeding directly. Let me know
+     > "This looks trivial enough to skip plan-draft — proceeding directly. Let me know
      > if you'd like a full plan instead."
-6. **Once `/feature-plan` completes:** set status to `⬜ Open` in both the task file and
+6. **Once `/plan-draft` completes:** set status to `⬜ Open` in both the task file and
    `TODO.md`. Then ask:
    > "Plan is written. Shall I run `/plan-board-review` now to gate it through the board?"
 7. Only after `/plan-board-review` gives CLEAR TO BUILD (status → `🔍 Reviewed`): create the branch
@@ -261,22 +261,22 @@ git checkout -b feat/<slug>
 When a task file exists but the Design section is empty or sparse, **do not start
 implementation.** Ask first:
 
-> "The design section for #N is sparse. Shall I run `/feature-plan` now to flesh it out
+> "The design section for #N is sparse. Shall I run `/plan-draft` now to flesh it out
 > before we start building?"
 
-- If yes → run `/feature-plan`, then ask about `/plan-board-review`.
+- If yes → run `/plan-draft`, then ask about `/plan-board-review`.
 - If the user wants to add context first → wait, then proceed.
 - Never silently skip to code.
 
 1. **Read the task file first** — always start here, never from a blank slate. The problem
    statement and goals are already written (by `/todo-scout`, manually, or from a previous
    session). Do not re-derive them; build on what's there.
-2. **Run `/feature-plan`** to fill in the design — it will read the task file's Problem
+2. **Run `/plan-draft`** to fill in the design — it will read the task file's Problem
    Statement and Goals as its Phase 1 input, skipping the problem-identification step.
    All output (requirements, architecture, ADRs, delivery slices) gets written back into
    the task file's **Design** and **Implementation Plan** sections.
 3. **Research first if needed** — if the Design section is empty *and* the technology is
-   unfamiliar, run `/deep-research` or `/search-first` before calling `/feature-plan`.
+   unfamiliar, run `/deep-research` or `/search-first` before calling `/plan-draft`.
    Save findings to `todo/research/<slug>/` and link from the task file's Design section.
 4. Add Open Questions for anything that requires a decision before implementation starts.
 5. Present the plan for approval before writing code.
@@ -286,10 +286,10 @@ implementation.** Ask first:
 
 | Where the task file came from | Status | Next step |
 |-------------------------------|--------|-----------|
-| `/todo-scout` | 📋 Preparing | Problem Statement already written — run `/feature-plan` directly |
-| Added manually (thin) | 📋 Preparing | Fill Problem Statement first, then run `/feature-plan` |
-| Previous session (partial design) | 📋 Preparing | Resume `/feature-plan` from where the Design section left off |
-| `/feature-plan` already run | ⬜ Open | Design is complete — run `/plan-board-review` |
+| `/todo-scout` | 📋 Preparing | Problem Statement already written — run `/plan-draft` directly |
+| Added manually (thin) | 📋 Preparing | Fill Problem Statement first, then run `/plan-draft` |
+| Previous session (partial design) | 📋 Preparing | Resume `/plan-draft` from where the Design section left off |
+| `/plan-draft` already run | ⬜ Open | Design is complete — run `/plan-board-review` |
 | `/plan-board-review` passed | 🔍 Reviewed | CLEAR TO BUILD — create branch, begin implementation |
 
 The task file *is* the plan. Don't maintain a separate plan document unless the design is
@@ -346,7 +346,7 @@ The task file is **never deleted** — it becomes a permanent record.
 4. Assign a priority tier (P0–P3)
 5. Add a row to `TODO.md` with priority and status `📋 Preparing`
 6. Commit: `git add TODO.md todo/ && git commit -m "docs(todo): add #<n> <title>"`
-7. **Do not create a branch or begin implementation yet.** The next step is `/feature-plan`
+7. **Do not create a branch or begin implementation yet.** The next step is `/plan-draft`
    (which advances status to `⬜ Open`), then `/plan-board-review` (which advances to `🔍 Reviewed`).
    A task is not ready to implement until it has passed the board.
 
@@ -459,7 +459,7 @@ includes design decisions, problems encountered, and trade-offs.
 | Trigger | What to update |
 |---------|---------------|
 | New task created | Add row with priority, status 📋 Preparing, branch `—`, PR `—` |
-| feature-plan completes | Status → ⬜ Open in task file and TODO.md; prompt user to run /plan-board-review |
+| plan-draft completes | Status → ⬜ Open in task file and TODO.md; prompt user to run /plan-board-review |
 | plan-board-review starts | Status → 🔎 In Review in task file and TODO.md |
 | plan-board-review passes (CLEAR TO BUILD / CLEAR WITH WARNINGS) | Status → 🔍 Reviewed; board review summary merged into task file; `todo/review/<slug>/` deleted |
 | plan-board-review blocked or unstable | Status → 📋 Preparing (revert to pre-review); board review summary merged into task file; `todo/review/<slug>/` deleted; blocking issues noted in Problems & Solutions |
@@ -499,7 +499,7 @@ When asked "what are we working on?" or "show me project status", always read `T
 7. **Never delete task files.** They are institutional memory. Cancelled tasks get `❌ Won't Do` status and a reason.
 8. **One branch per task.** Don't mix unrelated work on a branch — it breaks the task ↔ branch ↔ PR traceability.
 9. **Update before ending a session.** If you close your laptop without updating the task file and TODO.md, the context is gone.
-10. **Link, don't duplicate.** If `/feature-plan` produced a detailed doc, link to it rather than copying it. The task file is the hub, not the whole archive.
+10. **Link, don't duplicate.** If `/plan-draft` produced a detailed doc, link to it rather than copying it. The task file is the hub, not the whole archive.
 
 ---
 
@@ -508,7 +508,7 @@ When asked "what are we working on?" or "show me project status", always read `T
 | Skill | How it integrates |
 |-------|------------------|
 | `/todo-scout` | Run to proactively generate backlog candidates; writes task files directly into `todo/` |
-| `/feature-plan` | Run first; paste or link the output into the task file's **Design** section |
+| `/plan-draft` | Run first; paste or link the output into the task file's **Design** section |
 | `/plan-board-review` | Run the review pipeline against the design before starting implementation |
 | `/deep-research` | Research findings saved to `todo/research/<slug>/`; linked from task file |
 | `/code-review` | Review findings that require fixes become new task checklist items or new backlog items |

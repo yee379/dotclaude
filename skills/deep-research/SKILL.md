@@ -13,7 +13,7 @@ Produce thorough, cited research reports from multiple web sources using paralle
 When invoked as part of the planning workflow, deep-research operates in one of two modes
 depending on where it's called from:
 
-### Mode 1: Feature research (called from /feature-plan — Phase 0)
+### Mode 1: Feature research (called from /plan-draft — Phase 0)
 
 Open-ended research *before* the plan exists. Goal: ensure the plan is built on solid ground,
 not assumptions.

@@ -10,7 +10,7 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/feature-plan → /plan-board-review (board, parallel with plan-arch-review, plan-eng-review, security-review)
+/plan-draft → /plan-board-review (board, parallel with plan-arch-review, plan-eng-review, security-review)
       │
       ▼
 /plan-doc-review ← YOU ARE HERE: documentation planning gate — which docs
