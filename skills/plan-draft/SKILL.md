@@ -60,7 +60,7 @@ Before starting, check whether a task file already exists for this item:
 1. **If a task number was given** (e.g. "plan #007"): glob `todo/007-*.md` and read it.
 2. **If working from the current branch**: check `TODO.md` for a matching `🔄 In Progress`
    or `⬜ Open` item and read its task file.
-3. **If no task file exists**: create one now via `/project-management` before continuing —
+3. **If no task file exists**: create one now via `/codebase-workflow` before continuing —
    the task file is the plan's home.
 
 **If a task file already exists** (e.g. created by `/todo-scout` or added manually):

@@ -508,7 +508,7 @@ Then tell the user (substituting the actual TODO number and slug):
 
    #NNN todo/<slug>.md
         ↓
-   /project-management   ← track progress, keep TODO.md in sync
+   /codebase-workflow   ← track progress, keep TODO.md in sync
         ↓
    /tdd-workflow         ← tests first, then implementation
         ↓

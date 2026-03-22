@@ -209,7 +209,7 @@ After auditing each file individually, do a cross-doc consistency pass:
 
 ## Step 7: TODO Cleanup
 
-The canonical TODO format is defined by the `/project-management` skill: a `TODO.md` priority
+The canonical TODO format is defined by the `/codebase-workflow` skill: a `TODO.md` priority
 index plus individual task files in `todo/<n>-<slug>.md`. If neither exists, skip this step.
 
 1. **Completed task files not yet marked:** Cross-reference the diff against `todo/*.md` files
@@ -280,7 +280,7 @@ committing.
 
 **Commit:**
 
-Stage and commit following the git discipline in `/project-management` (stage by name, one
+Stage and commit following the git discipline in `/codebase-workflow` (stage by name, one
 concern per commit). Use `docs:` as the commit type:
 
 ```

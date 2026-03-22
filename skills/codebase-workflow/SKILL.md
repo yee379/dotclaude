@@ -1,5 +1,5 @@
 ---
-name: project-management
+name: codebase-workflow
 description: Institutional knowledge management via a todo/ directory. Tracks features and tasks as individual markdown files with a TODO.md priority index, linking planning artefacts to git branches, commits, and PRs so context is never lost between sessions. Covers planning, picking the next item, implementing, and closing tickets.
 ---
 

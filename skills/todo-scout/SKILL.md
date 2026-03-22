@@ -12,7 +12,7 @@ write accepted ones into the backlog as first-class task files.
 
 This skill is **generative and exploratory**, not evaluative. It asks "what *should* we build
 or fix?" rather than "is this plan safe to build?". It runs before `/plan-draft`, feeding
-the backlog that `/project-management` tracks.
+the backlog that `/codebase-workflow` tracks.
 
 ## Workflow position
 
@@ -20,7 +20,7 @@ the backlog that `/project-management` tracks.
 /todo-scout            ← YOU ARE HERE: read codebase → surface candidates → populate backlog
       │
       ▼
-/project-management    ← user picks an item, task file already exists
+/codebase-workflow    ← user picks an item, task file already exists
       │
       ▼
 /plan-draft          ← turns thin task file into a full design
@@ -379,7 +379,7 @@ Added to backlog:
   #008  Missing request timeouts on API        🟠 P1
   #009  User.find_all() loads all rows         🟠 P1
 
-TODO.md updated. Run /project-management to pick the next item.
+TODO.md updated. Run /codebase-workflow to pick the next item.
 ```
 
 5. Commit:
@@ -395,11 +395,11 @@ git commit -m "docs(todo): add N scout candidates from /todo-scout [<lens(es)>]"
 After writing items, always suggest what to do next based on what was found:
 
 - If any P0 items were added: "There's a P0 item — recommend picking it up immediately with
-  `/project-management`."
+  `/codebase-workflow`."
 - If security items were added: "Consider running `/security-review` for a deeper pass."
 - If production-readiness items were added: "Consider running `/twelve-factor` for a
   systematic audit."
-- If the backlog is now well-stocked: "Run `/project-management` to review the full backlog
+- If the backlog is now well-stocked: "Run `/codebase-workflow` to review the full backlog
   and pick the highest-value item."
 
 ---
@@ -426,7 +426,7 @@ After writing items, always suggest what to do next based on what was found:
 
 | Skill | How it integrates |
 |-------|------------------|
-| `/project-management` | Scout writes task files in the same format; `/project-management` picks them up |
+| `/codebase-workflow` | Scout writes task files in the same format; `/codebase-workflow` picks them up |
 | `/plan-draft` | Scout writes thin task files; `/plan-draft` fills in the design when the item is picked |
 | `/plan-board-review` | Scout does not gate items — that happens later when a design exists |
 | `/security-review` | Scout's security lens is a quick pass; `/security-review` is the deep audit |
