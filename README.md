@@ -21,11 +21,13 @@ Skills are named by category and function: `<subject>-<category>`.
 
 | Suffix | Meaning | Examples |
 |---|---|---|
-| `-standards` | Rules and best practices to follow | `code-standards`, `tdd-standards` |
-| `-workflow` | Orchestrated sequence of steps, moves something from A to B | `codebase-workflow`, `prod-release` |
+| `-standards` | Prescriptive rules you must follow — pass/fail, enforced by review. "Do this, not that." | `code-standards`, `tdd-standards` |
+| `-patterns` | Reusable solutions to recurring problems — advisory, not mandatory. "Here's how things can be done well." | `python-patterns`, `react-patterns` |
+| `-workflow` | Orchestrated sequence of steps that moves something from A to B | `codebase-workflow`, `prod-release` |
 | `-review` | Evaluates something and reports findings | `code-review`, `plan-arch-review` |
-| `-handbook` | How to do a type of work — methodology, patterns, reference | `research-handbook`, `multi-agent-handbook` |
-| `-patterns` | Language/framework idioms and best practices | `python-patterns`, `react-patterns` |
+| `-handbook` | How to do a type of work — methodology, reference, operating modes | `research-handbook`, `multi-agent-handbook` |
+
+The key distinction between `-standards` and `-patterns`: **standards tell you what you must do, patterns show you how things can be done**. Standards have a right/wrong answer; patterns have better/worse tradeoffs.
 
 Some skills don't carry a suffix where the name is already self-documenting (e.g. `search-first`, `todo-scout`).
 
