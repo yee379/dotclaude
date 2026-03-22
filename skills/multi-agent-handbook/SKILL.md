@@ -1,5 +1,5 @@
 ---
-name: autonomous-loops
+name: multi-agent-handbook
 description: "Patterns and architectures for autonomous Claude Code loops — from simple sequential pipelines to RFC-driven multi-agent DAG systems."
 origin: ECC
 ---

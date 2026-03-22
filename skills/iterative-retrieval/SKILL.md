@@ -177,4 +177,4 @@ Relevant files (read these first):
 
 ## Related
 
-- `autonomous-loops` skill — loop architectures that use iterative retrieval as a context phase
+- `multi-agent-handbook` skill — loop architectures that use iterative retrieval as a context phase
