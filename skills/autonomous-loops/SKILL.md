@@ -107,7 +107,7 @@ claude -p --allowedTools "Read,Write,Edit,Bash" "Implement the fixes from securi
 
 ```bash
 node scripts/claw.js                                                    # default session
-CLAW_SESSION=my-project CLAW_SKILLS=tdd-workflow,security-review node scripts/claw.js
+CLAW_SESSION=my-project CLAW_SKILLS=tdd-standards,security-review node scripts/claw.js
 ```
 
 See the `/claw` command for full documentation.

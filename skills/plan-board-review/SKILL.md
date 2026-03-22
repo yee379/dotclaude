@@ -510,7 +510,7 @@ Then tell the user (substituting the actual TODO number and slug):
         ↓
    /codebase-workflow   ← track progress, keep TODO.md in sync
         ↓
-   /tdd-workflow         ← tests first, then implementation
+   /tdd-standards         ← tests first, then implementation
         ↓
    /plan-closeout #NNN   ← close out task, apply doc updates, sync TODO.md
         ↓
