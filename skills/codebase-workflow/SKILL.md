@@ -269,7 +269,7 @@ implementation.** Ask first:
 - Never silently skip to code.
 
 1. **Read the task file first** — always start here, never from a blank slate. The problem
-   statement and goals are already written (by `/todo-scout`, manually, or from a previous
+   statement and goals are already written (by `/codebase-scout`, manually, or from a previous
    session). Do not re-derive them; build on what's there.
 2. **Run `/plan-draft`** to fill in the design — it will read the task file's Problem
    Statement and Goals as its Phase 1 input, skipping the problem-identification step.
@@ -286,7 +286,7 @@ implementation.** Ask first:
 
 | Where the task file came from | Status | Next step |
 |-------------------------------|--------|-----------|
-| `/todo-scout` | 📋 Preparing | Problem Statement already written — run `/plan-draft` directly |
+| `/codebase-scout` | 📋 Preparing | Problem Statement already written — run `/plan-draft` directly |
 | Added manually (thin) | 📋 Preparing | Fill Problem Statement first, then run `/plan-draft` |
 | Previous session (partial design) | 📋 Preparing | Resume `/plan-draft` from where the Design section left off |
 | `/plan-draft` already run | ⬜ Open | Design is complete — run `/plan-board-review` |
@@ -533,7 +533,7 @@ was underspecified — update the task file's Design section and note it in Prob
 
 | Skill | How it integrates |
 |-------|------------------|
-| `/todo-scout` | Run to proactively generate backlog candidates; writes task files directly into `todo/` |
+| `/codebase-scout` | Run to proactively generate backlog candidates; writes task files directly into `todo/` |
 | `/plan-draft` | Run first; paste or link the output into the task file's **Design** section |
 | `/plan-board-review` | Run the review pipeline against the design before starting implementation |
 | `/research-handbook` | Research findings saved to `todo/research/<slug>/`; linked from task file |

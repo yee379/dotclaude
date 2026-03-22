@@ -63,7 +63,7 @@ Before starting, check whether a task file already exists for this item:
 3. **If no task file exists**: create one now via `/codebase-workflow` before continuing —
    the task file is the plan's home.
 
-**If a task file already exists** (e.g. created by `/todo-scout` or added manually):
+**If a task file already exists** (e.g. created by `/codebase-scout` or added manually):
 - Use its **Problem Statement** as Phase 1 input — do not re-derive the problem from scratch.
 - Use its **Goals** as the starting point for Phase 2 requirements.
 - Check whether a **Design** section is already partially filled — if so, start from there

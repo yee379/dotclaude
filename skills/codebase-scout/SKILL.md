@@ -1,5 +1,5 @@
 ---
-name: todo-scout
+name: codebase-scout
 description: Proactive backlog generation — reads the codebase, existing TODOs, and project goals to surface prioritised improvement candidates across quality, tech debt, features, security, and production-readiness. Presents candidates for user acceptance, then writes accepted items into todo/ and TODO.md. Use when asked to "find what to work on", "scout for improvements", "what should we do next", "find tech debt", "build the backlog", or "what features should we add".
 license: MIT
 compatibility: opencode
@@ -17,7 +17,7 @@ the backlog that `/codebase-workflow` tracks.
 ## Workflow position
 
 ```
-/todo-scout            ← YOU ARE HERE: read codebase → surface candidates → populate backlog
+/codebase-scout            ← YOU ARE HERE: read codebase → surface candidates → populate backlog
       │
       ▼
 /codebase-workflow    ← user picks an item, task file already exists
@@ -64,7 +64,7 @@ LENS                      DEFAULT   QUESTION
 ──────────────────────────────────────────────────────────────────────────
 ```
 
-The user can scope to one or more lenses: `/todo-scout security` or `/todo-scout debt quality`.
+The user can scope to one or more lenses: `/codebase-scout security` or `/codebase-scout debt quality`.
 Lens 7 is activated with `--market`, `--features-deep`, or by naming it explicitly.
 
 ---
@@ -365,7 +365,7 @@ For each accepted candidate:
    - Problem Statement (from candidate's "Problem" + "Why it matters")
    - Goals (1-2 goals derived from "Suggested fix")
    - Priority and Status (`⬜ Open`)
-   - Source: `> *Surfaced by /todo-scout on <date> — <lens> lens*`
+   - Source: `> *Surfaced by /codebase-scout on <date> — <lens> lens*`
    - Leave Design and Implementation Plan sections as stubs — those get filled by
      `/plan-draft` when the item is picked up.
 
@@ -385,7 +385,7 @@ TODO.md updated. Run /codebase-workflow to pick the next item.
 5. Commit:
 ```bash
 git add TODO.md todo/
-git commit -m "docs(todo): add N scout candidates from /todo-scout [<lens(es)>]"
+git commit -m "docs(todo): add N scout candidates from /codebase-scout [<lens(es)>]"
 ```
 
 ---
@@ -438,13 +438,13 @@ After writing items, always suggest what to do next based on what was found:
 ## Invocation variants
 
 ```
-/todo-scout                        — lenses 1–6, full codebase
-/todo-scout security               — security lens only
-/todo-scout debt quality           — two lenses
-/todo-scout --market               — lenses 1–6 plus Lens 7 (market & ecosystem)
-/todo-scout --market-only          — Lens 7 only, skip codebase lenses
-/todo-scout --quick                — surface only P0/P1 candidates, skip P2/P3
-/todo-scout --area src/api         — scope codebase lenses to a subdirectory
+/codebase-scout                        — lenses 1–6, full codebase
+/codebase-scout security               — security lens only
+/codebase-scout debt quality           — two lenses
+/codebase-scout --market               — lenses 1–6 plus Lens 7 (market & ecosystem)
+/codebase-scout --market-only          — Lens 7 only, skip codebase lenses
+/codebase-scout --quick                — surface only P0/P1 candidates, skip P2/P3
+/codebase-scout --area src/api         — scope codebase lenses to a subdirectory
 ```
 
 When `--market` or `--market-only` is passed: activate Lens 7 in parallel with other active

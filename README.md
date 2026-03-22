@@ -29,7 +29,7 @@ Skills are named by category and function: `<subject>-<category>`.
 
 The key distinction between `-standards` and `-patterns`: **standards tell you what you must do, patterns show you how things can be done**. Standards have a right/wrong answer; patterns have better/worse tradeoffs.
 
-Some skills don't carry a suffix where the name is already self-documenting (e.g. `search-first`, `todo-scout`).
+Some skills don't carry a suffix where the name is already self-documenting (e.g. `search-first`, `codebase-scout`).
 
 ---
 
@@ -88,7 +88,7 @@ Skills for investigation and discovery.
 | Skill | Purpose |
 |---|---|
 | `search-first` | Search for existing tools/libraries before writing custom code |
-| `todo-scout` | Scan codebase for backlog candidates |
+| `codebase-scout` | Scan codebase for backlog candidates |
 
 ### Patterns
 Language/framework best-practice guides.
