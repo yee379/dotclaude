@@ -15,15 +15,30 @@ Global Claude Code configuration, skills, and documentation.
 
 ## Skill Taxonomy
 
-Skills are named by category and function: `<category>-<function>` or `<function>-<category>`.
+Skills are named by category and function: `<subject>-<category>`.
+
+### Categories
+
+| Suffix | Meaning | Examples |
+|---|---|---|
+| `-standards` | Rules and best practices to follow | `code-standards`, `tdd-standards` |
+| `-workflow` | Orchestrated sequence of steps, moves something from A to B | `codebase-workflow`, `prod-release` |
+| `-review` | Evaluates something and reports findings | `code-review`, `plan-arch-review` |
+| `-handbook` | How to do a type of work — methodology, patterns, reference | `research-handbook`, `multi-agent-handbook` |
+| `-patterns` | Language/framework idioms and best practices | `python-patterns`, `react-patterns` |
+
+Some skills don't carry a suffix where the name is already self-documenting (e.g. `search-first`, `todo-scout`).
+
+---
 
 ### Standards
-Reference documents — rules and best practices to follow when writing code.
+Rules and best practices to follow when writing code.
 
 | Skill | Purpose |
 |---|---|
 | `code-standards` | TypeScript/JS/React naming, patterns, anti-patterns |
 | `tdd-standards` | Test-driven development rules, 80%+ coverage requirement |
+| `agentic-standards` | Principles for agentic engineering: eval-first, decomposition, model routing |
 
 ### Workflows
 Active processes that orchestrate a sequence of steps.
@@ -31,7 +46,7 @@ Active processes that orchestrate a sequence of steps.
 | Skill | Purpose |
 |---|---|
 | `codebase-workflow` | Backlog management via `todo/`, task files, `TODO.md` |
-| `prod-release` | Production release gates, promotion, rollback |
+| `prod-release` | Production release gates, staging promotion, rollback |
 
 ### Reviews
 Skills that evaluate something and report findings.
@@ -56,15 +71,21 @@ Skills that operate on a feature plan, in order.
 | `plan-board-review` | Gate a plan through all reviewers in parallel |
 | `plan-closeout` | Close out after a feature ships — docs, changelog, task files |
 
-### Research
-Skills for investigation and synthesis.
+### Handbooks
+How to do a type of work — methodology, patterns, reference guides.
 
 | Skill | Purpose |
 |---|---|
-| `deep-research` | Multi-source research with citations |
-| `search-first` | Search before writing code |
+| `research-handbook` | Multi-source research: parallel subagents, cited reports, operating modes |
+| `multi-agent-handbook` | Multi-agent architectures: sequential pipelines → DAG orchestration, iterative context retrieval |
+
+### Research
+Skills for investigation and discovery.
+
+| Skill | Purpose |
+|---|---|
+| `search-first` | Search for existing tools/libraries before writing custom code |
 | `todo-scout` | Scan codebase for backlog candidates |
-| `iterative-retrieval` | Progressive context retrieval pattern |
 
 ### Patterns
 Language/framework best-practice guides.
@@ -92,9 +113,8 @@ Skills about Claude Code itself.
 |---|---|
 | `skill-stocktake` | Audit skill library for quality |
 | `strategic-compact` | Context compaction at logical intervals |
-| `agentic-engineering` | Eval-first agentic execution, cost-aware routing |
-| `autonomous-loops` | Autonomous loop architectures and patterns |
-| `claude-api` | Build apps with the Anthropic SDK |
+
+---
 
 ## Planned
 
