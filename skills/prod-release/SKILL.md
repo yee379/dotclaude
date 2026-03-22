@@ -10,14 +10,14 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/plan-draft → /plan-board-review → implementation → /plan-closeout
+/codebase-draft → /codebase-board-review → implementation → /codebase-closeout
       │
       ▼
 /prod-release          ← YOU ARE HERE: environment promotion, smoke tests, feature flag
                          rollout, monitoring validation, rollback procedure
 ```
 
-Run after `/plan-eng-review` has passed and implementation is complete. This skill owns the promotion path from feature branch to production. Earlier skills validate plans — this skill ships them safely.
+Run after `/codebase-eng-review` has passed and implementation is complete. This skill owns the promotion path from feature branch to production. Earlier skills validate plans — this skill ships them safely.
 
 ---
 

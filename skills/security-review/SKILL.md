@@ -10,18 +10,18 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/plan-draft → /plan-board-review (board, parallel with plan-arch-review, plan-eng-review, plan-doc-review)
+/codebase-draft → /codebase-board-review (board, parallel with codebase-arch-review, codebase-eng-review, codebase-doc-review)
       │
       ▼
 /security-review       ← YOU ARE HERE: security gate: secrets, auth, input validation,
       │                  injection prevention, supply chain, Kubernetes workload security
       ▼
-implementation → /plan-closeout → /prod-release
+implementation → /codebase-closeout → /prod-release
 ```
 
-Run after `/plan-eng-review` and before promoting to production. This skill checks that the implementation is safe to ship — not just correct. Any security finding here should block `prod-release` until resolved.
+Run after `/codebase-eng-review` and before promoting to production. This skill checks that the implementation is safe to ship — not just correct. Any security finding here should block `prod-release` until resolved.
 
-To run all gates in sequence automatically, use `/plan-board-review` instead of invoking each skill individually.
+To run all gates in sequence automatically, use `/codebase-board-review` instead of invoking each skill individually.
 
 ---
 
