@@ -31,9 +31,9 @@ Apply the 15-minute unit rule:
 
 ## Model Routing
 
-- copilot-claude-haiku-4.5: classification, boilerplate transforms, narrow edits
-- copilot-claude-opus-4.6: architecture, root-cause analysis, troubleshooting, multi-file invariants, research, investigations, reviews, planning
-- copilot-claude-sonnet-4.6: implementation and refactors, default model
+- haiku: classification, boilerplate transforms, narrow edits
+- opus: architecture, root-cause analysis, troubleshooting, multi-file invariants, research, investigations, reviews, planning
+- sonnet: implementation and refactors, default model
 
 ## Session Strategy
 
