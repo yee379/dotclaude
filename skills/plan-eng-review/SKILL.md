@@ -10,7 +10,7 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/feature-plan → /full-review (board, parallel with plan-arch-review, plan-doc-review, security-review)
+/feature-plan → /plan-board-review (board, parallel with plan-arch-review, plan-doc-review, security-review)
       │
       ▼
 /plan-eng-review       ← YOU ARE HERE: implementation gate: code quality, test coverage,
@@ -21,7 +21,7 @@ compatibility: opencode
 
 Run after `/plan-arch-review` has validated the structural decisions and before writing code. This skill reviews **execution** — whether the implementation plan is correct, testable, and complete. `plan-arch-review` reviews **structure** — the decisions that are expensive to reverse.
 
-To run all gates in sequence automatically, use `/full-review` instead of invoking each skill individually.
+To run all gates in sequence automatically, use `/plan-board-review` instead of invoking each skill individually.
 
 ---
 

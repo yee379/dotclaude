@@ -1,11 +1,11 @@
 ---
-name: full-review
-description: Orchestrates the board review pipeline — runs deep-research, plan-arch-review, plan-eng-review, plan-doc-review, and security-review in parallel, then re-runs the full board if any reviewer amends the plan. Iterates until all reviewers pass in the same round with no changes. Use when asked to "run a full review", "review everything", or "gate this plan".
+name: plan-board-review
+description: Orchestrates the board review pipeline — runs deep-research, plan-arch-review, plan-eng-review, plan-doc-review, and security-review in parallel, then re-runs the full board if any reviewer amends the plan. Iterates until all reviewers pass in the same round with no changes. Use when asked to "run a full review", "review everything", "board review", or "gate this plan".
 license: MIT
 compatibility: opencode
 ---
 
-# Full Review
+# Plan Board Review
 
 Runs the five plan reviewers as a **board** — in parallel, not sequentially. If any reviewer
 amends the plan, the whole board re-reviews the updated plan. The round repeats until all
@@ -23,7 +23,7 @@ when you're clear to build.
 ## The board model
 
 ```
-/full-review (main session)
+/plan-board-review (main session)
       │
       ▼
   [Triage]      which reviewers are relevant for this change?
@@ -70,7 +70,7 @@ Before anything else, find what's being reviewed:
    - `git diff $(git merge-base HEAD main 2>/dev/null || git merge-base HEAD master 2>/dev/null || echo HEAD~5)...HEAD --stat 2>/dev/null | head -30` — code already on the branch may implicitly define scope
 
 If no plan is found, **stop** and tell the user:
-> "No plan found. Run `/feature-plan` first to produce a design document, then come back to `/full-review`."
+> "No plan found. Run `/feature-plan` first to produce a design document, then come back to `/plan-board-review`."
 
 If a plan is found, summarise it in 2-3 sentences so the user can confirm you've read the right
 thing before proceeding.
@@ -285,7 +285,7 @@ Reviewer roles:
    # SKILL_DIR is the directory containing this SKILL.md file
    bash $SKILL_DIR/poll-round.sh <review_dir> <round> <active_reviewer_codes...>
    # e.g.
-   bash ~/.claude/skills/full-review/poll-round.sh todo/review/007-my-feature 1 dr ar er dc
+   bash ~/.claude/skills/plan-board-review/poll-round.sh todo/review/007-my-feature 1 dr ar er dc
    ```
 
    The script prints one status line per reviewer and exits `0` when all are done, `1` if
@@ -316,9 +316,9 @@ Reviewer roles:
    — do not construct ad-hoc bash or read files manually:
 
    ```bash
-   bash ~/.claude/skills/full-review/consolidate-round.sh <review_dir> <round> <reviewer_codes...>
+   bash ~/.claude/skills/plan-board-review/consolidate-round.sh <review_dir> <round> <reviewer_codes...>
    # e.g.
-   bash ~/.claude/skills/full-review/consolidate-round.sh todo/review/007-my-feature 1 dr ar er dc sr
+   bash ~/.claude/skills/plan-board-review/consolidate-round.sh todo/review/007-my-feature 1 dr ar er dc sr
    ```
 
    The script extracts STATUS, AMENDED, DECISIONS, BLOCKING, and a ≤10-line SUMMARY for
@@ -497,7 +497,7 @@ If verdict is **CLEAR TO BUILD** or **CLEAR WITH WARNINGS**:
 4. **Commit everything together:**
    ```bash
    git add todo/<slug>.md TODO.md
-   git commit -m "docs(todo): merge board review into #NNN task file [full-review]"
+   git commit -m "docs(todo): merge board review into #NNN task file [plan-board-review]"
    ```
 
 Then tell the user (substituting the actual TODO number and slug):
@@ -533,12 +533,12 @@ If verdict is **BLOCKED** or **UNSTABLE**:
 4. **Commit everything together:**
    ```bash
    git add todo/<slug>.md TODO.md
-   git commit -m "docs(todo): merge blocked board review into #NNN task file [full-review]"
+   git commit -m "docs(todo): merge blocked board review into #NNN task file [plan-board-review]"
    ```
 
 Then tell the user:
 
-> "Resolve the issues above, then re-run `/full-review`."
+> "Resolve the issues above, then re-run `/plan-board-review`."
 
 ---
 

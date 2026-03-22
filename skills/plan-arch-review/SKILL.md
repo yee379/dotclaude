@@ -13,7 +13,7 @@ compatibility: opencode
 /feature-plan
       │
       ▼
-/full-review ──── runs these reviewers in parallel ────┐
+/plan-board-review ──── runs these reviewers in parallel ────┐
       │                                                 │
       │   /plan-arch-review  ← YOU ARE HERE             │
       │   /plan-eng-review                              │
@@ -26,9 +26,9 @@ compatibility: opencode
 implementation → /plan-closeout → /prod-release
 ```
 
-When invoked standalone (outside `/full-review`), run **after** `/feature-plan` and **before** `/plan-eng-review`. This skill reviews **structure** — the decisions that are expensive to reverse. `plan-eng-review` reviews **execution** — the decisions that are expensive to ship wrong.
+When invoked standalone (outside `/plan-board-review`), run **after** `/feature-plan` and **before** `/plan-eng-review`. This skill reviews **structure** — the decisions that are expensive to reverse. `plan-eng-review` reviews **execution** — the decisions that are expensive to ship wrong.
 
-To run all gates in sequence automatically, use `/full-review` instead of invoking each skill individually.
+To run all gates in sequence automatically, use `/plan-board-review` instead of invoking each skill individually.
 
 ---
 

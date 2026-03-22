@@ -109,7 +109,7 @@ Task(subagent_type="general-purpose", prompt="
 
 ### In the review pipeline
 
-`/search-first` is invoked automatically at two points in `/full-review`:
+`/search-first` is invoked automatically at two points in `/plan-board-review`:
 
 - **`/plan-arch-review` Section 4 (Technology choices)** — run for every novel technology or custom component before accepting it as a plan decision. The boring-by-default instinct requires knowing what already exists. Cannot spend an innovation token wisely without first checking whether an off-the-shelf solution almost works.
 - **`/plan-eng-review` Step 0 (Scope Challenge)** — run for any new custom utility, helper, or integration before counting it as implementation work. If a library already provides it, the scope shrinks.

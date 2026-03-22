@@ -10,7 +10,7 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/feature-plan → /full-review (board, parallel with plan-arch-review, plan-eng-review, plan-doc-review)
+/feature-plan → /plan-board-review (board, parallel with plan-arch-review, plan-eng-review, plan-doc-review)
       │
       ▼
 /security-review       ← YOU ARE HERE: security gate: secrets, auth, input validation,
@@ -21,7 +21,7 @@ implementation → /plan-closeout → /prod-release
 
 Run after `/plan-eng-review` and before promoting to production. This skill checks that the implementation is safe to ship — not just correct. Any security finding here should block `prod-release` until resolved.
 
-To run all gates in sequence automatically, use `/full-review` instead of invoking each skill individually.
+To run all gates in sequence automatically, use `/plan-board-review` instead of invoking each skill individually.
 
 ---
 

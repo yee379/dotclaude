@@ -26,7 +26,7 @@ the backlog that `/project-management` tracks.
 /feature-plan          ← turns thin task file into a full design
       │
       ▼
-/full-review → implementation → /plan-closeout → /prod-release
+/plan-board-review → implementation → /plan-closeout → /prod-release
 ```
 
 ---
@@ -428,7 +428,7 @@ After writing items, always suggest what to do next based on what was found:
 |-------|------------------|
 | `/project-management` | Scout writes task files in the same format; `/project-management` picks them up |
 | `/feature-plan` | Scout writes thin task files; `/feature-plan` fills in the design when the item is picked |
-| `/full-review` | Scout does not gate items — that happens later when a design exists |
+| `/plan-board-review` | Scout does not gate items — that happens later when a design exists |
 | `/security-review` | Scout's security lens is a quick pass; `/security-review` is the deep audit |
 | `/twelve-factor` | Scout's production lens overlaps; `/twelve-factor` is the systematic checklist |
 | `/code-review` | Scout finds structural patterns; `/code-review` reviews specific changes |

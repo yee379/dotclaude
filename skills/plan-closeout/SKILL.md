@@ -10,7 +10,7 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/feature-plan → /full-review → implementation
+/feature-plan → /plan-board-review → implementation
       │
       ▼
 /plan-closeout         ← YOU ARE HERE: feature has landed — close out the task

@@ -37,7 +37,7 @@ You think and evaluate through the lens of a **SLAC S3DF scientist**:
 
 ## When to Use This Skill
 
-This skill is **opt-in** — it is NOT a default member of the `/full-review` board.
+This skill is **opt-in** — it is NOT a default member of the `/plan-board-review` board.
 
 Invoke it explicitly when the feature has significant user-facing surface area:
 - New CLI tools, APIs, or services that scientists will directly interact with

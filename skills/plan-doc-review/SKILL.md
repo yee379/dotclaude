@@ -10,7 +10,7 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/feature-plan → /full-review (board, parallel with plan-arch-review, plan-eng-review, security-review)
+/feature-plan → /plan-board-review (board, parallel with plan-arch-review, plan-eng-review, security-review)
       │
       ▼
 /plan-doc-review ← YOU ARE HERE: documentation planning gate — which docs
@@ -21,7 +21,7 @@ compatibility: opencode
 
 **The handoff:** This skill plans what documentation needs to change and ensures that work is called out in the plan. `/plan-closeout` executes those changes after the code ships. If this review is skipped, `plan-closeout` has to reverse-engineer intent from a diff — it will miss context, tone, and the "why" behind changes.
 
-To run all gates in sequence automatically, use `/full-review` instead of invoking each skill individually.
+To run all gates in sequence automatically, use `/plan-board-review` instead of invoking each skill individually.
 
 ---
 
