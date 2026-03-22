@@ -24,7 +24,7 @@ REVIEWERS=("$@")
 
 code_to_name() {
   case "$1" in
-    dr) echo "deep-research"   ;;
+    dr) echo "research-handbook"   ;;
     ar) echo "plan-arch-review" ;;
     er) echo "plan-eng-review" ;;
     dc) echo "plan-doc-review" ;;

@@ -1,13 +1,13 @@
 ---
 name: plan-board-review
-description: Orchestrates the board review pipeline — runs deep-research, plan-arch-review, plan-eng-review, plan-doc-review, security-review, and plan-ux-review (triage-gated) in parallel, then re-runs the full board if any reviewer amends the plan. Iterates until all reviewers pass in the same round with no changes. Use when asked to "run a full review", "review everything", "board review", or "gate this plan".
+description: Orchestrates the board review pipeline — runs research-handbook, plan-arch-review, plan-eng-review, plan-doc-review, security-review, and plan-ux-review (triage-gated) in parallel, then re-runs the full board if any reviewer amends the plan. Iterates until all reviewers pass in the same round with no changes. Use when asked to "run a full review", "review everything", "board review", or "gate this plan".
 license: MIT
 compatibility: opencode
 ---
 
 # Plan Board Review
 
-Runs up to six board reviewers — `deep-research`, `plan-arch-review`, `plan-eng-review`, `plan-doc-review`, `security-review`, and `plan-ux-review` — in parallel, not sequentially. Triage determines which reviewers apply; `plan-ux-review` is included when the change has direct user-facing surface area and skipped for pure infra/backend work. If any reviewer
+Runs up to six board reviewers — `research-handbook`, `plan-arch-review`, `plan-eng-review`, `plan-doc-review`, `security-review`, and `plan-ux-review` — in parallel, not sequentially. Triage determines which reviewers apply; `plan-ux-review` is included when the change has direct user-facing surface area and skipped for pure infra/backend work. If any reviewer
 amends the plan, the whole board re-reviews the updated plan. The round repeats until all
 reviewers pass in the same round without triggering any further changes. Maximum 3 rounds.
 
@@ -32,7 +32,7 @@ when you're clear to build.
   ┌─────────────────────────────────────────────────────────────────┐
   │  ROUND N  (all reviewers launched as parallel subagents)        │
   │                                                                 │
-  │  subagent: deep-research     → todo/review/<slug>/round-N-dr.md │
+  │  subagent: research-handbook     → todo/review/<slug>/round-N-dr.md │
   │  subagent: plan-arch-review  → todo/review/<slug>/round-N-ar.md │
   │  subagent: plan-eng-review   → todo/review/<slug>/round-N-er.md │
   │  subagent: plan-doc-review   → todo/review/<slug>/round-N-dc.md │
@@ -102,7 +102,7 @@ Not every change needs every reviewer. Run triage first to avoid wasted effort.
 ```
 REVIEWER             SKIP IF...
 ──────────────────────────────────────────────────────────────────────
-deep-research        the technology and approach are well-understood —
+research-handbook        the technology and approach are well-understood —
                      no unknowns that would make the plan speculative
 plan-arch-review     change touches only a single existing service with
                      no new data stores, no new async channels, no service
@@ -127,7 +127,7 @@ Present the triage result as plain text (not a code block) and immediately proce
 
    Triage complete
    ──────────────────────────────────────────────────────
-   deep-research        RUN | SKIP (reason)
+   research-handbook        RUN | SKIP (reason)
    plan-arch-review     RUN | SKIP (reason)
    plan-eng-review      RUN | SKIP (reason)
    plan-doc-review      RUN | SKIP (reason)
@@ -157,7 +157,7 @@ Run up to **3 rounds**. In each round:
 
    | Reviewer | Sections to include |
    |---|---|
-   | deep-research | Problem Statement, Goals, Design (full), Open Questions |
+   | research-handbook | Problem Statement, Goals, Design (full), Open Questions |
    | plan-arch-review | Problem Statement, Goals, Design (full), Non-Goals, Open Questions |
    | plan-eng-review | Problem Statement, Goals, Design (full), Implementation Plan, Implementation Checklist, Open Questions |
    | plan-doc-review | Problem Statement, Goals, Non-Goals, Implementation Plan (step titles only) |
@@ -202,7 +202,7 @@ context window. Prioritise ruthlessly:
 Priority hierarchy (most important first — never skip these):
 - plan-arch-review: Step 0 scope assessment → service boundary diagram → ADRs
 - plan-eng-review: Step 0 scope challenge → test diagram → critical gaps
-- deep-research: assumption verification → dependency health → obsolescence
+- research-handbook: assumption verification → dependency health → obsolescence
 - plan-doc-review: mandatory doc list → gaps
 - security-review: auth/authz → injection → secrets
 
@@ -266,8 +266,8 @@ Severity levels:
 ```
 
 Reviewer roles:
-- **deep-research**: Fact-check plan assumptions, check dependency health, identify obsolescence
-  risks and simplification opportunities. See `/deep-research` Mode 2 guidelines.
+- **research-handbook**: Fact-check plan assumptions, check dependency health, identify obsolescence
+  risks and simplification opportunities. See `/research-handbook` Mode 2 guidelines.
 - **plan-arch-review**: Evaluate service boundaries, data ownership, consistency models,
   technology selection, failure domains. Write ADRs to `docs/adr/` for significant decisions.
 - **plan-eng-review**: Review implementation correctness, test coverage, performance, edge cases.
@@ -291,7 +291,7 @@ Reviewer roles:
    ```
 
    The script prints one status line per reviewer and exits `0` when all are done, `1` if
-   any are still running. Reviewer codes: `dr` deep-research, `ar` plan-arch-review,
+   any are still running. Reviewer codes: `dr` research-handbook, `ar` plan-arch-review,
    `er` plan-eng-review, `dc` plan-doc-review, `sr` security-review.
 
    After each poll, emit the status table as plain text (not a code block):
@@ -391,7 +391,7 @@ Reviewer roles:
 
    #NNN Round N complete
    ──────────────────────────────────────────────────────────────────
-   deep-research        ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
+   research-handbook        ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
    plan-arch-review     ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
    plan-eng-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
    plan-doc-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
@@ -430,7 +430,7 @@ After the board completes (or is halted), produce the final summary as plain tex
    Date:    {date}
    Rounds:  {N completed}
    ------------------------------------------------------------
-   deep-research        {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+   research-handbook        {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
    plan-arch-review     {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
    plan-eng-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
    plan-doc-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
@@ -477,7 +477,7 @@ If verdict is **CLEAR TO BUILD** or **CLEAR WITH WARNINGS**:
 
    | Reviewer | Result | Amended | Key findings |
    |---|---|---|---|
-   | deep-research | ✅ PASS | N | <one-line summary> |
+   | research-handbook | ✅ PASS | N | <one-line summary> |
    | plan-arch-review | ✅ PASS | Y | <one-line summary> |
    | plan-eng-review | ✅ PASS | N | <one-line summary> |
    | plan-doc-review | ✅ PASS | N | <one-line summary> |

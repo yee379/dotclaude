@@ -80,7 +80,7 @@ All output from the planning phases below should be written back into the task f
 ### Phase 0 — Research (if needed)
 
 Before framing the problem, check whether there are unknowns that would make the plan speculative.
-Run `/deep-research` or `/search-first` if any of the following are true:
+Run `/research-handbook` or `/search-first` if any of the following are true:
 
 - The technology, library, or approach is unfamiliar
 - There are competing approaches and you don't know the trade-offs yet

@@ -1,5 +1,5 @@
 ---
-name: deep-research
+name: research-handbook
 description: Multi-source deep research using parallel subagents and native web fetch. Searches the web, synthesizes findings, and delivers cited reports with source attribution. Use when the user wants thorough research on any topic with evidence and citations.
 origin: ECC
 ---
@@ -10,7 +10,7 @@ Produce thorough, cited research reports from multiple web sources using paralle
 
 ## Planning Context
 
-When invoked as part of the planning workflow, deep-research operates in one of two modes
+When invoked as part of the planning workflow, research-handbook operates in one of two modes
 depending on where it's called from:
 
 ### Mode 1: Feature research (called from /plan-draft — Phase 0)

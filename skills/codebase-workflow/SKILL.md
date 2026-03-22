@@ -193,7 +193,7 @@ Include a recommended answer so they can be resolved quickly.
 
 | Reviewer | Result | Amended | Key findings |
 |---|---|---|---|
-| deep-research | — | — | — |
+| research-handbook | — | — | — |
 | plan-arch-review | — | — | — |
 | plan-eng-review | — | — | — |
 | plan-doc-review | — | — | — |
@@ -276,7 +276,7 @@ implementation.** Ask first:
    All output (requirements, architecture, ADRs, delivery slices) gets written back into
    the task file's **Design** and **Implementation Plan** sections.
 3. **Research first if needed** — if the Design section is empty *and* the technology is
-   unfamiliar, run `/deep-research` or `/search-first` before calling `/plan-draft`.
+   unfamiliar, run `/research-handbook` or `/search-first` before calling `/plan-draft`.
    Save findings to `todo/research/<slug>/` and link from the task file's Design section.
 4. Add Open Questions for anything that requires a decision before implementation starts.
 5. Present the plan for approval before writing code.
@@ -510,7 +510,7 @@ When asked "what are we working on?" or "show me project status", always read `T
 | `/todo-scout` | Run to proactively generate backlog candidates; writes task files directly into `todo/` |
 | `/plan-draft` | Run first; paste or link the output into the task file's **Design** section |
 | `/plan-board-review` | Run the review pipeline against the design before starting implementation |
-| `/deep-research` | Research findings saved to `todo/research/<slug>/`; linked from task file |
+| `/research-handbook` | Research findings saved to `todo/research/<slug>/`; linked from task file |
 | `/code-review` | Review findings that require fixes become new task checklist items or new backlog items |
 | `/security-review` | Security gaps discovered become P0/P1 backlog items |
 | `/plan-closeout` | After shipping, close out the task file, sync TODO.md, update all docs, and polish CHANGELOG |
