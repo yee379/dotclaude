@@ -123,18 +123,21 @@ codebase-ux-review       change has no direct user-facing surface — pure
 **Default: run all reviewers.** Only skip if the skip condition is clearly and unambiguously met.
 When in doubt, run it.
 
-Present the triage result as plain text (not a code block) and immediately proceed to Step 2 — no confirmation needed:
+Present the triage result directly in your response as plain prose — **NOT inside a code
+block, NOT inside backticks**. Immediately proceed to Step 2 — no confirmation needed. Example:
 
-   Triage complete
-   ──────────────────────────────────────────────────────
-   research-handbook        RUN | SKIP (reason)
-   codebase-arch-review     RUN | SKIP (reason)
-   codebase-eng-review      RUN | SKIP (reason)
-   codebase-doc-review      RUN | SKIP (reason)
-   security-review      RUN | SKIP (reason)
-   codebase-ux-review       RUN | SKIP (reason)
-   ──────────────────────────────────────────────────────
-   Starting Round 1...
+Triage complete
+──────────────────────────────────────────────────────
+research-handbook        RUN | SKIP (reason)
+codebase-arch-review     RUN | SKIP (reason)
+codebase-eng-review      RUN | SKIP (reason)
+codebase-doc-review      RUN | SKIP (reason)
+security-review          RUN | SKIP (reason)
+codebase-ux-review       RUN | SKIP (reason)
+──────────────────────────────────────────────────────
+Starting Round 1...
+
+IMPORTANT: Do not wrap this in ``` backticks. Emit it as raw text in your reply.
 
 ---
 
@@ -294,14 +297,17 @@ Reviewer roles:
    any are still running. Reviewer codes: `dr` research-handbook, `ar` codebase-arch-review,
    `er` codebase-eng-review, `dc` codebase-doc-review, `sr` security-review.
 
-   After each poll, emit the status table as plain text (not a code block):
+   After each poll, emit the status table directly in your response as plain prose — **NOT
+   inside a code block, NOT inside backticks**. The table must be readable inline. Example:
 
-   ⏳ #NNN Round N — in progress  (elapsed: Xs)
-   ──────────────────────────────────────────────────────────────
-   Reviewer             Status            Early signal
-   ──────────────────────────────────────────────────────────────
-   <poll-round.sh output here>
-   ──────────────────────────────────────────────────────────────
+⏳ #NNN Round N — in progress  (elapsed: Xs)
+──────────────────────────────────────────────────────────────
+Reviewer             Status            Early signal
+──────────────────────────────────────────────────────────────
+<poll-round.sh output here>
+──────────────────────────────────────────────────────────────
+
+   IMPORTANT: Do not wrap this in ``` backticks. Emit it as raw text in your reply.
 
    Wait **3 minutes** between polls. Do not call the script more frequently — each status
    table emitted costs tokens. Poll → render table → sleep 180 → repeat.
@@ -341,17 +347,20 @@ Reviewer roles:
 
    a. **`blocking` decisions first** — work through them one at a time, in order. For each:
 
-      1. Present the decision as plain text (not a code block):
+      1. Present the decision directly in your response as plain prose — **NOT inside a code
+         block, NOT inside backticks**. Example:
 
-         🛑 BLOCKING DECISION <M> of <total> — <reviewer name>
-         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-         ❓ <the question>
+🛑 BLOCKING DECISION <M> of <total> — <reviewer name>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+❓ <the question>
 
-         Options:
-           A) ...
-           B) ...
+Options:
+  A) ...
+  B) ...
 
-         ⚠️  The review cannot proceed until this is answered.
+⚠️  The review cannot proceed until this is answered.
+
+IMPORTANT: Do not wrap this in ``` backticks. Emit it as raw text in your reply.
 
       2. Wait for the user's answer.
       3. **Mark this decision resolved.** Update the plan file to reflect the choice.
@@ -368,38 +377,44 @@ Reviewer roles:
       after blocking decisions are resolved. Ask the user to confirm, override, or accept the
       defaults. One confirmation call covers all judgement-calls in a round.
 
-      Format the judgement-call group as plain text (not a code block):
+      Format the judgement-call group directly in your response as plain prose — **NOT inside
+      a code block, NOT inside backticks**. Example:
 
-      🤔 JUDGEMENT CALLS — please confirm or override  (<N> decisions)
-      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-      1. [<reviewer>] <question> → defaulted to: <assumed>
-      2. [<reviewer>] <question> → defaulted to: <assumed>
-      ...
+🤔 JUDGEMENT CALLS — please confirm or override  (<N> decisions)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. [<reviewer>] <question> → defaulted to: <assumed>
+2. [<reviewer>] <question> → defaulted to: <assumed>
+...
 
-      Reply "ok" to accept all defaults, or specify overrides by number.
+Reply "ok" to accept all defaults, or specify overrides by number.
 
-   c. **`defaulted` decisions** — list them as plain text (not a code block):
+IMPORTANT: Do not wrap this in ``` backticks. Emit it as raw text in your reply.
 
-      ℹ️  <N> minor defaults taken — see reviewer output files for details.
+   c. **`defaulted` decisions** — list them as plain text (not a code block). Example format:
 
-      No user action required unless they want to override.
+ℹ️  <N> minor defaults taken — see reviewer output files for details.
+
+No user action required unless they want to override.
 
    Only after all blocking decisions are answered and judgement-calls are confirmed, proceed to
    the round dashboard.
 
-7. Show the round dashboard as plain text (not a code block):
+7. Show the round dashboard directly in your response as plain prose — **NOT inside a code
+   block, NOT inside backticks**. Example:
 
-   #NNN Round N complete
-   ──────────────────────────────────────────────────────────────────
-   research-handbook        ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
-   codebase-arch-review     ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
-   codebase-eng-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
-   codebase-doc-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
-   security-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
-   codebase-ux-review       ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
-   ──────────────────────────────────────────────────────────────────
-   Decisions resolved this round: N blocking / N judgement-call / N defaulted
-   Plan amended this round: YES → starting Round N+1 | NO → board complete
+#NNN Round N complete
+──────────────────────────────────────────────────────────────────
+research-handbook        ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
+codebase-arch-review     ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
+codebase-eng-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
+codebase-doc-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
+security-review          ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
+codebase-ux-review       ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
+──────────────────────────────────────────────────────────────────
+Decisions resolved this round: N blocking / N judgement-call / N defaulted
+Plan amended this round: YES → starting Round N+1 | NO → board complete
+
+IMPORTANT: Do not wrap this in ``` backticks. Emit it as raw text in your reply.
 
 `✂️ TRUNC` — agent hit context limit; note which sections were reached vs missed.
 
@@ -421,33 +436,36 @@ Reviewer roles:
 
 ## Step 3: Final summary
 
-After the board completes (or is halted), produce the final summary as plain text (not a code block):
+After the board completes (or is halted), produce the final summary directly in your response
+as plain prose — **NOT inside a code block, NOT inside backticks**. Example:
 
-   FULL REVIEW — FINAL SUMMARY  #NNN Round N
-   ============================================================
-   Plan:    {plan file or description}
-   Branch:  {branch}
-   Date:    {date}
-   Rounds:  {N completed}
-   ------------------------------------------------------------
-   research-handbook        {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
-   codebase-arch-review     {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
-   codebase-eng-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
-   codebase-doc-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
-   security-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
-   codebase-ux-review       {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
-   ------------------------------------------------------------
-   ADRs written:          {N}  (in docs/adr/)
-   Test plan written:     {Y/N}  (in todo/ task file)
-   Doc gaps added:        {N}
-   Accepted warnings:     {N}
-   Blocking issues:       {N}
-   ------------------------------------------------------------
-   Decisions resolved:    {N blocking} / {N judgement-call} / {N defaulted}
-   Unresolved decisions:  {N}  ← non-zero means the plan has open assumptions
-   ------------------------------------------------------------
-   VERDICT:  CLEAR TO BUILD | BLOCKED | CLEAR WITH WARNINGS | UNSTABLE
-   ============================================================
+FULL REVIEW — FINAL SUMMARY  #NNN Round N
+============================================================
+Plan:    {plan file or description}
+Branch:  {branch}
+Date:    {date}
+Rounds:  {N completed}
+------------------------------------------------------------
+research-handbook        {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+codebase-arch-review     {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+codebase-eng-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+codebase-doc-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+security-review          {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+codebase-ux-review       {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+------------------------------------------------------------
+ADRs written:          {N}  (in docs/adr/)
+Test plan written:     {Y/N}  (in todo/ task file)
+Doc gaps added:        {N}
+Accepted warnings:     {N}
+Blocking issues:       {N}
+------------------------------------------------------------
+Decisions resolved:    {N blocking} / {N judgement-call} / {N defaulted}
+Unresolved decisions:  {N}  ← non-zero means the plan has open assumptions
+------------------------------------------------------------
+VERDICT:  CLEAR TO BUILD | BLOCKED | CLEAR WITH WARNINGS | UNSTABLE
+============================================================
+
+IMPORTANT: Do not wrap this in ``` backticks. Emit it as raw text in your reply.
 
 **CLEAR TO BUILD** — all reviewers passed in the final round, no unresolved issues.
 
@@ -463,15 +481,20 @@ which reviewer they belong to.
 
 ## After the review
 
-If verdict is **CLEAR TO BUILD** or **CLEAR WITH WARNINGS**:
+Regardless of verdict, **all reviewer output must be persisted into the task file** before the
+review artefact directory is deleted. This is the permanent record — once `rm -rf` runs, the
+per-reviewer detail is gone forever.
 
-1. **Merge review artefacts into the task file.** Append a `## Board Review` section to
-   `todo/<slug>.md` with a condensed summary of the board's findings:
+### Merging artefacts
+
+1. **Append a `## Board Review` section to `todo/<slug>.md`.** This section has two parts:
+
+   **Part A — Summary table** (always written first):
 
    ```markdown
    ## Board Review
 
-   **Verdict:** CLEAR TO BUILD | CLEAR WITH WARNINGS
+   **Verdict:** CLEAR TO BUILD | CLEAR WITH WARNINGS | BLOCKED | UNSTABLE
    **Date:** YYYY-MM-DD
    **Rounds:** N
 
@@ -482,63 +505,110 @@ If verdict is **CLEAR TO BUILD** or **CLEAR WITH WARNINGS**:
    | codebase-eng-review | ✅ PASS | N | <one-line summary> |
    | codebase-doc-review | ✅ PASS | N | <one-line summary> |
    | security-review | ⚠️ WARN | N | <one-line summary> |
+   | codebase-ux-review | — SKIP | N | — |
 
    **Accepted warnings:** <list any warnings the user accepted, or "none">
    **ADRs written:** <N> (in docs/adr/)
+   **Unresolved decisions:** <N> (or "none")
    ```
 
-2. **Delete the review artefact directory:**
+   **Part B — Full reviewer output** (appended immediately after the summary table, one
+   collapsible block per reviewer that ran — do not include SKIP reviewers):
+
+   ```markdown
+   ### Reviewer output
+
+   <details>
+   <summary>research-handbook — Round N (✅ PASS)</summary>
+
+   <!-- paste full contents of todo/review/<slug>/round-N-dr.md here -->
+
+   </details>
+
+   <details>
+   <summary>codebase-arch-review — Round N (✅ PASS)</summary>
+
+   <!-- paste full contents of todo/review/<slug>/round-N-ar.md here -->
+
+   </details>
+
+   <details>
+   <summary>codebase-eng-review — Round N (✅ PASS)</summary>
+
+   <!-- paste full contents of todo/review/<slug>/round-N-er.md here -->
+
+   </details>
+
+   <details>
+   <summary>codebase-doc-review — Round N (✅ PASS)</summary>
+
+   <!-- paste full contents of todo/review/<slug>/round-N-dc.md here -->
+
+   </details>
+
+   <details>
+   <summary>security-review — Round N (⚠️ WARN)</summary>
+
+   <!-- paste full contents of todo/review/<slug>/round-N-sr.md here -->
+
+   </details>
+   ```
+
+   For multi-round reviews, include **only the final round's output** for each reviewer —
+   the round that produced the passing verdict. Earlier rounds were intermediate drafts; the
+   final round is the authoritative record.
+
+   If a reviewer was truncated (✂️ TRUNC), include its partial output with a note:
+   `⚠️ Truncated — output is partial; sections reached: <list>`
+
+2. **Delete the review artefact directory** — only after the task file has been written:
    ```bash
    rm -rf todo/review/<slug>/
    ```
 
 3. **Update the task file and `TODO.md`:**
+
+   If verdict is **CLEAR TO BUILD** or **CLEAR WITH WARNINGS**:
    - Set `**Status:**` in the task file to `🔍 Reviewed`
    - Update `TODO.md` — flip the status column to `🔍 Reviewed`
 
-4. **Commit everything together:**
-   ```bash
-   git add todo/<slug>.md TODO.md
-   git commit -m "docs(todo): merge board review into #NNN task file [codebase-board-review]"
-   ```
-
-Then tell the user (substituting the actual TODO number and slug):
-
-   ✅ #NNN <title> — CLEAR TO BUILD
-
-   #NNN todo/<slug>.md
-        ↓
-   /codebase-workflow   ← track progress, keep TODO.md in sync
-        ↓
-   /tdd-standards         ← tests first, then implementation
-        ↓
-   /codebase-closeout #NNN   ← close out task, apply doc updates, sync TODO.md
-        ↓
-   /prod-release         ← promote through environments
-
-If verdict is **BLOCKED** or **UNSTABLE**:
-
-1. **Merge review artefacts into the task file.** Append a `## Board Review` section as above,
-   but with verdict BLOCKED or UNSTABLE and a clear list of blocking issues.
-
-2. **Delete the review artefact directory:**
-   ```bash
-   rm -rf todo/review/<slug>/
-   ```
-
-3. **Update the task file and `TODO.md`:**
+   If verdict is **BLOCKED** or **UNSTABLE**:
    - Set `**Status:**` in the task file back to `⬜ Open`
    - Update `TODO.md` — flip the status column back to `⬜ Open`
    - Add a note in the task file's Problems & Solutions section describing what blocked the
      review and which issues must be resolved before re-running.
 
 4. **Commit everything together:**
+
+   If CLEAR TO BUILD or CLEAR WITH WARNINGS:
+   ```bash
+   git add todo/<slug>.md TODO.md
+   git commit -m "docs(todo): merge board review into #NNN task file [codebase-board-review]"
+   ```
+
+   If BLOCKED or UNSTABLE:
    ```bash
    git add todo/<slug>.md TODO.md
    git commit -m "docs(todo): merge blocked board review into #NNN task file [codebase-board-review]"
    ```
 
-Then tell the user:
+---
+
+If verdict is **CLEAR TO BUILD** or **CLEAR WITH WARNINGS**, tell the user:
+
+✅ #NNN <title> — CLEAR TO BUILD
+
+#NNN todo/<slug>.md
+     ↓
+/codebase-workflow   ← track progress, keep TODO.md in sync
+     ↓
+/tdd-standards         ← tests first, then implementation
+     ↓
+/codebase-closeout #NNN   ← close out task, apply doc updates, sync TODO.md
+     ↓
+/prod-release         ← promote through environments
+
+If verdict is **BLOCKED** or **UNSTABLE**, tell the user:
 
 > "Resolve the issues above, then re-run `/codebase-board-review`."
 

@@ -1,6 +1,6 @@
 ---
 name: research-workflow
-description: Manages all research output — cataloguing concepts and writing reports into source/, concepts/, and reports/ with bidirectional cross-linking and confidence tracking.
+description: Manages all research output — cataloguing concepts, writing reports, and synthesising charge answers into source/, concepts/, reports/, and charges/ with bidirectional cross-linking and confidence tracking.
 ---
 
 # research-workflow
@@ -40,12 +40,13 @@ Then respond to the user's request in one of two ways:
 
 ## Purpose
 
-This skill has two modes:
+This skill has three modes:
 
 | Mode | Command trigger | Output directory |
 |------|----------------|-----------------|
 | **Catalogue** a technology / standard / tool / concept | `/research-workflow catalogue <topic>` | `concepts/` |
 | **Report** on a topic | `/research-workflow report <topic>` | `reports/` |
+| **Charge** — synthesise existing research to answer a charge question | `/research-workflow charge <N>` or `answer charge N` | `charges/` |
 
 You can also omit the mode word and describe what you want in plain English — Claude will infer which mode applies.
 
@@ -214,13 +215,155 @@ pure reference count.
 
 ## Repository Layout
 
-| Directory | Purpose | Written by |
+| Directory / File | Purpose | Written by |
 |-----------|---------|------------|
 | `source/` | Verbatim primary documents — specs, upstream materials, ground-truth inputs placed here by the user | **User only — never Claude** |
 | `concepts/` | Distilled, neutral descriptions of technologies, tools, protocols, and standards | Claude (catalogue mode) |
 | `reports/` | Opinionated analysis and recommendations applied to the project's context | Claude (report mode) |
+| `charges/` | Synthesis answer documents — one per charge question; collate findings from `concepts/` and `reports/` to answer the question directly | Claude (charge mode) |
+| `CHARGE.md` | The research brief — the set of questions this project is intended to answer, each linked to its answer document in `charges/` | **User-defined (Claude maintains links)** |
 | `_scratch/` | Temporary research checkpoints; deleted after output files are written | Claude (transient) |
 | `_cache/` | Cleaned, persisted web fetch content — reused across sessions and subagents to avoid re-fetching | Claude (persistent until stale) |
+
+---
+
+## Charges — Synthesis Layer
+
+`CHARGE.md` and `charges/` form a fourth tier above `reports/` and `concepts/`. They exist
+to answer the question: *given everything we now know, what is the answer to the original
+research question?*
+
+### The four-tier reading path
+
+```
+CHARGE.md        ← the questions  (what are we trying to answer?)
+charges/         ← synthesised answers  (what did we find, in plain terms?)
+reports/         ← detailed analysis  (why, with evidence and citations)
+concepts/        ← factual reference  (what is this thing?)
+```
+
+Charge files are **the entry point for decision-makers** who do not want to read every report.
+A reader who only reads `charges/` should understand the state of the research, the
+recommendation, and the key residual open questions — with links into `reports/` for depth.
+
+### `CHARGE.md` — the research brief
+
+`CHARGE.md` is user-defined. It contains the broad questions the research is expected to
+answer, grouped by theme, each linking to its answer document in `charges/`. Questions are
+intentionally broad — each one may be answered by synthesising multiple reports and concepts.
+
+Claude maintains the links in `CHARGE.md` (adding `(charges/charge-NN.md)` when a new
+charge file is created) but **never rewrites or reorders the questions themselves** — that
+is the user's prerogative.
+
+### `charges/` — answer documents
+
+Each charge file answers one question from `CHARGE.md`. It is a **synthesis document**, not
+new research. It:
+
+1. **Reads across `concepts/` and `reports/`** to collate the relevant findings
+2. **States a direct answer** to the charge question — not "it depends" without follow-up
+3. **Cites evidence** with inline `[→ report-slug.md §section-name]` references
+4. **Identifies residual open questions** — what is still unknown or unresolved
+
+Charge files are the *most opinionated* output in the repository. Where reports hedge or
+present options, charge files commit to an answer based on the weight of evidence.
+
+### Charge file structure
+
+```markdown
+# Charge N: <verbatim question from CHARGE.md>
+
+> **Status:** Answered | Partial | Open
+> **Primary sources:** `reports/foo.md`, `reports/bar.md`, `concepts/baz.md`
+
+## Answer
+
+[2–5 sentence direct answer to the charge question. State a position. Cite reports inline
+as [→ slug.md §section]. Do not hedge unless the evidence is genuinely ambiguous — in that
+case, state why it is ambiguous and what would resolve it.]
+
+## Evidence
+
+### <Report or concept title> — `<filename>`
+
+- **Key finding:** "[direct quote or tight paraphrase]" (§section-name)
+- **Key finding:** "[direct quote or tight paraphrase]" (§section-name)
+[…repeat for each primary source; omit sources that add no new evidence for this charge]
+
+## Residual Open Questions
+
+1. [Specific unresolved question — what decision or information would close it]
+2. …
+```
+
+**Status values:**
+
+| Status | Meaning |
+|--------|---------|
+| `Answered` | A clear, defensible answer exists based on research to date |
+| `Partial` | An answer exists for the main thrust but one or more sub-questions remain open |
+| `Open` | Insufficient research to answer; records what is known and what is needed |
+
+### When to write or update a charge file
+
+Write or update a charge file when:
+
+- A new report is written that directly answers or changes the answer to a charge question
+- A charge is explicitly requested: *"answer charge 3"* or *"update charge 7 given the new report"*
+- A charge status needs to change (e.g. from `Partial` to `Answered` after a gap is resolved)
+
+Do **not** automatically update all charge files every time a new report is written — only
+update the charges materially affected by the new finding.
+
+### Charge mode — how to work a charge
+
+**Trigger:** User says *"answer charge N"*, *"update charge N"*, *"write up charge N"*, or
+*"what does the research say about [question]?"* where the question maps to a charge.
+
+**Workflow:**
+
+1. Read `CHARGE.md` — identify the charge question and its number
+2. Read the existing `charges/charge-NN.md` if it exists — understand current status
+3. **Read all reports and concepts cited as primary sources** for this charge (in parallel)
+4. **Scan for newly relevant files** — `ls reports/` and `ls concepts/`, skim `README.md`
+   for any output written since the charge was last updated that bears on the question
+5. Write the answer: commit to a position, cite evidence with `§section` references,
+   list residual open questions
+6. Update `CHARGE.md` — add or refresh the link to the charge file
+
+**No external research in charge mode.** Charge files synthesise existing `concepts/` and
+`reports/` — they do not originate new research. If the charge cannot be answered from
+existing output, record it as `Open` and add the missing research as a `todo` in `TOPICS.md`.
+
+### Evidence citation format
+
+```
+[→ report-slug.md §Section Title]
+```
+
+Direct quotes use standard Markdown blockquotes:
+
+```markdown
+> "The connector doesn't support refresh tokens since the SAML 2.0 protocol doesn't provide
+> a way to requery a provider without interaction." [→ dex-integration.md §1.3]
+```
+
+### Charge files and README.md
+
+Charge files are **not listed in README.md's reports table**. `README.md` indexes `concepts/`
+and `reports/`. Charge files are navigated via `CHARGE.md`.
+
+The README should include a reading-path entry pointing at `CHARGE.md` as the
+management-level entry point:
+
+```markdown
+**"I need a management-level summary of what the research concluded"**
+→ `CHARGE.md` — browse the questions; each links to its synthesis answer
+→ follow `Primary sources` links in each charge for detailed evidence
+```
+
+---
 
 ### `source/` — Primary Source Documents
 
@@ -700,7 +843,11 @@ or the user says "catalogue / document / what is / how does X work".
 **Report mode** when the topic is a question, recommendation, decision, or comparison, or the
 user says "report / should we / viability / compare / roadmap".
 
-When in doubt, ask: *"Should I catalogue this as a reference entry, or write a recommendation report?"*
+**Charge mode** when the user says "answer charge N", "update charge N", "write charge N",
+or asks a question that maps directly to a numbered charge in `CHARGE.md`. Charge mode reads
+existing `concepts/` and `reports/` only — it does not fetch external sources.
+
+When in doubt, ask: *"Should I catalogue this as a reference entry, write a recommendation report, or synthesise an answer to a charge question?"*
 
 ### Step 2 — Check for existing files
 
