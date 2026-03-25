@@ -27,12 +27,12 @@ Runs six board reviewers in parallel. If any reviewer amends the plan, the whole
   ┌─────────────────────────────────────────────────────────────────┐
   │  ROUND N  (all reviewers launched as parallel subagents)        │
   │                                                                 │
-  │  subagent: platform-arch-review     → platform/review/<slug>/round-N-ar.md │
-  │  subagent: platform-capacity-review → platform/review/<slug>/round-N-cr.md │
-  │  subagent: platform-security-review → platform/review/<slug>/round-N-sr.md │
-  │  subagent: platform-ops-review      → platform/review/<slug>/round-N-or.md │
-  │  subagent: platform-eng-review      → platform/review/<slug>/round-N-er.md │
-  │  subagent: platform-doc-review      → platform/review/<slug>/round-N-dc.md │
+  │  subagent: platform-arch-review     → todo/review/<slug>/round-N-ar.md │
+  │  subagent: platform-capacity-review → todo/review/<slug>/round-N-cr.md │
+  │  subagent: platform-security-review → todo/review/<slug>/round-N-sr.md │
+  │  subagent: platform-ops-review      → todo/review/<slug>/round-N-or.md │
+  │  subagent: platform-eng-review      → todo/review/<slug>/round-N-er.md │
+  │  subagent: platform-doc-review      → todo/review/<slug>/round-N-dc.md │
   │                                                                 │
   │  main session reads all outputs, collects Decisions Required    │
   │  blocking decisions? ──────────────────── AskUserQuestion (×N) │
@@ -50,17 +50,17 @@ Runs six board reviewers in parallel. If any reviewer amends the plan, the whole
 
 ## Step 0: Locate the plan
 
-1. **If the user named a task number** (e.g. "review platform 003"): glob `platform/<number>-*.md` and read it.
-2. **Otherwise**: check `PLATFORM.md` for the in-progress task and read its file.
+1. **If the user named a task number** (e.g. "review platform 003"): glob `todo/<number>-*.md` and read it.
+2. **Otherwise**: check `TODO.md` for the in-progress task and read its file.
 
 If no plan is found, stop:
 > "No platform plan found. Run `/platform-draft` first to produce a design document, then come back to `/platform-board-review`."
 
 Summarise the plan in 2-3 sentences so the user can confirm you've read the right thing.
 
-**Immediately after confirming the plan**, update the task file and `PLATFORM.md`:
+**Immediately after confirming the plan**, update the task file and `TODO.md`:
 - Set `**Status:**` in the task file to `🔎 In Review`
-- Update `PLATFORM.md` — flip the status column to `🔎 In Review`
+- Update `TODO.md` — flip the status column to `🔎 In Review`
 
 **Context discipline:** Store the plan as a file path only. Do not hold full plan content in working memory across rounds — subagents read it from disk. After consolidating a round, drop reviewer output content from working memory.
 
@@ -114,7 +114,7 @@ Run up to **3 rounds**. In each round:
 
 1. Announce: "#NNN — Starting Round N — launching board subagents in parallel."
 
-2. Create output directory: `platform/review/<slug>/`
+2. Create output directory: `todo/review/<slug>/`
 
 3. **Prepare a trimmed plan excerpt for each reviewer:**
 
@@ -136,7 +136,7 @@ You are a [REVIEWER NAME] subagent in a platform board review.
 
 Your role: [one-line role description]
 
-Plan file: <path to platform task file>
+Plan file: <path to task file in todo/>
 [Round 1 only] Plan excerpt (sections relevant to your review):
 <trimmed plan content>
 
@@ -149,7 +149,7 @@ Stop adding findings once output file exceeds ~800 lines.
 
 Your job:
 1. Perform a thorough review using the /[skill-name] skill guidelines.
-2. Write findings incrementally to: platform/review/<slug>/round-<N>-<reviewer>.md
+2. Write findings incrementally to: todo/review/<slug>/round-<N>-<reviewer>.md
 
    Use this exact structure:
 
@@ -206,18 +206,18 @@ structured entry in ## Decisions Required and continue with the best-default opt
 
 6. **Surface decisions before the round dashboard:**
 
-   a. **Blocking decisions** — one at a time, wait for user answer before proceeding to next.
+   a. **Blocking decisions** — group related decisions together into a single question where possible (e.g. "manifest fixes: do you want A, B, C applied now or tracked?"). Only ask separately when decisions are genuinely independent and the answer to one changes the answer to another. Wait for user answer(s) before proceeding.
 
    ```
-   🛑 BLOCKING DECISION <M> of <total> — <reviewer>
+   🛑 BLOCKING DECISIONS — <N total>
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   ❓ <the question>
+   ❓ <grouped question or individual question>
 
    Options:
      A) ...
      B) ...
 
-   ⚠️  The review cannot proceed until this is answered.
+   ⚠️  The review cannot proceed until these are answered.
    ```
 
    b. **Judgement-call decisions** — all together in one list after blocking decisions are resolved.
@@ -290,19 +290,27 @@ VERDICT:  CLEAR TO APPLY | BLOCKED | CLEAR WITH WARNINGS | UNSTABLE
 
 If verdict is **CLEAR TO APPLY** or **CLEAR WITH WARNINGS**:
 
-1. Append a `## Board Review` section to the task file.
-2. Delete the review artefact directory: `rm -rf platform/review/<slug>/`
-3. Update the task file and `PLATFORM.md`: status → `🔍 Reviewed`
-4. Commit: `git add platform/<slug>.md PLATFORM.md && git commit -m "docs(platform): merge board review into #NNN [platform-board-review]"`
+1. **Write a `## Board Review` consolidated summary section to the task file** — this must be written *before* the artefact directory is deleted, as it is the permanent record. Include:
+   - Verdict and round count
+   - Per-reviewer status table (✅/⚠️/❌) with issue count and top finding
+   - Changes applied during the review (manifest fixes, doc fixes, plan amendments)
+   - Decisions made (with chosen option noted)
+   - Warnings accepted, with conditions under which they must be resolved
+   - Hard gates before production (if any)
+   - Also fix any stale `— see todo/review/<slug>/round-N-*.md` references in the individual reviewer sections appended by subagents, since those files are about to be deleted
+
+2. Delete the review artefact directory: `rm -rf todo/review/<slug>/`
+3. Update the task file and `TODO.md`: status → `🔍 Reviewed`
+4. Commit: `git add todo/<slug>.md TODO.md && git commit -m "docs(platform): merge board review into #NNN [platform-board-review]"`
 
 Then tell the user:
 
 ```
 ✅ #NNN <title> — CLEAR TO APPLY
 
-#NNN platform/<slug>.md
+#NNN todo/<slug>.md
      ↓
-/platform-workflow   ← track progress, keep PLATFORM.md in sync
+/platform-workflow   ← track progress, keep TODO.md in sync
      ↓
 /k8s-deploy          ← implement the changes
      ↓
@@ -311,9 +319,9 @@ Then tell the user:
 
 If verdict is **BLOCKED** or **UNSTABLE**:
 
-1. Append the board review section with verdict and blocking issues.
+1. Write the `## Board Review` section with verdict and blocking issues (same format as above).
 2. Delete the review artefact directory.
-3. Status → `⬜ Open` (revert to pre-review).
+3. Status → `⬜ Open` (revert to pre-review) in task file and `TODO.md`.
 4. Commit.
 
 > "Resolve the issues above, then re-run `/platform-board-review`."
