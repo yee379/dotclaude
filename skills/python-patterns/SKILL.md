@@ -43,14 +43,14 @@ def process_file(path: Path) -> Iterator[str]:
 
 ```python
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Internal data containers — use dataclasses
 @dataclass
 class UserEvent:
     user_id: str
     event_type: str
-    occurred_at: datetime = field(default_factory=datetime.utcnow)
+    occurred_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: dict[str, str] = field(default_factory=dict)
 
 # API input/output — use Pydantic

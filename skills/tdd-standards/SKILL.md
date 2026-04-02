@@ -266,9 +266,11 @@ jest.mock('@/lib/cache', () => ({
 
 ### External API / Embedding Mock (generic)
 ```typescript
+const EMBEDDING_DIMENSIONS = 1536  // match your model's output dimension (e.g. text-embedding-3-small)
+
 jest.mock('@/lib/embeddings', () => ({
   generateEmbedding: jest.fn(() => Promise.resolve(
-    new Array(1536).fill(0.1)  // fixed-dimension vector for test isolation
+    new Array(EMBEDDING_DIMENSIONS).fill(0.1)  // fixed-dimension vector for test isolation
   ))
 }))
 ```
@@ -447,7 +449,7 @@ npm test && npm run lint
 - name: Run Tests
   run: npm test -- --coverage
 - name: Upload Coverage
-  uses: codecov/codecov-action@v3
+  uses: codecov/codecov-action@v4
 ```
 
 ## Best Practices

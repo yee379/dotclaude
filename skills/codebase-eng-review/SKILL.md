@@ -169,7 +169,7 @@ Every plan review MUST produce a "NOT in scope" section listing work that was co
 List existing code/flows that already partially solve sub-problems in this plan, and whether the plan reuses them or unnecessarily rebuilds them.
 
 ### TODOS.md updates
-After all review sections are complete, present each potential TODO as its own individual AskUserQuestion. Never batch TODOs — one per question. Never silently skip this step. Follow the format in `.claude/skills/review/TODOS-format.md`.
+After all review sections are complete, present each potential TODO as its own individual AskUserQuestion. Never batch TODOs — one per question. Never silently skip this step. Follow the format below.
 
 For each TODO, describe:
 * **What:** One-line description of the work.
@@ -205,7 +205,7 @@ At the end of the review, fill in and display this summary so the user can see a
 - What already exists: written
 - TODOS.md updates: ___ items proposed to user
 - Failure modes: ___ critical gaps flagged
-- Lake Score: X/Y recommendations chose complete option
+- Lake Score: X/Y recommendations chose complete option (ratio of decisions where the more complete/thorough option was selected over a shortcut; higher = more engineering rigour applied)
 
 ## Retrospective learning
 Check the git log for this branch. If there are prior commits suggesting a previous review cycle (e.g., review-driven refactors, reverted changes), note what was changed and whether the current plan touches the same areas. Be more aggressive reviewing areas that were previously problematic.

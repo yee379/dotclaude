@@ -82,29 +82,37 @@ scan_dir_to_json() {
 
   # Pre-aggregate observation counts in two passes (one per window) instead of
   # calling jq per-file — reduces from O(n*m) to O(n+m) jq invocations.
+  #
+  # Paths in observations.jsonl may have been recorded on a different machine
+  # (different $HOME prefix, e.g. /Users/ytl vs /sdf/home/y/ytl).  To match
+  # portably, strip everything up to and including ".claude/skills/" from both
+  # the observed path and the file path, leaving just "skill-name/SKILL.md".
   local obs_7d_counts obs_30d_counts
   obs_7d_counts=""
   obs_30d_counts=""
   if [[ -f "$OBSERVATIONS" ]]; then
     obs_7d_counts=$(jq -r --arg c "$c7" \
-      'select(.tool=="Read" and .timestamp>=$c) | .path' \
+      'select(.tool=="Read" and .timestamp>=$c) | .path | gsub(".+\\.claude/skills/"; "")' \
       "$OBSERVATIONS" 2>/dev/null | sort | uniq -c)
     obs_30d_counts=$(jq -r --arg c "$c30" \
-      'select(.tool=="Read" and .timestamp>=$c) | .path' \
+      'select(.tool=="Read" and .timestamp>=$c) | .path | gsub(".+\\.claude/skills/"; "")' \
       "$OBSERVATIONS" 2>/dev/null | sort | uniq -c)
   fi
 
   local i=0
   while IFS= read -r file; do
-    local name desc mtime u7 u30 dp
+    local name desc mtime u7 u30 dp fkey
     name=$(extract_field "$file" "name")
     desc=$(extract_field "$file" "description")
     mtime=$(date -u -r "$file" +%Y-%m-%dT%H:%M:%SZ)
+    # Strip the machine-specific prefix so the key is "skill-name/SKILL.md",
+    # matching the normalised observation paths built above.
+    fkey="${file##*/.claude/skills/}"
     # Use awk exact field match to avoid substring false-positives from grep -F.
-    # uniq -c output format: "   N /path/to/file" — path is always field 2.
-    u7=$(echo "$obs_7d_counts" | awk -v f="$file" '$2 == f {print $1}' | head -1)
+    # uniq -c output format: "   N skill-name/SKILL.md" — key is always field 2.
+    u7=$(echo "$obs_7d_counts" | awk -v f="$fkey" '$2 == f {print $1}' | head -1)
     u7="${u7:-0}"
-    u30=$(echo "$obs_30d_counts" | awk -v f="$file" '$2 == f {print $1}' | head -1)
+    u30=$(echo "$obs_30d_counts" | awk -v f="$fkey" '$2 == f {print $1}' | head -1)
     u30="${u30:-0}"
     dp="${file/#$HOME/~}"
 

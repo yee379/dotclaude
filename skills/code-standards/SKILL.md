@@ -1,7 +1,6 @@
-
 ---
 name: code-standards
-description: Universal coding standards, best practices, and patterns for TypeScript, JavaScript, React, and Node.js development.
+description: TypeScript, JavaScript, React, and Next.js coding standards — naming conventions, immutability patterns, error handling, async/await, type safety, API design, file organisation, and testing structure.
 origin: ECC
 ---
 
@@ -74,10 +73,10 @@ function similarity(a, b) { }
 function email(e) { }
 ```
 
-### Immutability Pattern (CRITICAL)
+### Immutability Pattern
 
 ```typescript
-// ✅ ALWAYS use spread operator
+// ✅ PREFER: Spread operator for state updates
 const updatedUser = {
   ...user,
   name: 'New Name'
@@ -85,9 +84,14 @@ const updatedUser = {
 
 const updatedArray = [...items, newItem]
 
-// ❌ NEVER mutate directly
-user.name = 'New Name'  // BAD
-items.push(newItem)     // BAD
+// ⚠️ AVOID in most cases, but document intentional mutations:
+user.name = 'New Name'  // avoid unless in a controlled local scope
+items.push(newItem)     // avoid in React state; fine in local builders
+
+// ✅ OK: Deliberate local mutation — document it
+// Deliberately mutating local accumulator for performance with large arrays
+const result: string[] = []
+for (const item of items) result.push(transform(item))
 ```
 
 ### Error Handling

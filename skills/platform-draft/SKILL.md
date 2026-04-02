@@ -22,11 +22,17 @@ When a task number is given, glob `platform/<number>-*.md` to find the task file
 ```
 /platform-draft        ← YOU ARE HERE
       │
+      ├── Phase 0.5: Discovery Interview (ask why, what, who — ALWAYS)
+      ├── Phase 0:   Research (if unknowns remain)
+      ├── Phase 1–9: Design, capacity, ADRs, security, risk
+      │
       ▼
 /platform-board-review → implementation → /platform-workflow (close out)
 ```
 
 **This skill assumes a platform task file already exists** (created by `/platform-workflow`). If not, create one first.
+
+**This skill always begins with a discovery interview** — even when a task file exists. The task file records *what*; the interview surfaces *why*, *for whom*, and *whether the approach is right*.
 
 ---
 
@@ -36,6 +42,37 @@ When a task number is given, glob `platform/<number>-*.md` to find the task file
 2. **If no task file exists**: create one via `/platform-workflow` before continuing.
 
 If a task file already exists, use its Problem Statement and Goals as Phase 1 input — do not re-derive them. Write all output back into the task file's **Platform Design** and **Implementation Plan** sections.
+
+---
+
+## Phase 0.5 — Discovery Interview (REQUIRED before any design work)
+
+**Before writing a single line of design, ask the user these questions.** Do not skip this phase, even if a task file exists — the task file captures *what*, not *why*. This interview surfaces the reasoning, constraints, and applicability that make the difference between a plan that ships safely and one that gets blocked in board review.
+
+Ask all questions in a single message, grouped clearly. Wait for the user's answers before proceeding to Phase 1.
+
+### Questions to ask:
+
+**Purpose & motivation**
+1. What is the underlying operational or business problem this change solves? (Not "deploy X" — what breaks, slows down, or becomes risky without this?)
+2. Why now? What changed that makes this the right time to do it?
+3. Who is asking for this, and what outcome are they expecting?
+
+**Logic & approach**
+4. What approach are you proposing, and why that approach over alternatives? Have you ruled out simpler options (e.g. config change, existing operator, a different tool)?
+5. Is there prior art — internal or external — for this pattern on this cluster or elsewhere?
+6. What is the expected failure mode if this goes wrong, and how would you recover?
+
+**Applicability & scope**
+7. Which environments does this apply to (staging only, production, all)? Does the rollout need to be phased?
+8. Are there other services, namespaces, or teams that will be affected — even indirectly?
+9. Are there compliance, security, or regulatory constraints that shape the design?
+10. Is there a hard deadline or dependency on another change?
+
+**Unknowns**
+11. What are you least certain about in this plan? What would you want researched or validated before committing?
+
+> **Note:** If the user has already provided clear answers to most of these in the task file or conversation, acknowledge what you already know, ask only for what is still missing, and summarise your understanding before proceeding.
 
 ---
 
