@@ -15,7 +15,7 @@ A structured approach to planning platform and infrastructure changes before tou
 - Before onboarding any new application or microservice to the cluster
 - Before any significant infrastructure change (namespace strategy, network topology, storage, etc.)
 
-When a task number is given, glob `platform/<number>-*.md` to find the task file before starting.
+When a task number is given, glob `todo/<number>-*.md` to find the task file before starting.
 
 ## Workflow position
 
@@ -38,7 +38,7 @@ When a task number is given, glob `platform/<number>-*.md` to find the task file
 
 ## Pre-flight: Check for an existing task file
 
-1. **If a task number was given**: glob `platform/<number>-*.md` and read it.
+1. **If a task number was given**: glob `todo/<number>-*.md` and read it.
 2. **If no task file exists**: create one via `/platform-workflow` before continuing.
 
 If a task file already exists, use its Problem Statement and Goals as Phase 1 input — do not re-derive them. Write all output back into the task file's **Platform Design** and **Implementation Plan** sections.
@@ -85,7 +85,7 @@ Run `/research-handbook` or `/search-first` if any of the following are true:
 - A security, compliance, or regulatory question needs an answer before design
 - You're unsure whether the cluster already has infrastructure that solves this
 
-Save findings to `platform/research/<slug>/` and link from the task file's Design section.
+Save findings to `todo/research/<slug>/` and link from the task file's Design section.
 
 ---
 
@@ -171,6 +171,67 @@ Dedicated namespace — isolation benefit outweighs management overhead.
 
 ---
 
+## Phase 3.5 — Migration & Transition Path
+
+**Only required when the plan includes any of the following:**
+- A change to existing cluster topology, namespace structure, or network boundaries
+- Replacement, removal, or upgrade of a running operator, CRD, or controller
+- A storage class or PVC migration
+- A change that affects how running workloads connect to services (DNS, endpoint, mTLS, auth)
+- A Kubernetes version upgrade or a dependency with a compatibility break
+- Any change that cannot be applied without affecting live traffic or running pods
+
+**If none of the above apply, skip this phase and note: "No migration required — additive change."**
+
+Answer each item below. If an item is not applicable, say so in one line.
+
+```
+Migration pattern:
+  [ ] Expand-contract (add new resource/path, migrate consumers, remove old)
+  [ ] Parallel run (old + new run simultaneously, compare outputs)
+  [ ] Rolling replace (drain nodes/pods in waves, no hard cutover)
+  [ ] Hard cutover (maintenance window, all-at-once)
+  Chosen: ___ — Rationale: ___
+
+Workload impact during transition:
+  Which running workloads are affected during the change (not just after)?
+    ___
+  Will any pods be restarted, drained, or rescheduled as part of this change?
+    ___
+  Is there a safe apply order that minimises disruption?
+    ___
+
+Version skew:
+  Can the old and new versions of affected components run simultaneously?  Y / N
+  If N — what is the required apply order or maintenance window?
+    ___
+  Maximum safe skew window (how long both versions can coexist):
+    ___
+
+Rollback cost:
+  Can the change be fully reversed without data loss or manual intervention?  Y / N
+  If N — what is the point of no return and how do we communicate it?
+    ___
+  Estimated rollback time:  ___
+  State at risk if rollback is needed (PVC data, CRD state, etc.):  ___
+
+Deprecation / retirement:
+  If replacing an existing resource or interface — when is the old one removed?
+    ___
+  What depends on the old resource and must be migrated first?
+    ___
+
+Traffic / connection migration:
+  Is a gradual traffic shift required (canary, weighted routing)?  Y / N
+  If Y — tool (Istio weights / NGINX / DNS TTL), initial %, and observation window:
+    ___
+  DNS or endpoint cutover required?  Y / N
+  If Y — TTL reduction plan and rollback DNS path:
+    ___
+```
+
+---
+
 ## Phase 4 — Infrastructure design
 
 Diagram the topology and component relationships:
@@ -205,6 +266,107 @@ Ingress: nginx → auth-api (path: /auth/*)
 | On-call rotation updated | ❌ | Add to rotation doc |
 | Capacity baseline recorded | ❌ | Document in task file |
 | Backup policy | ✅ | No action |
+
+---
+
+### Phase 5.5 — Smoke tests, integration tests, and end-to-end tests
+
+**For every platform change, plan the full verification suite before writing any manifests.** "It deployed" is not the same as "it works." Scripted tests are mandatory — manual curl-and-eyeball is not acceptable as a gate.
+
+Answer each item. If an item does not apply, say so in one line.
+
+#### Pre-change baseline (run before applying anything)
+
+Document the current healthy state so regressions are detectable:
+
+```
+Dependency health pre-check:
+  All upstream dependencies confirmed healthy before applying:
+  - Database:       ___  (healthy / degraded / unknown)
+  - Cache:          ___
+  - External APIs:  ___
+  - Message queues: ___
+  - Other services: ___
+  If any dependency is degraded: STOP — do not deploy into a degraded environment.
+  Deploying into degraded dependencies causes misattributed incidents.
+
+Metric baseline snapshot (record immediately before applying):
+  Error rate:    ___  (e.g. 0.03%)
+  p95 latency:   ___  (e.g. 42ms)
+  RPS:           ___  (e.g. 1200 req/s)
+  Pod count:     ___  (e.g. 4 running / 4 desired)
+  CPU usage:     ___  (e.g. 34% of request)
+  Memory usage:  ___  (e.g. 61% of request)
+  Recorded at:   ___  (timestamp + where stored: task file / runbook / CI artifact)
+
+Baseline smoke test:
+  Script:  ___  (must be a repeatable script, not a manual step)
+  Asserts: ___  (e.g. HTTP 200 on /healthz, pod count N, secret present)
+  Result recorded at: ___
+
+Existing integration/E2E tests that must still pass after the change:
+  - ___  (test suite name / script path)
+  - ___
+```
+
+#### Post-change verification (run immediately after each slice applies)
+
+For each delivery slice, define what must pass before the next slice begins:
+
+```
+Slice N — smoke test:
+  Script:  ___
+  Asserts: ___  (what does "working" look like for this slice specifically?)
+  Timing:  run immediately after apply, before proceeding
+
+Metric delta comparison (compare against baseline snapshot, not absolute thresholds):
+  Error rate:    before ___ / after ___  — delta acceptable?  Y / N
+  p95 latency:   before ___ / after ___  — delta acceptable?  Y / N
+  RPS:           before ___ / after ___  — unexpected drop?   Y / N
+  Pod count:     before ___ / after ___  — all desired pods running?  Y / N
+  CPU usage:     before ___ / after ___  — unexpected spike?  Y / N
+  Memory usage:  before ___ / after ___  — unexpected spike?  Y / N
+  Rollback if: error rate delta > +1%, latency delta > 2×, RPS drops > 20%, or any
+               metric change cannot be explained by the change itself.
+
+End-to-end test (full user/system flow, not just health checks):
+  Script/suite:  ___
+  Covers:  ___  (which user-visible or system-level behaviours are exercised?)
+  Must pass before: production promotion / next slice / flag enable
+
+Integration tests (cross-service or cross-namespace correctness):
+  Script/suite:  ___
+  Covers:  ___  (which service interactions does this verify?)
+  Must pass before: ___
+```
+
+#### Negative-path tests (things that should be blocked)
+
+For changes involving NetworkPolicy, RBAC, auth, or access controls:
+
+```
+What should be blocked after this change?
+  - ___  (e.g. pod in namespace X cannot reach namespace Y)
+Negative test script:  ___  (verifies the block is in place)
+```
+
+#### Rollback verification
+
+```
+Rollback smoke test:
+  After rolling back, what must pass to confirm the cluster is back to baseline?
+  Script:  ___
+  Asserts: ___
+```
+
+#### Test ownership and execution
+
+```
+Who runs the tests?        ___  (platform team / CI pipeline / both)
+When are they run?         ___  (automated on every apply / manual gate / both)
+Where are results stored?  ___  (CI artifact / task file / runbook)
+What happens on failure?   ___  (block promotion / alert on-call / rollback immediately)
+```
 
 ---
 
@@ -263,6 +425,12 @@ Slice 4 (production, 1d): Promote — smoke test, confirm alerts live
 - [ ] All acceptance criteria pass in staging
 - [ ] Capacity headroom verified post-deploy (no resource above 80%)
 - [ ] NetworkPolicy tested — permitted traffic works, denied traffic blocked
+- [ ] **Pre-change baseline recorded** — smoke test run and result documented before any apply
+- [ ] **Smoke tests pass** after each slice applies in staging (scripted, not manual)
+- [ ] **Integration tests pass** — cross-service and cross-namespace interactions verified
+- [ ] **End-to-end tests pass** — full system flow exercised, not just health checks
+- [ ] **Negative-path tests pass** — blocked traffic/access confirmed blocked (if applicable)
+- [ ] **Rollback smoke test defined and tested** — cluster confirmed back to baseline after rollback
 - [ ] Runbook written and reviewed by at least one on-call engineer
 - [ ] Monitoring dashboard live and correct
 - [ ] Alerts configured and tested
@@ -278,7 +446,7 @@ Slice 4 (production, 1d): Promote — smoke test, confirm alerts live
 When `/platform-draft` finishes, immediately:
 
 1. Set `**Status:**` in the task file to `⬜ Open`
-2. Update the matching row in `PLATFORM.md` to `⬜ Open`
+2. Update the matching row in `TODO.md` to `⬜ Open`
 
 Then prompt:
 
