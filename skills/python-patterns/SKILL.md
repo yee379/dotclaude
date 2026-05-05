@@ -316,51 +316,6 @@ def user_factory(db_session):
     return _create
 ```
 
-### Test patterns
-
-```python
-# tests/unit/test_user_service.py
-import pytest
-
-@pytest.mark.asyncio
-async def test_create_user_returns_user(db_session, user_factory):
-    request = CreateUserRequest(name="Alice", email="alice@example.com", role=Role.ADMIN)
-    user = await user_service.create(db_session, request)
-    assert user.id is not None
-    assert user.email == "alice@example.com"
-
-@pytest.mark.asyncio
-async def test_create_user_duplicate_email_raises(db_session, user_factory):
-    await user_factory(email="alice@example.com")
-    with pytest.raises(ValidationError, match="email"):
-        await user_service.create(db_session, CreateUserRequest(
-            name="Alice 2", email="alice@example.com", role=Role.MEMBER
-        ))
-
-# tests/integration/test_users_api.py
-@pytest.mark.asyncio
-async def test_create_user_requires_admin(client, user_factory):
-    member = await user_factory(role=Role.MEMBER)
-    response = await client.post(
-        "/users",
-        json={"name": "Bob", "email": "bob@example.com", "role": "MEMBER"},
-        headers={"Authorization": f"Bearer {make_token(member)}"},
-    )
-    assert response.status_code == 403
-
-@pytest.mark.asyncio
-async def test_create_user_success(client, user_factory):
-    admin = await user_factory(role=Role.ADMIN)
-    response = await client.post(
-        "/users",
-        json={"name": "Bob", "email": "bob@example.com", "role": "MEMBER"},
-        headers={"Authorization": f"Bearer {make_token(admin)}"},
-    )
-    assert response.status_code == 201
-    data = response.json()
-    assert data["email"] == "bob@example.com"
-```
-
 ---
 
 ## Tooling

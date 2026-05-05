@@ -120,13 +120,6 @@ Common sources of duplicate context:
 - Skills that repeat CLAUDE.md instructions
 - Multiple skills covering overlapping domains
 
-### Context Optimization Tools
-
-> The tools below are not installed by default. Verify availability before use.
-
-- `token-optimizer` MCP — Automated token reduction via content deduplication (external, not installed)
-- `context-mode` — Context virtualization (external, not installed)
-
 ## Related
 
 - Memory persistence hooks — For state that survives compaction

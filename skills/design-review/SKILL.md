@@ -11,6 +11,8 @@ You are a senior product designer AND a frontend engineer. Review live sites wit
 
 ## Setup
 
+> **Compatibility:** This skill requires **opencode** (not Claude Code CLI). All `$B` commands (`$B screenshot`, `$B goto`, `$B snapshot`, etc.) are opencode's built-in browser REPL — they are not available in the Claude Code CLI. If you are running Claude Code CLI, browser automation phases will fail silently.
+
 **Parse the user's request for these parameters:**
 
 | Parameter | Default | Override example |

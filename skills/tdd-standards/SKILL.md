@@ -375,44 +375,6 @@ def test_raises_on_invalid_input():
         search_items(None)
 ```
 
-### Integration Test Pattern (pytest + httpx)
-```python
-# tests/integration/test_api.py
-import pytest
-from httpx import AsyncClient
-from app.main import app
-
-@pytest.mark.asyncio
-async def test_get_items_returns_200():
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        response = await client.get("/items")
-    assert response.status_code == 200
-    assert isinstance(response.json()["data"], list)
-
-@pytest.mark.asyncio
-async def test_invalid_query_param_returns_400():
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        response = await client.get("/items?limit=bad")
-    assert response.status_code == 400
-```
-
-### Mocking External Services (pytest)
-```python
-# Mock at the internal adapter boundary, not the vendor SDK
-from unittest.mock import AsyncMock, patch
-
-@pytest.fixture
-def mock_db(monkeypatch):
-    mock = AsyncMock(return_value=[{"id": "1", "name": "Test Item"}])
-    monkeypatch.setattr("app.db.fetch_items", mock)
-    return mock
-
-async def test_uses_db_result(mock_db):
-    results = await search_items("test")
-    mock_db.assert_called_once()
-    assert results[0]["name"] == "Test Item"
-```
-
 ### Coverage (pytest)
 ```bash
 pytest --cov=app --cov-report=term-missing --cov-fail-under=80

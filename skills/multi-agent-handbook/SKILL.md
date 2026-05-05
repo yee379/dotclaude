@@ -74,6 +74,11 @@ claude -p "Create a conventional commit for all staged changes. Use 'feat: add O
 
 **With model routing:**
 ```bash
+# Model tier aliases (Claude Code resolves these to current model IDs):
+#   --model opus   → claude-opus-4-7
+#   --model sonnet → claude-sonnet-4-6
+#   --model haiku  → claude-haiku-4-5-20251001
+
 # Research with opus (deep reasoning)
 claude -p --model opus "Analyze the codebase architecture and write a plan for adding caching..."
 
@@ -211,6 +216,8 @@ Don't rely on agents to self-differentiate. The orchestrator **assigns** each ag
 ```
 
 ### Installation
+
+> **Note:** Verify the repo is still active before installing — external GitHub projects can become unmaintained. Check [AnandChowdhary/continuous-claude](https://github.com/AnandChowdhary/continuous-claude) for recent activity.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/AnandChowdhary/continuous-claude/HEAD/install.sh | bash

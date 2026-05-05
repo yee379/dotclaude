@@ -436,7 +436,8 @@ function VirtualUserList({ users }: { users: User[] }) {
 ```tsx
 // Principle: test behaviour, not implementation
 
-import { render, screen, waitFor, userEvent } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 describe("UserCard", () => {
   it("renders user name and email", () => {
