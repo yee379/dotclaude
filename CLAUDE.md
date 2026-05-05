@@ -11,3 +11,5 @@
 
 - NEVER use absolute paths in terminal commands — always use relative paths, even in complex or multi-part commands (e.g. `ls src/` not `ls /Users/ytl/project/src/`).
 - Only use absolute paths when a command explicitly requires one, and only with user-provided paths.
+- NEVER change the working directory — do not use `cd` in any Bash command, not even as part of a chained command (e.g. `cd foo && make`). The working directory is the directory Claude was started in and must remain constant for the entire session.
+- When a command must run in a subdirectory, pass the path inline instead (e.g. `make -C src/`, `npm --prefix src/ install`, or `(cd src/ && make)` only as a last resort when the tool provides no alternative).
