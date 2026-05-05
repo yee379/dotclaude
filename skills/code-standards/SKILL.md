@@ -353,14 +353,14 @@ export function Dashboard() {
 
 ```typescript
 // ✅ GOOD: Select only needed columns
-const { data } = await supabase
-  .from('markets')
+const users = await db
+  .from('users')
   .select('id, name, status')
   .limit(10)
 
 // ❌ BAD: Select everything
-const { data } = await supabase
-  .from('markets')
+const users = await db
+  .from('users')
   .select('*')
 ```
 

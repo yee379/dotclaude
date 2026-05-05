@@ -25,7 +25,55 @@ To run all gates in sequence automatically, use `/codebase-board-review` instead
 
 ---
 
-A systematic security review for backend services, APIs, and Kubernetes infrastructure. Use before shipping any feature that handles user input, authentication, secrets, payments, or sensitive data.
+## Subagent mode
+
+When this skill runs inside `/codebase-board-review` the orchestrator will provide:
+- `Plan file:` — path to read from disk
+- `Output file:` — path to write findings to (e.g. `todo/review/<slug>/round-N-sr.md`)
+
+**If an output file path was provided, follow this protocol exactly:**
+
+1. **Write the skeleton first** — before any analysis, create the output file:
+   ```
+   ## Summary
+   _(written last)_
+
+   ## Issues
+   _(in progress)_
+
+   ## Decisions Required
+   _(in progress)_
+
+   ## Amendments
+   _(in progress)_
+
+   ## Status
+   IN PROGRESS
+   ```
+
+2. **Write after every section** — after completing each checklist section (secrets,
+   auth, authorisation, input validation, API security, Kubernetes, supply chain, data
+   protection, CVE scan, defense in depth):
+   - Append new findings to `## Issues` in the output file (SEVERITY | area | description)
+   - Append any Decisions Required entries
+   - Append any plan amendments made
+   - Do NOT wait until the end — write each section's findings immediately
+
+3. **Suppress AskUserQuestion** — do not call AskUserQuestion. For every decision point
+   write a structured `### Decision:` entry in `## Decisions Required` and continue.
+   Security findings that are unresolvable without user input get `blocking` severity.
+
+4. **Write ## Summary and final ## Status last** — replace the _(written last)_ placeholder
+   only after all sections are complete. Set ## Status to PASS | PASS WITH WARNINGS | FAIL.
+
+---
+
+## Priority hierarchy
+
+If running low on context: auth/authz → injection/input validation → secrets → Kubernetes
+→ supply chain → data protection → CVE scan → defense in depth. Never skip auth/authz.
+
+---
 
 **Model routing: `opus`.** Security review requires adversarial reasoning — thinking like an attacker, tracing trust boundaries across the full stack, and catching subtle auth logic flaws that pattern-matching misses. Do not run at Sonnet or Haiku.
 

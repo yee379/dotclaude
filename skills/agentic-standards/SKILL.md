@@ -4,9 +4,9 @@ description: Operate as an agentic engineer using eval-first execution, decompos
 origin: ECC
 ---
 
-# Agentic Engineering
+# Agentic Standards
 
-Use this skill for engineering workflows where AI agents perform most implementation work and humans enforce quality and risk controls.
+Use this skill for workflows where AI agents perform most implementation work and humans enforce quality and risk controls.
 
 ## Operating Principles
 
@@ -31,9 +31,9 @@ Apply the 15-minute unit rule:
 
 ## Model Routing
 
-- haiku: classification, boilerplate transforms, narrow edits
+- haiku: classification, boilerplate transforms, narrow edits, git operations
 - opus: architecture, root-cause analysis, troubleshooting, multi-file invariants, research, investigations, reviews, planning
-- sonnet: implementation and refactors, default model
+- sonnet: implementation and refactors, default model, everything else
 
 ## Session Strategy
 

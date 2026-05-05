@@ -159,7 +159,30 @@ For each alert verify:
 
 - **Existing runbooks invalidated?** If this service replaces or modifies an existing one, the old runbook may now be misleading.
 - **Related dashboards still accurate?** Cross-service dependency changes can break existing dashboards.
-- **Configuration drift risk:** Is there a mechanism to detect deployed state drifting from declared state?
+
+### Drift detection
+
+Running state drifting silently from declared state is one of the most common sources of "works on my cluster" incidents. A change that looks clean in git may be deploying into a cluster that has already drifted.
+
+**Pre-deploy drift check (mandatory before any production apply):**
+
+```bash
+# Compare committed manifests against what is actually running
+kubectl diff -f deploy/prod/manifests/ --namespace <ns> || true
+
+# For Helm-managed third-party charts
+helm diff upgrade <release> <chart> -f values-prod.yaml
+```
+
+- [ ] `kubectl diff` run against the target environment — unexpected live state identified and explained before applying
+- [ ] Any unexplained drift (manual `kubectl apply`, out-of-band change, failed previous rollout) is resolved or documented before proceeding
+- [ ] GitOps sync status checked if Argo CD / Flux is in use — no OutOfSync resources in the affected namespace
+
+**Ongoing drift detection:**
+
+- [ ] A mechanism exists to detect drift continuously (Argo CD sync status, Flux drift detection, or a scheduled `kubectl diff` in CI)
+- [ ] Drift alerts are routed to the owning team, not silently ignored
+- [ ] The runbook documents what to do when drift is detected (reconcile vs. investigate first)
 
 ---
 
@@ -175,6 +198,7 @@ Alerting:             N required, N configured, N missing
 SLOs defined:         ✅ yes | ❌ no
 On-call model:        ✅ clear | ⚠️ gaps | ❌ undefined
 Incident response:    ✅ ready | ⚠️ gaps | ❌ not ready
+Drift detection:      ✅ pre-deploy check + ongoing | ⚠️ gaps | ❌ none
 ─────────────────────────────────────────────────────
 Blocking gaps:        N
 Warnings:             N

@@ -27,8 +27,50 @@ To run all gates in sequence automatically, use `/codebase-board-review` instead
 
 Review this plan thoroughly before making any code changes. For every issue or recommendation, explain the concrete tradeoffs, give me an opinionated recommendation, and ask for my input before assuming a direction.
 
+## Subagent mode
+
+When this skill runs inside `/codebase-board-review` the orchestrator will provide:
+- `Plan file:` — path to read from disk
+- `Output file:` — path to write findings to (e.g. `todo/review/<slug>/round-N-er.md`)
+
+**If an output file path was provided, follow this protocol exactly:**
+
+1. **Write the skeleton first** — before any analysis, create the output file:
+   ```
+   ## Summary
+   _(written last)_
+
+   ## Issues
+   _(in progress)_
+
+   ## Decisions Required
+   _(in progress)_
+
+   ## Amendments
+   _(in progress)_
+
+   ## Status
+   IN PROGRESS
+   ```
+
+2. **Write after every section** — after completing each review section (Step 0, architecture,
+   code quality, tests, performance, upgrade/transition):
+   - Append new issues to `## Issues` in the output file
+   - Append any new Decisions Required entries
+   - Append any plan amendments made (e.g. Test Plan written)
+   - Do NOT wait until the end — write each section's findings immediately
+
+3. **Suppress AskUserQuestion** — do not call AskUserQuestion. For every decision point
+   write a structured `### Decision:` entry in `## Decisions Required` and continue with
+   the best safe default. Document the assumption explicitly.
+
+4. **Write ## Summary and final ## Status last** — replace the _(written last)_ placeholder
+   only after all sections are complete. Set ## Status to PASS | PASS WITH WARNINGS | FAIL.
+
+---
+
 ## Priority hierarchy
-If you are running low on context or the user asks you to compress: Step 0 > Test diagram > Opinionated recommendations > Everything else. Never skip Step 0 or the test diagram.
+If you are running low on context or the user asks you to compress: Step 0 > Test diagram > Upgrade & transition path > Opinionated recommendations > Everything else. Never skip Step 0 or the test diagram.
 
 ## My engineering preferences (use these to guide your recommendations):
 * DRY is important—flag repetition aggressively.
@@ -150,6 +192,52 @@ Evaluate:
 
 **STOP.** For each issue found in this section, call AskUserQuestion individually. One issue per call. Present options, state your recommendation, explain WHY. Do NOT batch multiple issues into one AskUserQuestion. Only proceed to the next section after ALL issues in this section are resolved.
 
+### 5. Upgrade & transition path
+
+**Only run this section when the plan includes any of the following:**
+- A schema or data model change affecting live data
+- A breaking or backward-incompatible API, interface, or contract change
+- Replacement or removal of a running service, component, or dependency
+- A change to how consumers discover or connect to a service (endpoint, protocol, auth)
+- A dependency upgrade with a compatibility break
+
+**If none apply — state "No migration required — additive change" and move on.**
+
+Work through this checklist. For each item that is unresolved, incomplete, or has a wrong answer — raise it as an issue (one AskUserQuestion per gap).
+
+**Migration pattern**
+- [ ] A migration pattern has been chosen: expand-contract / strangler fig / parallel run / hard cutover
+- [ ] The rationale for that pattern is documented (not just named)
+- [ ] The plan does NOT use hard cutover where a safer pattern is viable — hard cutover must be explicitly justified
+
+**Backward compatibility**
+- [ ] All existing consumers/clients that must continue working are identified
+- [ ] The backward compatibility window is defined (until when must the old interface remain available?)
+- [ ] There is a mechanism to know when all consumers have migrated (tracking, version header, deprecation metric)
+
+**Version skew**
+- [ ] It is confirmed whether old and new versions can run simultaneously during rollout
+- [ ] If they cannot — the required deployment order or maintenance window is documented
+- [ ] The maximum safe skew window is stated (how long both can coexist before the old must be removed)
+
+**Rollback cost**
+- [ ] It is confirmed whether the migration is reversible without data loss
+- [ ] If irreversible — the point of no return is identified and there is a gate before it (e.g. dry-run, confirmation step)
+- [ ] Estimated rollback time is stated
+- [ ] Data or state at risk during rollback is identified
+
+**Deprecation**
+- [ ] A deadline for retiring the old interface/schema/service is set
+- [ ] Dependents are identified and a communication or migration plan exists
+- [ ] Ownership of tracking the cutover is assigned
+
+**Traffic migration**
+- [ ] If gradual rollout is needed: feature flag name, initial %, and rollout stages are defined
+- [ ] If canary is needed: canary size and observation window are stated
+- [ ] There is a clear "full rollout" and "flag cleanup" step — not just "increase to 100%"
+
+**STOP.** For each gap found in this checklist, call AskUserQuestion individually. One issue per call. Only proceed after all gaps are resolved.
+
 ## CRITICAL RULE — How to ask questions
 Follow the AskUserQuestion format from the Preamble above. Additional rules for plan reviews:
 * **One issue = one AskUserQuestion call.** Never combine multiple issues into one question.
@@ -200,6 +288,7 @@ At the end of the review, fill in and display this summary so the user can see a
 - Architecture Review: ___ issues found
 - Code Quality Review: ___ issues found
 - Test Review: diagram produced, ___ gaps identified
+- Upgrade & Transition Path: ___ (skipped — additive change / N gaps found)
 - Performance Review: ___ issues found
 - NOT in scope: written
 - What already exists: written
@@ -225,10 +314,11 @@ Eng Review complete — unresolved decisions: N, critical gaps: N
 Status: clean | issues_open  |  Mode: FULL_REVIEW | SCOPE_REDUCED
 ```
 
-## Review Readiness Dashboard
+## Unresolved Decisions
 
-After completing the review, read the review log and config to display the dashboard.
+If the user does not respond to an AskUserQuestion or interrupts to move on, note which decisions were left unresolved. At the end of the review, list these as:
 
-```bash
-## Unresolved decisions
-If the user does not respond to an AskUserQuestion or interrupts to move on, note which decisions were left unresolved. At the end of the review, list these as "Unresolved decisions that may bite you later" — never silently default to an option.
+**Unresolved decisions that may bite you later:**
+- {issue N}: {one-line description of the deferred decision and its risk}
+
+Never silently default to an option for an unresolved decision.

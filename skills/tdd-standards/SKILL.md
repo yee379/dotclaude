@@ -187,7 +187,7 @@ test('user can search and filter items', async ({ page }) => {
 
   // Search
   await page.fill('input[placeholder="Search"]', 'widget')
-  await page.waitForTimeout(400)  // debounce
+  await page.waitForResponse(resp => resp.url().includes('/api') && resp.status() === 200)  // wait for debounced request, not a fixed timeout
 
   // Verify results
   const results = page.locator('[data-testid="item-card"]')
@@ -266,7 +266,7 @@ jest.mock('@/lib/cache', () => ({
 
 ### External API / Embedding Mock (generic)
 ```typescript
-const EMBEDDING_DIMENSIONS = 1536  // match your model's output dimension (e.g. text-embedding-3-small)
+const EMBEDDING_DIMENSIONS = 1536  // match your model's output dimension
 
 jest.mock('@/lib/embeddings', () => ({
   generateEmbedding: jest.fn(() => Promise.resolve(

@@ -121,8 +121,11 @@ Common sources of duplicate context:
 - Multiple skills covering overlapping domains
 
 ### Context Optimization Tools
-- `token-optimizer` MCP — Automated 95%+ token reduction via content deduplication
-- `context-mode` — Context virtualization (315KB to 5.4KB demonstrated)
+
+> The tools below are not installed by default. Verify availability before use.
+
+- `token-optimizer` MCP — Automated token reduction via content deduplication (external, not installed)
+- `context-mode` — Context virtualization (external, not installed)
 
 ## Related
 

@@ -30,6 +30,8 @@ triggers:
 
 # k8s-troubleshooting
 
+<!-- BEFORE RUNNING ANY KUBECTL COMMAND: look for a k8s-access skill in the project's .claude/skills/k8s-access/SKILL.md and apply it. If found, read it and follow all environment variable and KUBECONFIG instructions it contains. Prefix every kubectl/vault/make command with the required env vars, or export them first. Only proceed with Phase 0 once access is configured. -->
+
 Structured workflow for diagnosing Kubernetes workload and cluster issues — **architecture first, then drill down, then confirm root cause**.
 
 The golden rule: always understand the data path before touching individual components. Traffic enters through an Ingress or Gateway → reaches a Service → is load-balanced to Pods → Pods connect to backends (databases, queues, other services). Understand that path before chasing symptoms.
@@ -79,6 +81,8 @@ Work down this chain. Stop at the first broken layer — that's your blast radiu
 
 ## Phase 0 — Orient: Confirm cluster context
 
+**First:** check for `.claude/skills/k8s-access/SKILL.md` in the current project directory. If it exists, read it and apply all env var and KUBECONFIG instructions before running any command below.
+
 Before any diagnosis, confirm you are in the right cluster and namespace.
 
 ```bash
@@ -87,7 +91,7 @@ kubectl config current-context
 kubectl config get-contexts
 
 # This environment uses separate kubeconfig files per vcluster
-# (see k8s-deploy skill for KUBECONFIG conventions)
+# (see k8s-access skill for KUBECONFIG conventions)
 echo $KUBECONFIG
 
 # Get a broad picture of all namespaces

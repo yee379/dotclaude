@@ -86,7 +86,22 @@ Map:
 Check git log for prior design review cycles. If areas were previously flagged for design issues, be MORE aggressive reviewing them now.
 
 ### UI Scope Detection
-Analyze the plan. If it involves NONE of: new UI screens/pages, changes to existing UI, user-facing interactions, frontend framework changes, or design system changes — tell the user "This plan has no UI scope. A design review isn't applicable." and exit early. Don't force design review on a backend change.
+Analyze the plan. If it involves NONE of the following, tell the user "This plan has no UI scope. A design review isn't applicable." and exit early. Don't force design review on a backend change.
+
+**Non-UI signals (exit early if ALL of these apply):**
+- No new pages, routes, or screens added
+- No changes to existing UI components or layouts
+- No user-facing interactions introduced or modified
+- No frontend framework or build tooling changes
+- No design system or styling changes
+- Change is confined to: API handlers, background workers, database migrations, infrastructure, or CLI tooling
+
+**UI signals (proceed with review if ANY of these apply):**
+- New or modified UI screens, pages, or route components
+- Changes to React/Vue/Svelte components users interact with
+- New or changed forms, modals, dialogs, navigation, or data display
+- Frontend framework version bumps affecting rendering
+- Changes to a design system, token, or global stylesheet
 
 Report findings before proceeding to Step 0.
 

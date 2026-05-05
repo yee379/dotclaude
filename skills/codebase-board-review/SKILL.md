@@ -188,11 +188,41 @@ You are a [REVIEWER NAME] subagent in a board review.
 Your role: [one-line role description — see below]
 
 Plan file: <path to task file>
+Output file: todo/review/<slug>/round-<N>-<reviewer>.md
+
 [Round 1 only] Plan excerpt (sections relevant to your review):
 <trimmed plan content — see section table above>
 
 [Round 2+ only] Plan was amended in Round N: <one-line summary of changes>
 Read the plan file directly from disk: <path> — do not rely on any previously pasted content.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE-FIRST RULE — read this before doing anything else
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Your FIRST action must be to create the output file with a skeleton so the
+orchestrator can see progress even if you are truncated:
+
+  Write to: todo/review/<slug>/round-<N>-<reviewer>.md
+
+  Initial content (write this immediately, before any analysis):
+
+    ## Summary
+    _(written last — do not fill in yet)_
+
+    ## Issues
+    _(in progress)_
+
+    ## Decisions Required
+    _(in progress)_
+
+    ## Amendments
+    _(in progress)_
+
+    ## Status
+    IN PROGRESS
+
+After writing the skeleton, proceed with your review.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Context budget warning: you are running as a background subagent with a finite
 context window. Prioritise ruthlessly:
@@ -212,12 +242,23 @@ Priority hierarchy (most important first — never skip these):
 Your job:
 1. Perform a thorough [REVIEWER NAME] review using the /[skill-name] skill guidelines,
    following the priority hierarchy above.
-2. Write your findings incrementally to: todo/review/<slug>/round-<N>-<reviewer>.md
-   - Write partial findings as you go — after each section — so progress is not lost.
-   - Use this exact structure (do not add extra sections):
+
+2. Write your findings incrementally to the output file after EACH section completes —
+   do not buffer findings in memory and write once at the end.
+
+   CHECKPOINT PATTERN — after finishing each review section:
+   a. Append the section's findings to ## Issues in the output file (one line per issue)
+   b. Append any decision entries to ## Decisions Required
+   c. Append any plan edits to ## Amendments
+   d. Update ## Status to reflect current state (IN PROGRESS / FAIL / PASS WITH WARNINGS)
+
+   This means the file grows incrementally. If you are truncated mid-review, whatever
+   was completed is already on disk and not lost.
+
+   Final structure (do not add extra sections):
 
      ## Summary
-     <3-5 bullet points — the most important findings, written last>
+     <3-5 bullet points — the most important findings, written LAST>
 
      ## Issues
      <one line per issue: SEVERITY | area | description>
@@ -232,10 +273,13 @@ Your job:
      ## Status
      PASS | PASS WITH WARNINGS | FAIL
 
-   - Write ## Summary last, after all other sections are complete.
+   - Write ## Summary LAST, only after all other sections are complete and ## Status
+     has its final value. Replace the _(written last)_ placeholder at that point.
    - Keep each issue to one line. Save prose for the ## Decisions Required entries only.
 
-3. If you identify issues that require changes to the plan, edit the plan file directly.
+3. If you identify issues that require changes to the plan, edit the plan file directly,
+   then append the change to ## Amendments immediately.
+
 4. Return a structured summary:
    - Issues found (with severity: blocking | warning)
    - Decisions required (see below)

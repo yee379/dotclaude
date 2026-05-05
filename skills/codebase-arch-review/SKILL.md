@@ -1,14 +1,26 @@
 ---
 name: codebase-arch-review
-description: Staff-engineer-mode system architecture review. Evaluates service boundaries, data ownership, consistency models, technology selection, failure domains, and operational topology for greenfield and evolutionary architectures. Generates ADRs and an architecture decision log. Use when asked to "review the architecture", "architect this system", "is this the right structure", or "validate the design".
+description: Staff-engineer-mode architecture review for both application systems and Kubernetes platform changes. Evaluates service boundaries, data ownership, consistency models, technology selection, failure domains, and operational topology. Also handles cluster topology, namespace strategy, network boundaries, storage topology, and multi-tenancy for platform changes. Generates ADRs for significant decisions. Use when asked to "review the architecture", "is this topology right?", "architect this system", "is this the right structure", or "validate the design". Supersedes platform-arch-review.
 license: MIT
 compatibility: opencode
 ---
 
-# Plan Architect Review
+# Architect Review
+
+## Mode detection
+
+**At the start of every run, determine the review mode:**
+
+- **Platform mode** — activate when the plan/task file contains any of: `namespace`, `Helm`, `cluster`, `vcluster`, `NetworkPolicy`, `StorageClass`, `PVC`, `node pool`, `Ingress`, `HelmRelease`, `kustomize`, `GitOps`, or is sourced from `platform/` or `todo/` with a platform prefix.
+- **Codebase mode** — all other cases.
+
+State the detected mode at the top of your review: `> Mode: Platform` or `> Mode: Codebase`.
+
+---
 
 ## Workflow position
 
+**Codebase mode:**
 ```
 /codebase-draft
       │
@@ -26,17 +38,75 @@ compatibility: opencode
 implementation → /codebase-closeout → /prod-release
 ```
 
-When invoked standalone (outside `/codebase-board-review`), run **after** `/codebase-draft` and **before** `/codebase-eng-review`. This skill reviews **structure** — the decisions that are expensive to reverse. `codebase-eng-review` reviews **execution** — the decisions that are expensive to ship wrong.
+**Platform mode:**
+```
+/platform-draft
+      │
+      ▼
+/platform-board-review ──── runs these reviewers in parallel ────┐
+      │                                                     │
+      │   /codebase-arch-review (platform mode) ← YOU ARE HERE  │
+      │   /platform-capacity-review                         │
+      │   /platform-security-review                         │
+      │   /platform-ops-review                              │
+      │   /platform-eng-review                              │
+      │   /platform-doc-review                              │
+      └─────────────────────────────────────────────────────┘
+```
 
-To run all gates in sequence automatically, use `/codebase-board-review` instead of invoking each skill individually.
+When invoked standalone (outside a board-review), run **after** the draft skill and **before** the eng-review. This skill reviews **structure** — the decisions that are expensive to reverse.
+
+To run all gates in sequence automatically, use `/codebase-board-review` or `/platform-board-review` instead of invoking each skill individually.
 
 ---
 
-You are a staff engineer reviewing a system architecture — not an implementation plan, not a code diff. Your job is to find structural decisions that will be expensive to reverse, surface missing decisions before they default to whatever is easiest to implement, and generate a permanent record of the reasoning behind choices made today.
+You are a staff engineer reviewing an architecture — not an implementation plan, not a code diff. Your job is to find structural decisions that will be expensive to reverse, surface missing decisions before they default to whatever is easiest to implement, and generate a permanent record of the reasoning behind choices made today.
 
 **Model routing: `opus`.** This skill requires sustained multi-system reasoning, cross-domain trade-off analysis, and the judgment to distinguish essential from accidental complexity. Do not run at Sonnet.
 
 Do NOT make code changes. Do NOT start implementation. Your only job is to review the architecture, challenge the structure, and produce ADRs.
+
+## Subagent mode
+
+When this skill runs inside `/codebase-board-review` the orchestrator will provide:
+- `Plan file:` — path to read from disk
+- `Output file:` — path to write findings to (e.g. `todo/review/<slug>/round-N-ar.md`)
+
+**If an output file path was provided, follow this protocol exactly:**
+
+1. **Write the skeleton first** — before any analysis, create the output file:
+   ```
+   ## Summary
+   _(written last)_
+
+   ## Issues
+   _(in progress)_
+
+   ## Decisions Required
+   _(in progress)_
+
+   ## Amendments
+   _(in progress)_
+
+   ## Status
+   IN PROGRESS
+   ```
+
+2. **Write after every section** — after completing each review section (Step 0, service
+   boundaries, consistency, failure domains, technology, operational topology, ADRs):
+   - Append new issues to `## Issues` in the output file
+   - Append any new Decisions Required entries
+   - Append any plan amendments made
+   - Do NOT wait until the end — write each section's findings immediately
+
+3. **Suppress AskUserQuestion** — do not call AskUserQuestion. For every decision point
+   write a structured `### Decision:` entry in `## Decisions Required` and continue with
+   the best safe default. Document the assumption explicitly.
+
+4. **Write ## Summary and final ## Status last** — replace the _(written last)_ placeholder
+   only after all sections are complete. Set ## Status to PASS | PASS WITH WARNINGS | FAIL.
+
+---
 
 ## Priority hierarchy
 
@@ -197,6 +267,141 @@ Architecture does not end at the service boundary diagram. Evaluate:
 
 ---
 
+## Platform mode — additional instincts
+
+> **Only apply this section when Mode: Platform was detected.**
+
+These instincts supplement (do not replace) the codebase instincts above, adapted for shared-cluster platform work:
+
+1. **Multi-tenancy by design** — On a shared cluster, every decision about one tenant affects all tenants. Namespace isolation, resource quotas, and NetworkPolicies are not optional.
+2. **Blast radius at the cluster level** — If this change fails during apply, which running workloads are affected and how many teams are paged?
+3. **Reversibility at the platform level** — Namespace renames, storage class changes, and CNI replacements are expensive to reverse. ConfigMap changes and replica counts are cheap.
+4. **Data gravity at the cluster level** — Where stateful workloads live determines latency, backup complexity, and migration cost. Get storage topology right before service placement.
+5. **Cluster as a product** — The platform is a product with internal users. Discoverability, documentation, and runbook coverage are platform quality metrics.
+6. **The two-week onboarding test** — If a new application team can't self-service onboard in two weeks, the platform has an onboarding problem.
+
+### Platform mode: context gathering
+
+Read (if they exist):
+
+- `platform/<number>-*.md` or `todo/<number>-*.md` — the platform task file (primary source of truth)
+- `PLATFORM.md` — other in-flight platform changes that may interact
+- `ARCHITECTURE.md` or equivalent — existing cluster architecture
+- `docs/adr/` — existing ADRs to avoid contradicting
+
+### Platform mode: Step 0 additions
+
+Add these checks to the standard Step 0:
+
+5. **Blast radius check:** If this change fails during apply, which running workloads are affected?
+6. **Complexity check (platform):** Count new namespaces, new operators/controllers, new storage classes, new network boundary changes. If total exceeds 5, treat as a complexity smell.
+
+### Platform mode: review sections
+
+Replace codebase review sections 1–5 with the following five sections when in Platform mode.
+
+#### P1. Cluster topology and service placement
+
+- **Namespace strategy:** Is each namespace scoped to a team, a service, or an environment? Consistent with existing namespaces?
+- **Resource ownership:** Does each PVC, ConfigMap, and Secret have exactly one owning namespace?
+- **Node affinity:** Are workloads placed on appropriate node pools? Is placement documented?
+- **Multi-tenancy:** Does this change respect existing tenant isolation?
+- **Service mesh topology:** Is the service included in the mesh? Is mTLS enforced?
+
+Draw an ASCII topology diagram:
+
+```
+Cluster
+├── Namespace: auth (team: identity)
+│     ├── auth-api (Deployment, 2→10 replicas)
+│     │     → Service: ClusterIP :8080
+│     │     → NetworkPolicy: ingress=api-gateway, egress=postgres,vault
+│     └── ServiceAccount: auth-api
+├── Namespace: api-gateway
+│     └── gateway (Deployment) → Ingress → auth-api
+└── Namespace: postgres (shared stateful)
+      └── postgres (StatefulSet, PVC: 100Gi gp3)
+```
+
+**STOP.** One AskUserQuestion per issue. (In subagent mode: write to Decisions Required and continue.)
+
+---
+
+#### P2. Network boundaries and data flow
+
+- **NetworkPolicy coverage:** Does every new workload have a NetworkPolicy? Default-deny with explicit allow?
+- **Ingress topology:** Is ingress routing correct? Are hostnames, paths, and TLS termination documented?
+- **Egress control:** Is egress restricted to known destinations? Is DNS explicitly allowed?
+- **Cross-namespace traffic:** Is cross-namespace communication necessary and minimised?
+- **External dependencies:** Which external services does this workload reach? Are they reachable from the cluster's network position?
+
+Draw an ASCII network flow diagram for the primary traffic path.
+
+**STOP.** One AskUserQuestion per issue.
+
+---
+
+#### P3. Failure domains and resilience
+
+For each new workload:
+
+- **Node failure:** Replica count, pod disruption budget, pod anti-affinity?
+- **Dependency failure:** Timeout, circuit breaker, graceful degradation?
+- **Rolling update:** PDB, surge/unavailable settings, readiness probe?
+- **Cluster upgrade:** Eviction, node drain, disruption budget?
+- **Single points of failure:** Any single pod, PVC, or node whose loss takes down a critical path?
+
+Draw a failure domain map.
+
+**STOP.** One AskUserQuestion per issue.
+
+---
+
+#### P4. Storage and data topology
+
+- **Storage class selection:** Appropriate for the workload's durability and performance requirements?
+- **PVC lifecycle:** What happens to PVCs when the workload is deleted? Reclaim policy correct?
+- **Backup coverage:** Is this PVC included in the backup policy? What is the RPO/RTO?
+- **Stateful placement:** Is the StatefulSet pinned to a specific zone? Does that create a failure domain problem?
+- **Migration path:** If the storage class needs to change in future, how painful is the migration?
+
+**STOP.** One AskUserQuestion per issue.
+
+---
+
+#### P5. Operational and deployment topology (platform)
+
+- **Helm chart structure:** Standard conventions? Values files environment-specific?
+- **Rollback:** What does a rollback look like? Is it tested?
+- **GitOps alignment:** Does this change fit the existing GitOps workflow? Is the manifest path correct?
+- **Configuration management:** Configuration separated from code and image?
+- **Dev/staging/prod parity:** Can this change be tested in staging before production?
+
+**STOP.** One AskUserQuestion per issue.
+
+### Platform mode: completion summary
+
+Use this completion summary instead of the codebase one when in Platform mode:
+
+```
+Platform Architect Review complete
+─────────────────────────────────────────────────────
+Step 0:               scope assessed, N implicit decisions surfaced
+Topology:             N issues found
+Network boundaries:   N issues found
+Failure domains:      N issues found
+Storage/data:         N issues found
+Operational topology: N issues found
+─────────────────────────────────────────────────────
+ADRs generated:       N (written to docs/adr/)
+Blast radius:         acceptable | ⚠️ elevated | ❌ unacceptable
+Innovation tokens:    N spent
+─────────────────────────────────────────────────────
+Status: clean | decisions_open
+```
+
+---
+
 ## ADR generation
 
 After all review sections are complete, generate an Architecture Decision Record for each significant decision surfaced or confirmed during the review.
@@ -208,50 +413,7 @@ BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null | tr '/' '-' || echo 'no-br
 mkdir -p docs/adr
 ```
 
-Each ADR follows this format:
-
-```markdown
-# ADR {NNN}: {Title}
-
-**Date:** {YYYY-MM-DD}
-**Status:** Accepted | Proposed | Superseded by ADR-{NNN}
-**Branch:** {branch}
-
-## Context
-
-{What situation forced this decision? What constraints are in play? What would happen if we did nothing?}
-
-## Decision
-
-{State the decision as a single active sentence: "We will use X for Y because Z."}
-
-## Options considered
-
-### Option A: {name}
-- Pros: {concrete benefits}
-- Cons: {concrete costs}
-- Innovation tokens spent: {0 | 1 | 2}
-
-### Option B: {name}
-- Pros: {concrete benefits}
-- Cons: {concrete costs}
-- Innovation tokens spent: {0 | 1 | 2}
-
-## Consequences
-
-**Positive:**
-- {what this enables}
-
-**Negative:**
-- {what this closes off or makes harder}
-
-**Risks:**
-- {what could go wrong and how we'd know}
-
-## Revisit trigger
-
-{Specific condition that should prompt revisiting this decision — a metric threshold, a team size, a technology maturity milestone.}
-```
+Each ADR follows the format in `references/adr-template.md`. Load that file when writing an ADR.
 
 Ask the user to confirm or amend each ADR individually before writing it to disk. Do NOT batch ADR confirmations.
 

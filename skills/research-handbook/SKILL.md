@@ -39,6 +39,30 @@ would change design decisions if answered. **This mode is deliberately narrow an
 it is not an open-ended research exercise. Every minute spent on low-value verification is
 context budget stolen from the other four reviewers.
 
+**Output file:** when an `Output file:` path is provided in the invocation, follow the
+FILE-FIRST protocol:
+
+1. **Write the skeleton immediately** before any research:
+   ```
+   ## Claim Verdicts
+   _(in progress)_
+
+   ## Summary
+   _(written last)_
+
+   ## Amendments
+   _(in progress)_
+
+   ## Status
+   IN PROGRESS
+   ```
+
+2. **Write after each claim is verified** — append the claim's verdict row to
+   `## Claim Verdicts` in the output file immediately after the subagent returns.
+   Do not buffer all results until the end.
+
+3. **Write ## Summary and ## Status last** — only after all claims are processed.
+
 **Before launching any subagents**, extract the checkable claims from the plan:
 
 1. Read the plan excerpt (Problem Statement, Goals, Design, Open Questions).

@@ -30,7 +30,7 @@ Do NOT make cluster changes. Review the implementation plan for correctness, com
 
 ## Priority hierarchy
 
-Step 0 > Manifest correctness > Resource tuning > Health probes > Rollout strategy > Test plan > Everything else.
+Step 0 > Manifest correctness > Resource tuning > Health probes > Rollout strategy > Upgrade & transition path > Test plan > Everything else.
 
 ---
 
@@ -140,11 +140,12 @@ spec:
 
 ---
 
-## 5. Rollout strategy
+## 5. Rollout strategy and upgrade/transition path
+
+### 5a. Rollout strategy
 
 - **Rolling update settings:** `maxSurge` and `maxUnavailable` set explicitly? (default 25%/25% often wrong)
 - **Rollback:** Rollback procedure documented in runbook?
-- **Database migrations:** If schema migration involved, is expand-contract pattern used?
 - **Zero-downtime:** Correct readiness probe + PDB + preStop hook?
 - **GitOps sync wave:** If using Argo CD, is wave ordering correct? (namespaces before workloads, CRDs before CRs)
 
@@ -152,30 +153,175 @@ spec:
 - [ ] `maxSurge` and `maxUnavailable` set explicitly
 - [ ] Zero-downtime rollout verified
 - [ ] Rollback tested in staging
-- [ ] Migration sequencing safe (if applicable)
+- [ ] GitOps sync wave ordering correct (if applicable)
+
+---
+
+### 5b. Upgrade & transition path
+
+**Only run this section when the plan includes any of the following:**
+- A change to existing cluster topology, namespace structure, or network boundaries
+- Replacement, removal, or upgrade of a running operator, CRD, or controller
+- A storage class or PVC migration
+- A change that affects how running workloads connect to services (DNS, endpoint, mTLS, auth)
+- A Kubernetes version upgrade or a dependency with a compatibility break
+- Any change that cannot be applied without affecting live traffic or running pods
+
+**If none apply — state "No migration required — additive change" and move on.**
+
+Work through this checklist. Raise each unresolved or incorrect item as a gap (one per issue).
+
+**Migration pattern**
+- [ ] A migration pattern has been chosen: expand-contract / rolling replace / parallel run / hard cutover
+- [ ] The rationale for that pattern is documented (not just named)
+- [ ] Hard cutover is explicitly justified if chosen — it must not be the default
+
+**Workload impact during transition**
+- [ ] All running workloads affected *during* the change (not just after) are identified
+- [ ] Whether pods will be restarted, drained, or rescheduled is documented
+- [ ] A safe apply order that minimises disruption is specified
+
+**Version skew**
+- [ ] Whether old and new versions of affected components can run simultaneously is confirmed
+- [ ] If they cannot — the required apply order or maintenance window is documented
+- [ ] The maximum safe skew window is stated
+
+**Rollback cost**
+- [ ] Whether the change can be fully reversed without data loss or manual intervention is confirmed
+- [ ] If irreversible — the point of no return is identified and gated (e.g. dry-run step, explicit sign-off)
+- [ ] Estimated rollback time is stated
+- [ ] State at risk if rollback is needed (PVC data, CRD state, operator state) is identified
+
+**Deprecation / retirement**
+- [ ] If replacing an existing resource — when the old one is removed is specified
+- [ ] Everything that depends on the old resource and must be migrated first is listed
+- [ ] Ownership of tracking the cutover is assigned
+
+**Traffic / connection migration**
+- [ ] If gradual traffic shift is needed: tool (Istio weights / NGINX / DNS TTL), initial %, and observation window are defined
+- [ ] If DNS or endpoint cutover is required: TTL reduction plan and rollback DNS path are specified
+- [ ] Canary size and observation window are stated if a canary is needed
+
+**STOP.** Flag each gap as a blocking issue. One issue per gap.
 
 ---
 
 ## 6. Test plan
 
-Write this into the task file's Implementation Checklist:
+### 6a. Automated vs manual — the baseline rule
+
+**Automated tests are the bar. Manual verification is not a substitute.**
+
+| Test type | Must be automated? | Rationale |
+|---|---|---|
+| Regression tests | ✅ Yes — must run in CI on every future deploy | Manual regression erodes immediately |
+| Positive feature tests | ✅ Yes — must run in CI | Proves the feature works repeatably, not just on the day |
+| Negative / security tests | ✅ Yes — must run in CI | A security control with no automated test is untested in practice |
+| Smoke tests (post-deploy) | ✅ Yes — must be a script, not manual curl + eyeball | Must gate the rollout, not follow it |
+| Alert firing verification | ⚠️ One-time manual acceptable | Synthetic failure is hard to automate; document the result |
+
+Flag as **blocking** if any test is manual-only with no automation path. "I will check it" is not a test plan.
+
+---
+
+### 6b. Minimum coverage standard — per change type
+
+Every plan must meet the minimum bar for its change type. Use this table to assess coverage:
+
+| Change type | Required test coverage |
+|---|---|
+| New feature / new service | ✅ Positive test per new capability<br>✅ Negative test if any access control is involved<br>✅ Smoke test post-deploy<br>✅ Regression suite still passes |
+| Configuration change (routing, values, flags) | ✅ Positive test: intended behaviour still works<br>✅ Regression suite still passes |
+| Security control (NetworkPolicy, ipAllowList, RBAC, JWT gate) | ✅ Negative test: blocked traffic/request returns expected rejection<br>✅ Positive test: permitted traffic/request still works<br>✅ Both must be automated |
+| Infrastructure change (resource tuning, HPA, probes) | ✅ Smoke test: service responds after apply<br>✅ Regression suite still passes |
+| Rollback / restore | ✅ Rollback tested in staging: previous version restores cleanly |
+
+A plan that lists fewer tests than its change type requires is **incomplete** — flag as blocking.
+
+---
+
+### 6c. Evaluate existing verification steps in the plan
+
+Before writing the test plan template, assess whether the plan already has adequate verification:
+
+**Negative-path tests** — does the plan verify that the security/access controls actually block what they should?
+- e.g. for an ipAllowList change: is there a test that an external request to a blocked path returns 403?
+- e.g. for a NetworkPolicy: is there a test that denied pod-to-pod traffic is actually blocked?
+
+**Positive-path tests** — does the plan verify that legitimate traffic still works after the change?
+- e.g. for a routing change: is there a test that a valid request reaches the backend?
+- e.g. for a JWT gate: is there a test that a valid token returns 200, not just that an invalid token returns 401?
+
+**New feature tests** — does the plan verify that new functionality actually works as expected?
+- Every new capability must have at least one automated positive test that proves it works.
+- "It deployed successfully" is not evidence the feature works.
+
+**Regression tests** — does the plan identify existing tests that must still pass?
+- What test suites already exist for the affected component?
+- Are they listed as a required gate in the DoD / Implementation Checklist?
+- Are they wired into CI so they run on every future deploy, not just this one?
+
+**Smoke tests** — are they scripted, not manual?
+- A smoke test must be a repeatable script (e.g. `./test/smoke-test.sh`) that asserts specific responses.
+- "I curled the endpoint and it looked fine" is not a smoke test.
+
+**Test execution timing** — are tests positioned at the right point in the implementation sequence?
+- Tests must run **immediately after apply**, not deferred to "later" or left as optional manual verification.
+- If a test requires a credential (e.g. `TEST_JWT`), the plan should specify how to obtain it and what to do if it's unavailable (skip gracefully, flag for manual follow-up).
+
+Flag as **blocking** if:
+- Any required test for the change type (see 6b) is missing
+- Any test is manual-only with no automation path
+- A security control has no automated test verifying it works (positive or negative path)
+- Existing test suites are not listed as a required gate
+- Tests are not wired into CI for future deploys
+
+Flag as **warning** if:
+- Test execution timing is ambiguous ("verify after apply" without specifying when, by whom, or with what script)
+- A smoke test exists but is described as a manual step rather than a scripted gate
+
+---
+
+### 6d. Write the test plan into the task file
 
 ```markdown
 ## Platform Test Plan
 Generated by /platform-eng-review on {date}
 
+### Change type
+[new feature | config change | security control | infrastructure change | rollback]
+
+### Existing test suites (must pass post-apply, must be wired into CI)
+- [ ] [list any existing test scripts for the affected component, e.g. `./test/test-agentgateway-security.sh`]
+
+### New feature tests (one per new capability — automated)
+- [ ] [specific test: what capability, what input, what expected output]
+
+### Negative-path tests (controls block what they should — automated)
+- [ ] [specific test: what request, what expected rejection response]
+
+### Positive-path tests (legitimate traffic still works — automated)
+- [ ] [specific test: what request, what expected success response]
+
+### Regression tests (existing behaviour unchanged — automated, run in CI)
+- [ ] [existing test suite or script that must still pass]
+
+### Smoke tests (post-deploy gate — scripted, not manual)
+- [ ] [script name and what it asserts, e.g. `./test/smoke.sh` — HTTP 200 on /healthz and /api/v1/status]
+
 ### Staging verification
 - [ ] Helm chart applies without errors
 - [ ] All pods reach Running within N minutes
 - [ ] Health checks pass (liveness, readiness)
-- [ ] Smoke test: [specific functional test]
+- [ ] Smoke test script passes (not manual curl)
 - [ ] Network policy verified: permitted traffic works, denied traffic blocked
 - [ ] Secret injection verified
 - [ ] HPA triggers correctly under load
 - [ ] Rollback tested: previous version restores cleanly
 
 ### Production promotion gates
-- [ ] All staging tests pass
+- [ ] All staging tests pass (automated)
+- [ ] CI pipeline green with new test suite included
 - [ ] Capacity headroom confirmed
 - [ ] Runbook reviewed by on-call
 - [ ] Alerts confirmed live
@@ -213,6 +359,7 @@ Resource tuning:      N issues found
 Health probes:        N issues found
 HPA / scaling:        N issues found
 Rollout strategy:     N issues found
+Upgrade/transition:   N gaps found (or: skipped — additive change)
 Test plan:            written
 ─────────────────────────────────────────────────────
 Blocking gaps:        N

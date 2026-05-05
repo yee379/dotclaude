@@ -1,13 +1,13 @@
 ---
 name: platform-board-review
-description: Orchestrates the platform board review pipeline — runs platform-arch-review, platform-capacity-review, platform-security-review, platform-ops-review, platform-eng-review, and platform-doc-review in parallel, then re-runs the full board if any reviewer amends the plan. Iterates until all reviewers pass in the same round with no changes. Use when asked to "run a platform review", "gate this platform change", "board review this", or "is this ready to apply to the cluster?".
+description: Orchestrates the platform board review pipeline — runs codebase-arch-review (platform mode), platform-capacity-review, platform-security-review, platform-ops-review, platform-eng-review, and platform-doc-review in parallel, then re-runs the full board if any reviewer amends the plan. Iterates until all reviewers pass in the same round with no changes. Use when asked to "run a platform review", "gate this platform change", "board review this", or "is this ready to apply to the cluster?".
 ---
 
 # Platform Board Review
 
 Runs six board reviewers in parallel. If any reviewer amends the plan, the whole board re-reviews the updated plan. The round repeats until all reviewers pass in the same round without further changes. Maximum 3 rounds.
 
-**Model routing:** Triage is `haiku`-eligible. Each reviewer runs at its own routing level — `platform-arch-review` and `platform-security-review` run at **`opus`**; capacity, ops, eng, and doc reviewers run at **`sonnet`**.
+**Model routing:** Triage is `haiku`-eligible. Each reviewer runs at its own routing level — `codebase-arch-review` (platform mode) and `platform-security-review` run at **`opus`**; capacity, ops, eng, and doc reviewers run at **`sonnet`**.
 
 **This skill assumes a platform plan already exists.** If you don't have one yet, run `/platform-draft` first.
 
@@ -27,7 +27,7 @@ Runs six board reviewers in parallel. If any reviewer amends the plan, the whole
   ┌─────────────────────────────────────────────────────────────────┐
   │  ROUND N  (all reviewers launched as parallel subagents)        │
   │                                                                 │
-  │  subagent: platform-arch-review     → todo/review/<slug>/round-N-ar.md │
+  │  subagent: codebase-arch-review (platform mode) → todo/review/<slug>/round-N-ar.md │
   │  subagent: platform-capacity-review → todo/review/<slug>/round-N-cr.md │
   │  subagent: platform-security-review → todo/review/<slug>/round-N-sr.md │
   │  subagent: platform-ops-review      → todo/review/<slug>/round-N-or.md │
@@ -71,7 +71,7 @@ Summarise the plan in 2-3 sentences so the user can confirm you've read the righ
 ```
 REVIEWER                  SKIP IF...
 ──────────────────────────────────────────────────────────────────
-platform-arch-review      change is purely operational (tuning replicas,
+codebase-arch-review      change is purely operational (tuning replicas,
                           updating a ConfigMap) with no topology or
                           boundary changes
 platform-capacity-review  change removes workloads or is purely config
@@ -94,7 +94,7 @@ Present triage as plain text, then immediately proceed:
 ```
 Triage complete
 ──────────────────────────────────────────────────────
-platform-arch-review      RUN | SKIP (reason)
+codebase-arch-review      RUN | SKIP (reason)
 platform-capacity-review  RUN | SKIP (reason)
 platform-security-review  RUN | SKIP (reason)
 platform-ops-review       RUN | SKIP (reason)
@@ -120,7 +120,7 @@ Run up to **3 rounds**. In each round:
 
    | Reviewer | Sections to include |
    |---|---|
-   | platform-arch-review | Problem Statement, Goals, Platform Design (full), Non-Goals, Open Questions |
+   | codebase-arch-review (platform mode) | Problem Statement, Goals, Platform Design (full), Non-Goals, Open Questions |
    | platform-capacity-review | Problem Statement, Goals, Platform Design (Capacity Assessment section), Non-Goals |
    | platform-security-review | Problem Statement, Platform Design (Security Posture section + topology), Open Questions |
    | platform-ops-review | Problem Statement, Goals, Platform Design (Operational Readiness section), Implementation Plan |
@@ -137,24 +137,70 @@ You are a [REVIEWER NAME] subagent in a platform board review.
 Your role: [one-line role description]
 
 Plan file: <path to task file in todo/>
+Output file: todo/review/<slug>/round-<N>-<reviewer>.md
+
 [Round 1 only] Plan excerpt (sections relevant to your review):
 <trimmed plan content>
 
 [Round 2+ only] Plan was amended in Round N: <one-line summary of changes>
 Read the plan file directly from disk: <path>
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE-FIRST RULE — do this before any analysis
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Your FIRST action must be to create the output file with a skeleton:
+
+  # [REVIEWER NAME] — Round N
+
+  ## Summary
+  _(written last)_
+
+  ## Issues
+  _(in progress)_
+
+  ## Decisions Required
+  _(in progress)_
+
+  ## Amendments
+  _(in progress)_
+
+  ## Status
+  IN PROGRESS
+
+After writing this skeleton, proceed with your review.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 Context budget warning: you are running as a background subagent with a finite
 context window. Prioritise ruthlessly. Write findings in bullet points, not prose.
 Stop adding findings once output file exceeds ~800 lines.
 
-Your job:
-1. Perform a thorough review using the /[skill-name] skill guidelines.
-2. Write findings incrementally to: todo/review/<slug>/round-<N>-<reviewer>.md
+CRITICAL — WRITE TO DISK AFTER EVERY SECTION. Do not accumulate findings in
+memory and write once at the end. Your context window will terminate before you
+finish. Write partial findings to disk immediately after completing each review
+section, so nothing is lost if you are cut off.
 
-   Use this exact structure:
+Writing discipline:
+- Before starting each review section, append a "## <Section Name>" header to
+  the output file.
+- After completing each review section, append your findings for that section
+  to the output file immediately. Do not wait.
+- After completing ALL sections, write the final ## Summary (replacing the
+  _(written last)_ placeholder), ## Decisions Required, ## Amendments, and ## Status.
+- If you are cut off mid-section, the file will still contain all previously
+  completed sections.
+
+Your job:
+1. The output file skeleton was already created (FILE-FIRST rule above).
+2. For each review section in your skill guidelines:
+   a. Append the section header to the output file.
+   b. Perform the analysis for that section.
+   c. Append findings for that section to the output file.
+   d. If the section uncovers issues requiring plan changes, edit the plan file
+      now (do not defer to the end). Append the change to ## Amendments immediately.
+3. After all sections, update the final blocks in the output file:
 
    ## Summary
-   <3-5 bullet points — most important findings, written last>
+   <3-5 bullet points — most important findings>
 
    ## Issues
    <one line per issue: SEVERITY | area | description>
@@ -168,7 +214,6 @@ Your job:
    ## Status
    PASS | PASS WITH WARNINGS | FAIL
 
-3. If issues require plan changes, edit the plan file directly.
 4. Return: issues found, decisions required, amendments made, status.
 
 IMPORTANT: You cannot interact with the user. For any decision point, write a
@@ -193,7 +238,7 @@ structured entry in ## Decisions Required and continue with the best-default opt
    ──────────────────────────────────────────────────────────────
    Reviewer                  Status          Early signal
    ──────────────────────────────────────────────────────────────
-   platform-arch-review      ...
+   codebase-arch-review      ...
    platform-capacity-review  ...
    platform-security-review  ...
    platform-ops-review       ...
@@ -229,7 +274,7 @@ structured entry in ## Decisions Required and continue with the best-default opt
    ```
    #NNN Round N complete
    ──────────────────────────────────────────────────────────────────
-   platform-arch-review      ✅/⚠️/❌/—/✂️   amended: Y/N   decisions: N
+   codebase-arch-review      ✅/⚠️/❌/—/✂️   amended: Y/N   decisions: N
    platform-capacity-review  ✅/⚠️/❌/—/✂️   amended: Y/N   decisions: N
    platform-security-review  ✅/⚠️/❌/—/✂️   amended: Y/N   decisions: N
    platform-ops-review       ✅/⚠️/❌/—/✂️   amended: Y/N   decisions: N
@@ -259,7 +304,7 @@ Branch:  {branch}
 Date:    {date}
 Rounds:  {N completed}
 ------------------------------------------------------------
-platform-arch-review      {✅/⚠️/❌/—}  {N issues}
+codebase-arch-review      {✅/⚠️/❌/—}  {N issues}
 platform-capacity-review  {✅/⚠️/❌/—}  {N issues}
 platform-security-review  {✅/⚠️/❌/—}  {N issues}
 platform-ops-review       {✅/⚠️/❌/—}  {N issues}

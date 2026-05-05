@@ -1,18 +1,22 @@
 ---
 name: codebase-draft
-description: Structured feature planning and architectural design — problem framing, requirements, ADRs, system design, trade-offs, sequencing, and a definition of done before writing any code.
+description: Structure outline feature planning and architectural design — user interview, problem framing, user stories, requirements, module design, ADRs, system design, trade-offs, sequencing, and a definition of done before writing any code. Output can be written to the task file and/or submitted as a GitHub issue.
 triggers:
   - "plan #\\d+"
   - "plan \\d+"
   - "plan todo #?\\d+"
   - "/codebase-draft"
+  - "write a prd"
+  - "write-a-prd"
+  - "create a prd"
+  - "product requirements document"
 license: MIT
 compatibility: opencode
 ---
 
 # Plan Draft
 
-A structured approach to planning features and architectural changes before writing code. Produces a clear spec, design decisions, and delivery sequence.
+A structured approach to planning and outlining features and architectural changes before writing code. Produces a clear spec, design decisions, and delivery sequence.
 
 ## When to Trigger
 
@@ -23,6 +27,9 @@ Activate this skill when the user says any of the following:
 - `plan todo #<number>` — e.g. "plan todo #3", "plan todo #007"
 - `/codebase-draft` — explicit invocation
 - "plan this out", "let's plan", "run codebase-draft" on a task
+- `outline <number>` - e.g. "outline 3", "outline 007"
+- `structure outline <number>` - e.g. "structure outline 3", "structure outline 007"
+- "write a PRD", "create a PRD", "write-a-prd", "product requirements document"
 
 When a task number is given, glob `todo/<number>-*.md` (zero-padded or not) to find the task file before starting.
 
@@ -53,6 +60,20 @@ Once the plan exists, run `/codebase-board-review` to gate it through the comple
 
 ## Planning Workflow
 
+You may skip steps if they are clearly not necessary for the task at hand.
+
+### Pre-flight: User Interview
+
+Before reading the codebase or writing anything, ask the user for a **long, detailed description** of:
+
+1. The problem they want to solve
+2. Any potential ideas for solutions they already have in mind
+3. Why this problem exists and what the expected outcome looks like
+
+Then **interview the user relentlessly** about every aspect of the plan until you reach a shared understanding. Walk down each branch of the design tree, resolving dependencies between decisions one-by-one. Determine whether the issue is a real problem and what a successful outcome looks like. Do not proceed to codebase exploration until the problem is clearly understood.
+
+---
+
 ### Pre-flight: Check for an existing task file
 
 Before starting, check whether a task file already exists for this item:
@@ -77,9 +98,9 @@ All output from the planning phases below should be written back into the task f
 
 ---
 
-### Phase 0 — Research (if needed)
+### Phase 0 — Research & Codebase Exploration (if needed)
 
-Before framing the problem, check whether there are unknowns that would make the plan speculative.
+Before framing the problem, explore the repo to verify the user's assertions and understand the current state of the codebase. Then check whether there are unknowns that would make the plan speculative.
 Run `/research-handbook` or `/search-first` if any of the following are true:
 
 - The technology, library, or approach is unfamiliar
@@ -89,6 +110,9 @@ Run `/research-handbook` or `/search-first` if any of the following are true:
 
 Save findings to `todo/research/<slug>/` and link from the task file's **Design** section.
 If everything is well-understood, skip this phase.
+
+Extensively ask questions about why the problem exists and how we should go about fixing it. Determine
+if the issue at hand is even a real problem and what we expect the outcome to be.
 
 ---
 
@@ -111,6 +135,25 @@ Success metric: [how we'll know it worked]
 Out of scope: [what we are NOT doing]
 Constraints: [time, tech, team, compliance]
 ```
+
+---
+
+### Phase 1.5 — User Stories
+
+Write a long, numbered list covering all actors and all aspects of the feature. Every user story must follow this format:
+
+```
+As a <actor>, I want <feature>, so that <benefit>
+```
+
+Example:
+```
+1. As a mobile bank customer, I want to see balance on my accounts, so that I can make better informed decisions about my spending
+2. As a mobile bank customer, I want to upload a profile photo, so that my account feels personalised
+3. As an admin, I want to remove user photos, so that I can enforce content policy
+```
+
+The list should be **extremely extensive** and cover all aspects of the feature — happy paths, error paths, edge cases, admin flows, and any other actor that interacts with it. Check this list with the user before proceeding.
 
 ---
 
@@ -145,7 +188,7 @@ AC-3: Given a new upload, when complete, the old photo is removed from storage w
 
 ### Phase 3 — Architecture Decision Records (ADRs)
 
-For each significant technical decision, write a short ADR:
+For each significant technical decision, write a short ADR. Use the format from `~/.claude/skills/codebase-arch-review/references/adr-template.md`. Example:
 
 ```markdown
 ## ADR-001: Photo storage backend
@@ -173,6 +216,103 @@ cost is acceptable at current scale (< 10M photos).
 - Must implement S3 lifecycle rules to delete old photos
 - CloudFront distribution needs cache invalidation on photo update
 - Cost review if photo volume > 50M
+```
+
+---
+
+### Phase 3.5 — Module Design
+
+Sketch out the major modules you will need to **build or modify** to complete the implementation. Actively look for opportunities to extract **deep modules**.
+
+> A **deep module** (as opposed to a shallow module) is one that encapsulates a lot of functionality behind a **simple, testable interface** that rarely changes. Prefer these over shallow wrappers that just pass data through.
+
+For each module, describe:
+- **Name** and responsibility
+- **Interface** (what goes in, what comes out) — not the file path or internal details
+- **Whether it is new or a modification** of something existing
+- **Testability** — can it be tested in isolation?
+
+Example:
+```
+Module: PhotoResizer
+  Responsibility: Accept raw image bytes, return resized image bytes at a target dimension
+  Interface: resize(data: bytes, width: int, height: int) → bytes
+  Status: New
+  Testable in isolation: Yes — no I/O, pure transformation
+
+Module: UserProfileRepository
+  Responsibility: Read/write user records including photo_url
+  Interface: get_user(id), update_photo_url(id, url)
+  Status: Modify (add photo_url field)
+  Testable in isolation: Yes — mock the DB connection
+
+Module: PhotoUploadHandler (HTTP layer)
+  Responsibility: Validate, orchestrate resize + store + update, return URL
+  Interface: POST /users/:id/photo
+  Status: New
+  Testable in isolation: Partial — integration test covers the full flow
+```
+
+Check this module list with the user before continuing. Ask which modules they want tests written for.
+
+---
+
+**Only required when the plan includes any of the following:**
+- A schema or data model change affecting live data
+- A breaking or backward-incompatible API change
+- Replacement or removal of a running service or component
+- A change to how consumers discover or connect to a service (endpoint, protocol, auth)
+- A dependency upgrade with a compatibility break
+
+**If none of the above apply, skip this phase and note: "No migration required — additive change."**
+
+Answer each item below. If an item is not applicable, say so in one line.
+
+```
+Migration pattern:
+  [ ] Expand-contract (add new path, migrate consumers, remove old path)
+  [ ] Strangler fig (route % of traffic to new, drain old)
+  [ ] Parallel run (run old + new simultaneously, compare outputs)
+  [ ] Hard cutover (maintenance window, all-at-once)
+  Chosen: ___ — Rationale: ___
+
+Backward compatibility window:
+  Which existing consumers/clients must still work after the change ships?
+    ___
+  Until when must the old interface/schema remain available?
+    ___
+  How will we know all consumers have migrated?
+    ___
+
+Version skew:
+  Can the old and new versions run simultaneously during rollout?  Y / N
+  If N — what is the required deployment order or downtime window?
+    ___
+  Maximum safe skew window (time both versions can coexist):
+    ___
+
+Rollback cost:
+  Can the migration be reversed without data loss?  Y / N
+  If N — what is the point of no return and how do we signal it?
+    ___
+  Estimated rollback time:  ___
+  Data at risk if rollback is needed:  ___
+
+Deprecation timeline:
+  When is the old interface/schema/service retired?
+    ___
+  What is the communication plan for consumers?
+    ___
+  Who is responsible for tracking and enforcing the cutover?
+    ___
+
+Traffic migration:
+  Feature flag required?  Y / N
+  If Y — flag name, initial %, and rollout stages:
+    ___
+  Canary required before full rollout?  Y / N
+  If Y — canary size and observation window:
+    ___
 ```
 
 ---
@@ -331,7 +471,9 @@ When planning a feature, produce a document with these sections:
 # Feature: [Name]
 
 ## Problem & Goal
+## User Stories
 ## Requirements (FR + NFR + AC)
+## Module Design
 ## Architecture (diagram + data model + API contract)
 ## ADRs
 ## Trade-offs

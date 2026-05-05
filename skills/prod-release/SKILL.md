@@ -158,10 +158,14 @@ Complete this before every production deployment:
 ### Infrastructure
 - [ ] Kubernetes manifests reviewed (resources, probes, PDB)
 - [ ] `helm diff` run — unexpected changes reviewed
+- [ ] **Drift check:** `kubectl diff -f deploy/prod/manifests/` run — no unexplained live state before applying
 - [ ] Secrets updated in vault/external-secrets if needed
 - [ ] New environment variables documented
+- [ ] **Certs and secrets expiry:** no TLS certs or rotated secrets expire within the next 7 days (would fail mid-soak)
 
 ### Operations
+- [ ] **Dependency health pre-check:** all upstream dependencies (databases, caches, external APIs, message queues) confirmed healthy *before* deploying — degraded dependencies at deploy time cause misattributed incidents
+- [ ] **Metric baseline recorded:** key metrics snapshot taken immediately before deploy (error rate, p95 latency, RPS, pod count) — stored in the task file or release notes for post-deploy comparison
 - [ ] Monitoring dashboard updated for new metrics/endpoints
 - [ ] Alerts configured for error rate, latency, and any new SLOs
 - [ ] On-call informed of release (especially for high-risk changes)
@@ -233,15 +237,20 @@ kubectl top pods -n prod -l app=api
 kubectl logs -n prod -l app=api --since=5m | grep -E "ERROR|CRITICAL|Exception"
 ```
 
-**Metrics to watch for 15–30 min after deploy:**
+**Metrics to watch for 15–30 min after deploy — compare against recorded baseline, not absolute thresholds:**
 
-| Metric | Alert threshold | Action if breached |
+Compare each metric to the baseline snapshot recorded in the Pre-Release Checklist. A value that looks acceptable in absolute terms may still represent a meaningful regression from baseline.
+
+| Metric | Rollback if delta exceeds | Investigate if delta exceeds |
 |---|---|---|
-| HTTP 5xx error rate | > 1% (was < 0.1%) | Rollback immediately |
-| p95 latency | > 2× baseline | Rollback if sustained > 5 min |
-| Pod restarts | > 2 restarts in 10 min | Rollback + investigate |
-| DB connection errors | Any | Check migration, rollback if needed |
-| Memory usage | > 80% of limit | Scale up or rollback if OOMKill risk |
+| HTTP 5xx error rate | > +1% above baseline | > +0.1% above baseline |
+| p95 latency | > 2× baseline, sustained > 5 min | > 1.3× baseline |
+| Pod restarts | > 2 restarts in 10 min (new, not pre-existing) | Any new restarts |
+| DB connection errors | Any new errors not present at baseline | — |
+| Memory usage | > +30% above baseline (OOMKill risk) | > +15% above baseline |
+| RPS | Drop > 20% vs baseline (traffic not reaching service) | Drop > 5% |
+
+> **Why delta, not absolute:** a service running at 0.8% error rate pre-deploy that jumps to 1.5% post-deploy has regressed significantly — but neither value alone triggers a naive "error rate > 1%" threshold. Always compare to what you measured before applying.
 
 ---
 
@@ -340,5 +349,7 @@ Once smoke tests pass and the rollout is complete, update the task tracking:
 
 1. In the task file (`todo/<number>-<slug>.md`): set `**Status:**` to `🚀 Deployed`
 2. In `TODO.md`: flip the status column to `🚀 Deployed`
+
+> **Note:** This skill uses `🚀 Deployed` as the terminal status for codebase tasks. The platform workflow (`/platform-workflow`) uses `🚀 Applied` for Kubernetes changes — the different labels reflect the different deployment verbs (code deployed vs manifests applied). Check which workflow you're in before updating status.
 
 This is the terminal state — the feature is live in production.

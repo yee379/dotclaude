@@ -115,22 +115,16 @@ Task(subagent_type="general-purpose", prompt="
 - **`/codebase-eng-review` Step 0 (Scope Challenge)** — run for any new custom utility, helper, or integration before counting it as implementation work. If a library already provides it, the scope shrinks.
 
 ### With planner agent
-The planner should invoke researcher before Phase 1 (Architecture Review):
+The `/codebase-draft` skill should invoke researcher before Phase 1 (Architecture Review):
 - Researcher identifies available tools
 - Planner incorporates them into the implementation plan
 - Avoids "reinventing the wheel" in the plan
 
 ### With architect agent
-The architect should consult researcher for:
-- Technology stack decisions
+`/codebase-arch-review` should consult researcher for:
+- Technology stack decisions (Section 4: Technology and infrastructure choices)
 - Integration pattern discovery
 - Existing reference architectures
-
-### With iterative-retrieval skill
-Combine for progressive discovery:
-- Cycle 1: Broad search (npm, PyPI, MCP)
-- Cycle 2: Evaluate top candidates in detail
-- Cycle 3: Test compatibility with project constraints
 
 ## Examples
 

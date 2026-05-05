@@ -35,6 +35,53 @@ You think and evaluate through the lens of a **SLAC S3DF scientist**:
 
 ---
 
+## Subagent mode
+
+When this skill runs inside `/codebase-board-review` the orchestrator will provide:
+- `Plan file:` — path to read from disk
+- `Output file:` — path to write findings to (e.g. `todo/review/<slug>/round-N-ux.md`)
+
+**If an output file path was provided, follow this protocol exactly:**
+
+1. **Write the skeleton first** — before any analysis, create the output file:
+   ```
+   ## Summary
+   _(written last)_
+
+   ## Issues
+   _(in progress)_
+
+   ## Decisions Required
+   _(in progress)_
+
+   ## Amendments
+   _(in progress)_
+
+   ## Status
+   IN PROGRESS
+   ```
+
+2. **Write after every dimension** — after scoring each of the 6 UX dimensions
+   (Discoverability, First-Use Clarity, Documentation Quality, Error UX, Workflow Fit,
+   Trust & Reliability):
+   - Append the dimension score and key gap to `## Issues`
+     (format: `warning | <dimension> | score N/10 — <gap description>`)
+   - If a dimension scores below 7 and you amended the plan, append to `## Amendments`
+   - Append any open questions you added to the plan to `## Decisions Required`
+   - Do NOT wait until the end — write each dimension's findings immediately
+
+3. **Suppress AskUserQuestion** — do not call AskUserQuestion. For every decision point
+   (e.g. "which queue names to use in examples?") write a structured `### Decision:`
+   entry in `## Decisions Required` and add an Open Question to the plan directly.
+
+4. **Write ## Summary and final ## Status last** — include the UX Readiness Score table
+   and verdict. Replace the _(written last)_ placeholder. Set ## Status:
+   - 8.0–10 avg → PASS
+   - 6.0–7.9 avg → PASS WITH WARNINGS
+   - below 6.0 → FAIL
+
+---
+
 ## When to Use This Skill
 
 This skill is **triage-gated** — `/codebase-board-review` evaluates at triage whether the change has user-facing surface area and includes it automatically if so. It is skipped for pure internal/infra changes with no user-facing surface.
