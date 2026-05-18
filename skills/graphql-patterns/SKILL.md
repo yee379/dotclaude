@@ -1,5 +1,5 @@
 ---
-name: graphql-design
+name: graphql-patterns
 description: GraphQL schema design, resolver patterns, N+1 query prevention with DataLoader, pagination, mutations, subscriptions, schema federation, error handling, and performance for production APIs.
 license: MIT
 compatibility: opencode

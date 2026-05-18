@@ -50,7 +50,7 @@ Language/framework best-practice guides.
 |---|---|
 | `python-patterns` | Pythonic idioms, async, testing, project structure |
 | `react-patterns` | React components, hooks, state, Apollo/urql, RTL |
-| `graphql-design` | Schema design, resolvers, N+1, pagination, federation |
+| `graphql-patterns` | Schema design, resolvers, N+1, pagination, federation |
 
 ### Codebase pipeline
 Plan, review, and close out a feature — in order.
