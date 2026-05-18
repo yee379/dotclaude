@@ -183,7 +183,7 @@ After every `make apply` (or equivalent), **immediately update the task file** w
 ```markdown
 ### Applied YYYY-MM-DD — <short description>
 
-**Command:** `KUBECONFIG=~/.kube/contexts/ai-playground/prod make apply`
+**Command:** `KUBECONFIG=~/.kube/contexts/sage/prod make apply`
 **Outcome:** ✅ Success | ⚠️ Partial | ❌ Failed
 **Pod status:** `kubectl get pods` snippet or summary
 **Verification:** what was checked post-apply (health endpoint, tool list, logs, etc.)
