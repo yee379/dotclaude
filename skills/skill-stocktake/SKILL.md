@@ -126,6 +126,7 @@ Each skill is evaluated against this checklist:
 - [ ] Structural pattern identified (see Skill Design Patterns below)
 - [ ] Pattern applied correctly: steps are explicit, gating conditions present where needed, references/assets loaded at the right step
 - [ ] Instructions do not try to cram multiple patterns into a single monolithic prompt
+- [ ] Conciseness assessed: motivational preamble, repeated examples, prose that could be bullets, and inline templates >20 lines are flagged
 ```
 
 Verdict criteria:
@@ -144,6 +145,7 @@ Evaluation is **holistic AI judgment** — not a numeric rubric. Guiding dimensi
 - **Uniqueness**: value not replaceable by MEMORY.md / CLAUDE.md / another skill
 - **Currency**: technical references work in the current environment
 - **Pattern fit**: skill uses a recognisable structural pattern; instructions are not a shapeless blob
+- **Conciseness**: every line earns its place — motivational preamble, redundant examples, and prose summaries of what code already shows are waste; right-size by pattern: Tool Wrapper 50–100 lines, Reviewer/Inversion 60–120 lines, Generator/Pipeline 100–200 lines
 
 **Reason quality requirements** — the `reason` field must be self-contained and decision-enabling:
 - Do NOT write "unchanged" alone — always restate the core evidence
@@ -157,6 +159,12 @@ Evaluation is **holistic AI judgment** — not a numeric rubric. Guiding dimensi
   - Bad: `"Too long"`
   - Good: `"276 lines; Section 'Framework Comparison' (L80–140) duplicates ai-era-architecture-principles; delete it to reach ~150 lines."`
   - Pattern violations are also valid Improve reasons — name the pattern that fits and what's missing (e.g. "Reviewer pattern: checklist is inlined as 40 prose lines — extract to references/review-checklist.md so it can be swapped independently")
+  - For length/verbosity, name the condensation move alongside the line count:
+    - **Delete**: motivational preamble, "Remember:" sections, examples that repeat a pattern already shown once
+    - **Move to references/**: inline templates >20 lines, large checklists, reference tables — lazy-load them instead
+    - **Collapse**: three examples showing the same point → one annotated representative
+    - **Convert**: narrative prose explanation → checklist item or gate condition
+    - Example: `"380 lines; preamble (L1–15) is motivational — delete; inline template (L120–190) → assets/plan-template.md; three equivalent mock examples (L200–260) collapse to one. Target: ~180 lines."`
 - For **Keep** (mtime-only change in Quick Scan): restate the original verdict rationale, do not write "unchanged"
   - Bad: `"Unchanged"`
   - Good: `"mtime updated but content unchanged. Unique Python reference explicitly imported by rules/python/; no overlap found."`
@@ -174,6 +182,11 @@ Evaluation is **holistic AI judgment** — not a numeric rubric. Guiding dimensi
    - Impact of removal (any dependent skills, MEMORY.md references, or workflows affected)
 2. **Improve**: present specific improvement suggestions with rationale:
    - What to change and why (e.g., "trim 430→200 lines because sections X/Y duplicate python-patterns")
+   - For **length/verbosity** improvements, apply condensation moves in order and state the target line count:
+     1. Delete motivational preamble and "Remember:" footers
+     2. Move inline templates/large checklists to `references/` or `assets/`
+     3. Collapse repeated examples to one annotated representative
+     4. Convert prose explanations to checklist items or gate conditions
    - User decides whether to act
 3. **Update**: present updated content with sources checked
 4. Check MEMORY.md line count; propose compression if >100 lines
