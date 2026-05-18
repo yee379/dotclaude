@@ -22,7 +22,7 @@ State the detected mode at the top of your review: `> Mode: Platform` or `> Mode
 
 **Codebase mode:**
 ```
-/codebase-draft
+/codebase-draft-prd
       │
       ▼
 /codebase-board-review ──── runs these reviewers in parallel ────┐
@@ -40,7 +40,7 @@ implementation → /codebase-closeout → /prod-release
 
 **Platform mode:**
 ```
-/platform-draft
+/platform-draft-prd
       │
       ▼
 /platform-board-review ──── runs these reviewers in parallel ────┐
@@ -144,6 +144,7 @@ Read (if they exist):
 - `ARCHITECTURE.md` — existing architectural decisions to avoid contradicting
 - `TODOS.md` — deferred architectural work that may be relevant
 - `CLAUDE.md` — project conventions and technology choices
+- Domain glossary or ubiquitous language doc (`docs/glossary.md`, `GLOSSARY.md`, or equivalent) — if present, use its vocabulary throughout the review; flag where the plan introduces terminology that conflicts with or drifts from the established domain model (two names for the same concept often signals competing ownership and a misplaced boundary)
 
 ### Step 0: Architecture Scope Assessment
 
@@ -189,6 +190,10 @@ Example shape only:
                                     ⇢ order.created
                              [Inventory Service]──owns──[inventory DB]
 ```
+
+**Deep module check:** For each boundary in the diagram, ask: does it encapsulate meaningful complexity behind a simple, rarely-changing interface? A boundary where the interface is nearly as complex as what it wraps is a shallow wrapper — a sign the split is at the wrong level or the abstraction is wrong. Flag any boundary that passes data through without genuinely simplifying it.
+
+**Testability check:** For each boundary, ask: can this service or module be tested in isolation? What does a test require — a real database, mocks, a stub service? If testing a single unit requires standing up 3 or more services, the architecture has a coupling problem that will slow delivery and mask bugs. Testability is an architectural property — flag coupling problems here, not in eng-review, because fixing them requires changing the boundaries, not the implementation.
 
 **STOP.** For each issue found in this section, call AskUserQuestion individually. One issue per call. Present options, state recommendation, explain WHY. Do NOT batch. Only proceed after ALL issues resolved.
 
@@ -414,6 +419,8 @@ mkdir -p docs/adr
 ```
 
 Each ADR follows the format in `references/adr-template.md`. Load that file when writing an ADR.
+
+**Prototype snippets:** If a short snippet encodes a decision more precisely than prose can — a schema shape, state machine, type definition, or API contract — inline it trimmed to the decision-relevant parts and note it came from a prototype. Do not include working implementation code; only the parts that capture the decision itself.
 
 Ask the user to confirm or amend each ADR individually before writing it to disk. Do NOT batch ADR confirmations.
 
