@@ -47,45 +47,61 @@ If a task file already exists, use its Problem Statement and Goals as Phase 1 in
 
 ## Phase 0.5 — Discovery Interview (REQUIRED before any design work)
 
-**Before writing a single line of design, ask the user these questions.** Do not skip this phase, even if a task file exists — the task file captures *what*, not *why*. This interview surfaces the reasoning, constraints, and applicability that make the difference between a plan that ships safely and one that gets blocked in board review.
+Do not skip this phase, even when a task file exists — the task file captures *what*, not *why*. This interview surfaces the reasoning, constraints, and applicability that make the difference between a plan that ships safely and one that gets blocked in board review.
 
-Ask all questions in a single message, grouped clearly. Wait for the user's answers before proceeding to Phase 1.
+**Do not dump all questions at once.** Instead, follow this discipline:
 
-### Questions to ask:
+**1. Look things up first.**
+Before asking the user anything, check what can be determined by examining existing state: task files and prior platform changes in `todo/`, Helm charts and values files, namespace manifests, runbooks, ADRs, cluster topology docs, and any prior board review decisions for related changes. If an existing operator or pattern already covers this need, find it. Answer as many questions as you can without involving the user.
+
+**2. Ask about what you cannot determine.**
+Bring targeted questions — only about things genuinely requiring human input: purpose and motivation (only the user knows *why now* and *for whom*), approach trade-offs with no objectively correct answer, scope decisions involving other teams, compliance constraints, and what the user is least certain about. Ask one thread at a time. Wait for the answer. If an answer opens new questions or needs more lookups, do those before continuing.
+
+**3. Surface conflicts explicitly.**
+If exploration of the cluster config, existing runbooks, or prior ADRs reveals something that conflicts with or complicates the proposed approach, ask about it directly: *"I found X in the existing config, which conflicts with Y in the plan. How do you want to resolve this?"*
+
+**4. Iterate until shared understanding.**
+Keep exploring and asking until you can restate the full plan — problem, approach, affected environments, impacted teams, rollout order, failure modes, unknowns — and the user confirms it is correct. There is no fixed number of rounds. Do not proceed to Phase 1 until this point is reached.
+
+### Questions to cover (ask only those not already answerable from exploration):
 
 **Purpose & motivation**
-1. What is the underlying operational or business problem this change solves? (Not "deploy X" — what breaks, slows down, or becomes risky without this?)
-2. Why now? What changed that makes this the right time to do it?
-3. Who is asking for this, and what outcome are they expecting?
+- What is the underlying operational or business problem this change solves? (Not "deploy X" — what breaks, slows down, or becomes risky without this?)
+- Why now? What changed that makes this the right time?
+- Who is asking for this, and what outcome are they expecting?
 
 **Logic & approach**
-4. What approach are you proposing, and why that approach over alternatives? Have you ruled out simpler options (e.g. config change, existing operator, a different tool)?
-5. Is there prior art — internal or external — for this pattern on this cluster or elsewhere?
-6. What is the expected failure mode if this goes wrong, and how would you recover?
+- What approach is proposed, and why that approach over alternatives? Have simpler options been ruled out (e.g. config change, existing operator, a different tool)?
+- Is there prior art — internal or external — for this pattern on this cluster or elsewhere?
+- What is the expected failure mode if this goes wrong, and how would recovery work?
 
 **Applicability & scope**
-7. Which environments does this apply to (staging only, production, all)? Does the rollout need to be phased?
-8. Are there other services, namespaces, or teams that will be affected — even indirectly?
-9. Are there compliance, security, or regulatory constraints that shape the design?
-10. Is there a hard deadline or dependency on another change?
+- Which environments does this apply to (staging only, production, all)? Does the rollout need to be phased?
+- Are there other services, namespaces, or teams that will be affected — even indirectly?
+- Are there compliance, security, or regulatory constraints that shape the design?
+- Is there a hard deadline or dependency on another change?
 
 **Unknowns**
-11. What are you least certain about in this plan? What would you want researched or validated before committing?
-
-> **Note:** If the user has already provided clear answers to most of these in the task file or conversation, acknowledge what you already know, ask only for what is still missing, and summarise your understanding before proceeding.
+- What are you least certain about in this plan? What should be researched or validated before committing?
 
 ---
 
-## Phase 0 — Research (if needed)
+## Phase 0 — Research
 
-Run `/research-handbook` or `/search-first` if any of the following are true:
+This phase runs in parallel with the discovery interview. Every lookup is an opportunity to answer a question before asking the user.
 
+**What to check:**
+- Existing Helm charts, values files, and namespace manifests that are relevant
+- Prior ADRs or board review decisions for related platform changes
+- Operator docs, upstream changelogs, or migration guides if an external tool is involved
+- Whether the cluster already has infrastructure that meets this need
+
+**When to run `/research-handbook` or `/search-first`:**
 - The technology, operator, or pattern is unfamiliar
-- There are competing approaches and you don't know the trade-offs
+- There are competing approaches and the trade-offs are unclear
 - A security, compliance, or regulatory question needs an answer before design
-- You're unsure whether the cluster already has infrastructure that solves this
 
-Save findings to `todo/research/<slug>/` and link from the task file's Design section.
+Save findings to `todo/research/<slug>/` and link from the task file's Design section. Feed discoveries back into the interview loop — new findings may resolve open questions or reveal new conflicts to surface.
 
 ---
 

@@ -64,13 +64,21 @@ You may skip steps if they are clearly not necessary for the task at hand.
 
 ### Pre-flight: User Interview
 
-Before reading the codebase or writing anything, ask the user for a **long, detailed description** of:
+Ask the user for a **brief initial description** of the problem and what they have in mind. Keep this opening request short — you'll resolve the details through exploration and follow-up.
 
-1. The problem they want to solve
-2. Any potential ideas for solutions they already have in mind
-3. Why this problem exists and what the expected outcome looks like
+Once you have the initial description, do not ask a long list of questions. Instead:
 
-Then **interview the user relentlessly** about every aspect of the plan until you reach a shared understanding. Walk down each branch of the design tree, resolving dependencies between decisions one-by-one. Determine whether the issue is a real problem and what a successful outcome looks like. Do not proceed to codebase exploration until the problem is clearly understood.
+**1. Explore first.**
+Read the codebase, existing task file, tests, docs, ADRs, and anything referenced in the description. Check for: existing patterns you should follow or avoid, constraints implied by the current architecture, prior decisions recorded anywhere, and gaps or conflicts between the user's stated intent and the current state of the code. Answer as many questions as you can without involving the user.
+
+**2. Ask about what you cannot determine.**
+After exploration, bring targeted questions to the user — only about things genuinely requiring human input: decisions involving preference or priority, trade-offs with no objectively correct answer, conflicting signals you found in the codebase, and unknowns only the user can resolve. Ask one thread at a time. Wait for the answer. If the answer opens new questions or requires more lookups, do them before asking again.
+
+**3. Surface conflicts explicitly.**
+If exploration reveals something that conflicts with or complicates the user's stated approach — an existing abstraction, a prior ADR, a coupling that makes the plan harder — surface it directly: *"I found X, which conflicts with Y. How do you want to resolve this?"*
+
+**4. Iterate until shared understanding.**
+Keep exploring and asking until you can restate the full plan — goals, scope, approach, constraints, affected users, edge cases, failure modes — and the user confirms it is correct. Do not proceed to Phase 1 until this point is reached. There is no fixed number of rounds; keep going as long as there are genuine unresolved questions.
 
 ---
 
@@ -98,21 +106,22 @@ All output from the planning phases below should be written back into the task f
 
 ---
 
-### Phase 0 — Research & Codebase Exploration (if needed)
+### Phase 0 — Research & Codebase Exploration
 
-Before framing the problem, explore the repo to verify the user's assertions and understand the current state of the codebase. Then check whether there are unknowns that would make the plan speculative.
-Run `/research-handbook` or `/search-first` if any of the following are true:
+This phase runs in parallel with the Pre-flight interview, not after it. Every round of exploration is an opportunity to answer questions before asking the user.
 
+**What to explore:**
+- Relevant source files, tests, and existing similar features
+- Prior ADRs, design docs, or task files that touch this area
+- Library docs, changelogs, or migration guides if an external dependency is involved
+- Whether something solving this already exists in the codebase or ecosystem
+
+**When to run `/research-handbook` or `/search-first`:**
 - The technology, library, or approach is unfamiliar
-- There are competing approaches and you don't know the trade-offs yet
-- You're unsure whether something already exists in the codebase or ecosystem
-- A regulatory, security, or compliance question needs an answer before design can start
+- There are competing approaches and the trade-offs are unclear
+- A regulatory, security, or compliance question must be resolved before design can start
 
-Save findings to `todo/research/<slug>/` and link from the task file's **Design** section.
-If everything is well-understood, skip this phase.
-
-Extensively ask questions about why the problem exists and how we should go about fixing it. Determine
-if the issue at hand is even a real problem and what we expect the outcome to be.
+Save findings to `todo/research/<slug>/` and link from the task file's **Design** section. Feed discoveries back into the interview loop — new findings may resolve open questions or open new ones. Continue until no meaningful unknowns remain.
 
 ---
 
