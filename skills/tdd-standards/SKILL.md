@@ -1,12 +1,10 @@
 ---
 name: tdd-standards
-description: Use this skill when writing new features, fixing bugs, or refactoring code. Enforces test-driven development with 80%+ coverage including unit, integration, and E2E tests.
+description: Use this skill when writing new features, fixing bugs, or refactoring code. Enforces test-driven development with vertical slicing, behavior-focused tests, and 80%+ coverage including unit, integration, and E2E tests.
 origin: ECC
 ---
 
 # Test-Driven Development Workflow
-
-This skill ensures all code development follows TDD principles with comprehensive test coverage.
 
 ## When to Activate
 
@@ -16,14 +14,35 @@ This skill ensures all code development follows TDD principles with comprehensiv
 - Adding API endpoints
 - Creating new components
 
+## Philosophy
+
+**Core principle**: Tests should verify behavior through public interfaces, not implementation details. Code can change entirely; tests shouldn't.
+
+Good tests are integration-style: they exercise real code paths through public APIs. They describe *what* the system does, not *how* it does it. "User can checkout with valid cart" tells you exactly what capability exists and survives any internal refactor.
+
+**Warning sign**: If you rename an internal function and tests fail without any change in observable behavior, those tests were testing implementation, not behavior.
+
 ## Core Principles
 
-### 1. Tests BEFORE Code
-ALWAYS write tests first, then implement code to make tests pass.
+### 1. Vertical Slices, Not Horizontal
+
+**DO NOT write all tests first, then all implementation.** This is horizontal slicing — it produces tests that test imagined behavior, not actual behavior, and become insensitive to real changes.
+
+```
+WRONG (horizontal):
+  RED:   test1, test2, test3, test4, test5
+  GREEN: impl1, impl2, impl3, impl4, impl5
+
+RIGHT (vertical):
+  RED→GREEN: test1→impl1
+  RED→GREEN: test2→impl2
+  RED→GREEN: test3→impl3
+```
 
 ### 2. Coverage Requirements
-- Minimum 80% coverage (unit + integration + E2E)
-- All edge cases covered
+
+- Minimum 80% coverage (unit + integration + E2E) — a floor, not a goal
+- **You can't test everything** — focus on critical paths and complex logic, not every edge case
 - Error scenarios tested
 - Boundary conditions verified
 
@@ -47,73 +66,180 @@ ALWAYS write tests first, then implement code to make tests pass.
 - Browser automation
 - UI interactions
 
-## TDD Workflow Steps
+## TDD Workflow
 
-### Step 1: Write User Journeys
+### Step 0: Plan Before Writing
+
+Before any tests:
+
+- [ ] Confirm with user what interface changes are needed
+- [ ] Confirm which behaviors to test — prioritise critical paths over edge cases
+- [ ] Write behaviors as user journeys: `As a [role], I want to [action], so that [benefit]`
+- [ ] List behaviors to test (not implementation steps)
+- [ ] Get user sign-off on the list
+
+Ask: "What should the public interface look like? Which behaviors are most important to test?"
+
+### Step 1: Tracer Bullet
+
+Write ONE test that proves the end-to-end path works:
+
 ```
-As a [role], I want to [action], so that [benefit]
-
-Example:
-As a user, I want to search for items by keyword,
-so that I can find relevant results even without exact matches.
+RED:   Write test for first behavior → fails
+GREEN: Write minimal code to pass → passes
 ```
 
-### Step 2: Generate Test Cases
-For each user journey, create comprehensive test cases:
+This confirms the wiring — test runner works, framework is configured, basic structure holds.
+
+### Step 2: Incremental Loop
+
+For each remaining behavior, one at a time:
 
 ```typescript
 describe('Keyword Search', () => {
-  it('returns relevant items for query', async () => {
-    // Test implementation
-  })
-
-  it('handles empty query gracefully', async () => {
-    // Test edge case
-  })
-
-  it('falls back to exact match when search index unavailable', async () => {
-    // Test fallback behavior
-  })
-
-  it('sorts results by relevance score', async () => {
-    // Test sorting logic
-  })
+  it('returns relevant items for query', async () => { })
+  it('handles empty query gracefully', async () => { })
+  it('falls back to exact match when search index unavailable', async () => { })
 })
 ```
 
+**Per-cycle checklist** — before moving to the next test:
+```
+[ ] Test describes behavior, not implementation
+[ ] Test uses public interface only
+[ ] Test would survive internal refactor
+[ ] Code is minimal for this test
+[ ] No speculative features added
+```
+
 ### Step 3: Run Tests (They Should Fail)
+
 ```bash
 npm test
-# Tests should fail - we haven't implemented yet
+# Tests should fail — implementation doesn't exist yet
 ```
 
-### Step 4: Implement Code
-Write minimal code to make tests pass:
+### Step 4: Implement (Minimal)
 
-```typescript
-// Implementation guided by tests
-export async function searchItems(query: string) {
-  // Implementation here
-}
-```
+Write only enough code to pass the current test. Don't anticipate future tests.
 
 ### Step 5: Run Tests Again
+
 ```bash
 npm test
 # Tests should now pass
 ```
 
 ### Step 6: Refactor
-Improve code quality while keeping tests green:
-- Remove duplication
-- Improve naming
-- Optimize performance
-- Enhance readability
+
+Improve code quality while keeping tests green. **Never refactor while RED.** Get to GREEN first.
+
+Refactor candidates:
+- **Duplication** → Extract function/class
+- **Long methods** → Break into private helpers (keep tests on public interface)
+- **Shallow modules** → Combine or deepen — complexity should live behind simple interfaces
+- **Feature envy** → Move logic to where data lives
+- **Primitive obsession** → Introduce value objects
+- **Existing code** the new code reveals as problematic
 
 ### Step 7: Verify Coverage
+
 ```bash
 npm run test:coverage
 # Verify 80%+ coverage achieved
+```
+
+## Good vs Bad Tests
+
+### Good Tests
+
+Test behavior through public interfaces. Survive internal refactors.
+
+```typescript
+// GOOD: Tests observable behavior
+test("user can checkout with valid cart", async () => {
+  const cart = createCart();
+  cart.add(product);
+  const result = await checkout(cart, paymentMethod);
+  expect(result.status).toBe("confirmed");
+});
+
+// GOOD: Verifies through interface, not internal state
+test("createUser makes user retrievable", async () => {
+  const user = await createUser({ name: "Alice" });
+  const retrieved = await getUser(user.id);
+  expect(retrieved.name).toBe("Alice");
+});
+```
+
+### Bad Tests
+
+Coupled to implementation — they break on refactor without any behavior change.
+
+```typescript
+// BAD: Tests that an internal collaborator was called
+test("checkout calls paymentService.process", async () => {
+  const mockPayment = jest.mock(paymentService);
+  await checkout(cart, payment);
+  expect(mockPayment.process).toHaveBeenCalledWith(cart.total);
+});
+
+// BAD: Bypasses interface to query database directly
+test("createUser saves to database", async () => {
+  await createUser({ name: "Alice" });
+  const row = await db.query("SELECT * FROM users WHERE name = ?", ["Alice"]);
+  expect(row).toBeDefined();
+});
+```
+
+**Red flags:**
+- Mocking internal collaborators (your own classes/modules)
+- Testing private methods
+- Asserting on call counts or call order
+- Test breaks when you refactor without changing behavior
+- Test name describes HOW not WHAT
+- Verifying through external means (direct DB query) instead of the interface
+
+### Common Mistakes
+
+#### ❌ WRONG: Testing Implementation Details
+```typescript
+expect(component.state.count).toBe(5)
+```
+
+#### ✅ CORRECT: Test User-Visible Behavior
+```typescript
+expect(screen.getByText('Count: 5')).toBeInTheDocument()
+```
+
+#### ❌ WRONG: Brittle Selectors
+```typescript
+await page.click('.css-class-xyz')
+```
+
+#### ✅ CORRECT: Semantic Selectors
+```typescript
+await page.click('button:has-text("Submit")')
+await page.click('[data-testid="submit-button"]')
+```
+
+#### ❌ WRONG: No Test Isolation
+```typescript
+test('creates user', () => { /* ... */ })
+test('updates same user', () => { /* depends on previous test */ })
+```
+
+#### ✅ CORRECT: Independent Tests
+```typescript
+test('creates user', () => {
+  const user = createTestUser()
+  // Test logic
+})
+
+test('updates user', () => {
+  const user = createTestUser()
+  // Update logic
+})
 ```
 
 ## Testing Patterns
@@ -132,9 +258,7 @@ describe('Button Component', () => {
   it('calls onClick when clicked', () => {
     const handleClick = jest.fn()
     render(<Button onClick={handleClick}>Click</Button>)
-
     fireEvent.click(screen.getByRole('button'))
-
     expect(handleClick).toHaveBeenCalledTimes(1)
   })
 
@@ -164,7 +288,6 @@ describe('GET /api/items', () => {
   it('validates query parameters', async () => {
     const request = new NextRequest('http://localhost/api/items?limit=invalid')
     const response = await GET(request)
-
     expect(response.status).toBe(400)
   })
 
@@ -181,20 +304,15 @@ import { test, expect } from '@playwright/test'
 
 test('user can search and filter items', async ({ page }) => {
   await page.goto('/items')
-
-  // Verify page loaded
   await expect(page.locator('h1')).toContainText('Items')
 
-  // Search
   await page.fill('input[placeholder="Search"]', 'widget')
-  await page.waitForResponse(resp => resp.url().includes('/api') && resp.status() === 200)  // wait for debounced request, not a fixed timeout
+  await page.waitForResponse(resp => resp.url().includes('/api') && resp.status() === 200)
 
-  // Verify results
   const results = page.locator('[data-testid="item-card"]')
   await expect(results).toHaveCount(5, { timeout: 5000 })
   await expect(results.first()).toContainText('widget', { ignoreCase: true })
 
-  // Apply a filter
   await page.click('button:has-text("Active")')
   await expect(results).toHaveCount(3)
 })
@@ -234,12 +352,59 @@ src/
     └── auth.spec.ts
 ```
 
-## Mocking External Services
+## Mocking Guidelines
 
-Mock at the module boundary — replace the internal adapter, not the third-party SDK directly.
+### Mock at system boundaries only
 
-### Database Mock (generic)
+**Do mock:**
+- External APIs (payment, email, third-party services)
+- Databases — but prefer a real test database over mocking
+- Time and randomness
+- File system when I/O is the bottleneck
+
+**Don't mock** your own classes, modules, or internal collaborators. If you feel the urge to mock something you control, that's a signal the interface needs redesigning, not a testing problem.
+
+### Design for mockability
+
+**Use dependency injection** — pass external dependencies in rather than creating them internally:
+
 ```typescript
+// Easy to mock
+function processPayment(order, paymentClient) {
+  return paymentClient.charge(order.total);
+}
+
+// Hard to mock — creates its own dependency
+function processPayment(order) {
+  const client = new StripeClient(process.env.STRIPE_KEY);
+  return client.charge(order.total);
+}
+```
+
+**Prefer SDK-style interfaces over generic fetchers** — one function per operation, not one function with conditional logic:
+
+```typescript
+// GOOD: each function is independently mockable
+const api = {
+  getUser: (id) => fetch(`/users/${id}`),
+  getOrders: (userId) => fetch(`/users/${userId}/orders`),
+  createOrder: (data) => fetch('/orders', { method: 'POST', body: data }),
+};
+
+// BAD: mocking requires conditional logic inside the mock
+const api = {
+  fetch: (endpoint, options) => fetch(endpoint, options),
+};
+```
+
+SDK-style means each mock returns one specific shape, no conditional logic in test setup, and it's immediately clear which endpoints a test exercises.
+
+### Mock implementations
+
+Mock the internal adapter (`@/lib/db`), not the vendor SDK (`@supabase/supabase-js`). Return minimal stable shapes. Always provide a failure path mock alongside the success path.
+
+```typescript
+// Database mock
 jest.mock('@/lib/db', () => ({
   db: {
     from: jest.fn(() => ({
@@ -252,42 +417,31 @@ jest.mock('@/lib/db', () => ({
     }))
   }
 }))
-```
 
-### Cache / Vector Store Mock (generic)
-```typescript
+// Cache / Vector Store mock
 jest.mock('@/lib/cache', () => ({
   searchByVector: jest.fn(() => Promise.resolve([
     { id: 'item-1', score: 0.95 }
   ])),
   checkHealth: jest.fn(() => Promise.resolve({ connected: true }))
 }))
-```
 
-### External API / Embedding Mock (generic)
-```typescript
+// External API / Embedding mock
 const EMBEDDING_DIMENSIONS = 1536  // match your model's output dimension
 
 jest.mock('@/lib/embeddings', () => ({
   generateEmbedding: jest.fn(() => Promise.resolve(
-    new Array(EMBEDDING_DIMENSIONS).fill(0.1)  // fixed-dimension vector for test isolation
+    new Array(EMBEDDING_DIMENSIONS).fill(0.1)
   ))
 }))
 ```
 
-**Rules:**
-- Mock the internal adapter (`@/lib/db`), not the vendor SDK (`@supabase/supabase-js`)
-- Return minimal, stable shapes — don't couple test data to production schema
-- Always provide a failure path mock alongside the success path
-
 ## Test Coverage Verification
 
-### Run Coverage Report
 ```bash
 npm run test:coverage
 ```
 
-### Coverage Thresholds
 ```json
 {
   "jest": {
@@ -303,59 +457,10 @@ npm run test:coverage
 }
 ```
 
-## Common Testing Mistakes to Avoid
-
-### ❌ WRONG: Testing Implementation Details
-```typescript
-// Don't test internal state
-expect(component.state.count).toBe(5)
-```
-
-### ✅ CORRECT: Test User-Visible Behavior
-```typescript
-// Test what users see
-expect(screen.getByText('Count: 5')).toBeInTheDocument()
-```
-
-### ❌ WRONG: Brittle Selectors
-```typescript
-// Breaks easily
-await page.click('.css-class-xyz')
-```
-
-### ✅ CORRECT: Semantic Selectors
-```typescript
-// Resilient to changes
-await page.click('button:has-text("Submit")')
-await page.click('[data-testid="submit-button"]')
-```
-
-### ❌ WRONG: No Test Isolation
-```typescript
-// Tests depend on each other
-test('creates user', () => { /* ... */ })
-test('updates same user', () => { /* depends on previous test */ })
-```
-
-### ✅ CORRECT: Independent Tests
-```typescript
-// Each test sets up its own data
-test('creates user', () => {
-  const user = createTestUser()
-  // Test logic
-})
-
-test('updates user', () => {
-  const user = createTestUser()
-  // Update logic
-})
-```
-
 ## Python TDD (pytest)
 
 For Python projects, follow the same Red → Green → Refactor cycle using pytest. See `/python-patterns` for full project structure and async fixture patterns.
 
-### Unit Test Pattern (pytest)
 ```python
 # tests/unit/test_search.py
 import pytest
@@ -375,7 +480,6 @@ def test_raises_on_invalid_input():
         search_items(None)
 ```
 
-### Coverage (pytest)
 ```bash
 pytest --cov=app --cov-report=term-missing --cov-fail-under=80
 ```
@@ -389,23 +493,13 @@ asyncio_mode = "auto"
 fail_under = 80
 ```
 
----
-
 ## Continuous Testing
 
-### Watch Mode During Development
 ```bash
-npm test -- --watch
-# Tests run automatically on file changes
+npm test -- --watch        # watch mode during development
+npm test && npm run lint   # pre-commit
 ```
 
-### Pre-Commit Hook
-```bash
-# Runs before every commit
-npm test && npm run lint
-```
-
-### CI/CD Integration
 ```yaml
 # GitHub Actions
 - name: Run Tests
@@ -416,16 +510,16 @@ npm test && npm run lint
 
 ## Best Practices
 
-1. **Write Tests First** - Always TDD
-2. **One Assert Per Test** - Focus on single behavior
-3. **Descriptive Test Names** - Explain what's tested
-4. **Arrange-Act-Assert** - Clear test structure
-5. **Mock External Dependencies** - Isolate unit tests
-6. **Test Edge Cases** - Null, undefined, empty, large
-7. **Test Error Paths** - Not just happy paths
-8. **Keep Tests Fast** - Unit tests < 50ms each
-9. **Clean Up After Tests** - No side effects
-10. **Review Coverage Reports** - Identify gaps
+1. **Vertical slices** — one test → one implementation, never bulk RED then bulk GREEN
+2. **Behavior not implementation** — test what it does, not how it does it
+3. **One assertion per test** — focus on a single observable outcome
+4. **Descriptive names** — describe WHAT, not HOW
+5. **Mock system boundaries only** — never mock what you control
+6. **Dependency injection** — design interfaces to be testable from the start
+7. **Test error paths** — not just happy paths
+8. **Keep tests fast** — unit tests < 50ms each
+9. **Independent tests** — each test sets up its own data
+10. **Review coverage reports** — identify gaps, not just hit the number
 
 ## Success Metrics
 
@@ -435,7 +529,3 @@ npm test && npm run lint
 - Fast test execution (< 30s for unit tests)
 - E2E tests cover critical user flows
 - Tests catch bugs before production
-
----
-
-**Remember**: Tests are not optional. They are the safety net that enables confident refactoring, rapid development, and production reliability.
