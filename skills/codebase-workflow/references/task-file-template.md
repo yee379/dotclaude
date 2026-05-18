@@ -111,7 +111,7 @@ Include a recommended answer so they can be resolved quickly.
 | research-handbook | — | — | — |
 | codebase-arch-review | — | — | — |
 | codebase-eng-review | — | — | — |
-| codebase-doc-review | — | — | — |
+| doc-review | — | — | — |
 | security-review | — | — | — |
 
 **Accepted warnings:** none

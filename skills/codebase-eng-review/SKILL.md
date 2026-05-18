@@ -10,13 +10,13 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/codebase-draft → /codebase-board-review (board, parallel with codebase-arch-review, codebase-doc-review, security-review)
+/codebase-draft-prd → /codebase-board-review (board, parallel with codebase-arch-review, doc-review, security-review)
       │
       ▼
 /codebase-eng-review       ← YOU ARE HERE: implementation gate: code quality, test coverage,
       │                  performance, edge cases → test plan artifact
       ▼
-/codebase-doc-review → /security-review → implementation → /codebase-closeout → /prod-release
+/doc-review → /security-review → implementation → /codebase-closeout → /prod-release
 ```
 
 Run after `/codebase-arch-review` has validated the structural decisions and before writing code. This skill reviews **execution** — whether the implementation plan is correct, testable, and complete. `codebase-arch-review` reviews **structure** — the decisions that are expensive to reverse.

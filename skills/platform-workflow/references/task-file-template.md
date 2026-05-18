@@ -127,7 +127,7 @@ Record every "we chose X over Y because Z".
 | platform-security-review | — | — | — |
 | platform-ops-review | — | — | — |
 | platform-eng-review | — | — | — |
-| platform-doc-review | — | — | — |
+| doc-review | — | — | — |
 
 **Accepted warnings:** none
 **ADRs written:** 0

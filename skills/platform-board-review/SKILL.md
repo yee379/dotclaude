@@ -1,6 +1,6 @@
 ---
 name: platform-board-review
-description: Orchestrates the platform board review pipeline — runs codebase-arch-review (platform mode), platform-capacity-review, platform-security-review, platform-ops-review, platform-eng-review, and platform-doc-review in parallel, then re-runs the full board if any reviewer amends the plan. Iterates until all reviewers pass in the same round with no changes. Use when asked to "run a platform review", "gate this platform change", "board review this", or "is this ready to apply to the cluster?".
+description: Orchestrates the platform board review pipeline — runs codebase-arch-review (platform mode), platform-capacity-review, platform-security-review, platform-ops-review, platform-eng-review, and doc-review in parallel, then re-runs the full board if any reviewer amends the plan. Iterates until all reviewers pass in the same round with no changes. Use when asked to "run a platform review", "gate this platform change", "board review this", or "is this ready to apply to the cluster?".
 ---
 
 # Platform Board Review
@@ -9,7 +9,7 @@ Runs six board reviewers in parallel. If any reviewer amends the plan, the whole
 
 **Model routing:** Triage is `haiku`-eligible. Each reviewer runs at its own routing level — `codebase-arch-review` (platform mode) and `platform-security-review` run at **`opus`**; capacity, ops, eng, and doc reviewers run at **`sonnet`**.
 
-**This skill assumes a platform plan already exists.** If you don't have one yet, run `/platform-draft` first.
+**This skill assumes a platform plan already exists.** If you don't have one yet, run `/platform-draft-prd` first.
 
 **This skill does not implement anything.** It convenes the board, tracks rounds, and tells you when you're clear to apply.
 
@@ -32,7 +32,7 @@ Runs six board reviewers in parallel. If any reviewer amends the plan, the whole
   │  subagent: platform-security-review → todo/review/<slug>/round-N-sr.md │
   │  subagent: platform-ops-review      → todo/review/<slug>/round-N-or.md │
   │  subagent: platform-eng-review      → todo/review/<slug>/round-N-er.md │
-  │  subagent: platform-doc-review      → todo/review/<slug>/round-N-dc.md │
+  │  subagent: doc-review      → todo/review/<slug>/round-N-dc.md │
   │                                                                 │
   │  main session reads all outputs, collects Decisions Required    │
   │  blocking decisions? ──────────────────── AskUserQuestion (×N) │
@@ -54,7 +54,7 @@ Runs six board reviewers in parallel. If any reviewer amends the plan, the whole
 2. **Otherwise**: check `TODO.md` for the in-progress task and read its file.
 
 If no plan is found, stop:
-> "No platform plan found. Run `/platform-draft` first to produce a design document, then come back to `/platform-board-review`."
+> "No platform plan found. Run `/platform-draft-prd` first to produce a design document, then come back to `/platform-board-review`."
 
 Summarise the plan in 2-3 sentences so the user can confirm you've read the right thing.
 
@@ -82,7 +82,7 @@ platform-ops-review       change is purely infrastructure with no new
                           failure modes and no runbook impact
 platform-eng-review       change is purely documentation or config with
                           no manifest changes
-platform-doc-review       change is purely internal infra with no
+doc-review       change is purely internal infra with no
                           operator or user-facing surface area
 ──────────────────────────────────────────────────────────────────
 ```
@@ -99,7 +99,7 @@ platform-capacity-review  RUN | SKIP (reason)
 platform-security-review  RUN | SKIP (reason)
 platform-ops-review       RUN | SKIP (reason)
 platform-eng-review       RUN | SKIP (reason)
-platform-doc-review       RUN | SKIP (reason)
+doc-review       RUN | SKIP (reason)
 ──────────────────────────────────────────────────────
 Starting Round 1...
 ```
@@ -125,7 +125,7 @@ Run up to **3 rounds**. In each round:
    | platform-security-review | Problem Statement, Platform Design (Security Posture section + topology), Open Questions |
    | platform-ops-review | Problem Statement, Goals, Platform Design (Operational Readiness section), Implementation Plan |
    | platform-eng-review | Problem Statement, Goals, Platform Design (full), Implementation Plan, Implementation Checklist |
-   | platform-doc-review | Problem Statement, Goals, Non-Goals, Implementation Plan (step titles only) |
+   | doc-review | Problem Statement, Goals, Non-Goals, Implementation Plan (step titles only) |
 
 4. **Launch all relevant reviewers as background subagents in a single message.**
 
@@ -243,7 +243,7 @@ structured entry in ## Decisions Required and continue with the best-default opt
    platform-security-review  ...
    platform-ops-review       ...
    platform-eng-review       ...
-   platform-doc-review       ...
+   doc-review       ...
    ──────────────────────────────────────────────────────────────
    ```
 
@@ -279,7 +279,7 @@ structured entry in ## Decisions Required and continue with the best-default opt
    platform-security-review  ✅/⚠️/❌/—/✂️   amended: Y/N   decisions: N
    platform-ops-review       ✅/⚠️/❌/—/✂️   amended: Y/N   decisions: N
    platform-eng-review       ✅/⚠️/❌/—/✂️   amended: Y/N   decisions: N
-   platform-doc-review       ✅/⚠️/❌/—/✂️   amended: Y/N   decisions: N
+   doc-review       ✅/⚠️/❌/—/✂️   amended: Y/N   decisions: N
    ──────────────────────────────────────────────────────────────────
    Plan amended this round: YES → starting Round N+1 | NO → board complete
    ```
@@ -309,7 +309,7 @@ platform-capacity-review  {✅/⚠️/❌/—}  {N issues}
 platform-security-review  {✅/⚠️/❌/—}  {N issues}
 platform-ops-review       {✅/⚠️/❌/—}  {N issues}
 platform-eng-review       {✅/⚠️/❌/—}  {N issues}
-platform-doc-review       {✅/⚠️/❌/—}  {N issues}
+doc-review       {✅/⚠️/❌/—}  {N issues}
 ------------------------------------------------------------
 ADRs written:          {N}
 Runbook gaps:          {N}

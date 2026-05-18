@@ -8,7 +8,7 @@ description: Platform capacity and feasibility review. Assesses whether the clus
 ## Workflow position
 
 ```
-/platform-draft
+/platform-draft-prd
       │
       ▼
 /platform-board-review ──── runs these reviewers in parallel ────┐
@@ -18,7 +18,7 @@ description: Platform capacity and feasibility review. Assesses whether the clus
       │   /platform-security-review                         │
       │   /platform-ops-review                              │
       │   /platform-eng-review                              │
-      │   /platform-doc-review                              │
+      │   /doc-review                              │
       └─────────────────────────────────────────────────────┘
 ```
 

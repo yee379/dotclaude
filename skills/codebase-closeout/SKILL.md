@@ -10,7 +10,7 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/codebase-draft → /codebase-board-review → implementation
+/codebase-draft-prd → /codebase-board-review → implementation
       │
       ▼
 /codebase-closeout         ← YOU ARE HERE: feature has landed — close out the task
@@ -20,7 +20,7 @@ compatibility: opencode
 /prod-release
 ```
 
-**The handoff from `/codebase-doc-review`:** That skill identified which docs need updating and added the work to the plan. This skill executes those updates after the code ships. If `codebase-doc-review` ran, check its output (look for plan amendments and the deferred-to-doc-release list) — use it as your starting checklist rather than discovering everything from scratch.
+**The handoff from `/doc-review`:** That skill identified which docs need updating and added the work to the plan. This skill executes those updates after the code ships. If `doc-review` ran, check its output (look for plan amendments and the deferred-to-doc-release list) — use it as your starting checklist rather than discovering everything from scratch.
 
 ---
 

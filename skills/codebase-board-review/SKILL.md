@@ -1,19 +1,19 @@
 ---
 name: codebase-board-review
-description: Orchestrates the board review pipeline — runs research-handbook, codebase-arch-review, codebase-eng-review, codebase-doc-review, security-review, and codebase-ux-review (triage-gated) in parallel, then re-runs the full board if any reviewer amends the plan. Iterates until all reviewers pass in the same round with no changes. Use when asked to "run a full review", "review everything", "board review", or "gate this plan".
+description: Orchestrates the board review pipeline — runs research-handbook, codebase-arch-review, codebase-eng-review, doc-review, security-review, and codebase-ux-review (triage-gated) in parallel, then re-runs the full board if any reviewer amends the plan. Iterates until all reviewers pass in the same round with no changes. Use when asked to "run a full review", "review everything", "board review", or "gate this plan".
 license: MIT
 compatibility: opencode
 ---
 
 # Plan Board Review
 
-Runs up to six board reviewers — `research-handbook`, `codebase-arch-review`, `codebase-eng-review`, `codebase-doc-review`, `security-review`, and `codebase-ux-review` — in parallel, not sequentially. Triage determines which reviewers apply; `codebase-ux-review` is included when the change has direct user-facing surface area and skipped for pure infra/backend work. If any reviewer
+Runs up to six board reviewers — `research-handbook`, `codebase-arch-review`, `codebase-eng-review`, `doc-review`, `security-review`, and `codebase-ux-review` — in parallel, not sequentially. Triage determines which reviewers apply; `codebase-ux-review` is included when the change has direct user-facing surface area and skipped for pure infra/backend work. If any reviewer
 amends the plan, the whole board re-reviews the updated plan. The round repeats until all
 reviewers pass in the same round without triggering any further changes. Maximum 3 rounds.
 
 **Model routing:** Triage is `haiku`-eligible. Each reviewer runs at **`opus`** — they require deep reasoning, cross-file analysis, and architectural judgment. Do not downgrade to Sonnet.
 
-**This skill assumes a plan already exists.** If you don't have one yet, run `/codebase-draft` first.
+**This skill assumes a plan already exists.** If you don't have one yet, run `/codebase-draft-prd` first.
 
 **This skill does not implement anything.** It convenes the board, tracks rounds, and tells you
 when you're clear to build.
@@ -35,7 +35,7 @@ when you're clear to build.
   │  subagent: research-handbook     → todo/review/<slug>/round-N-dr.md │
   │  subagent: codebase-arch-review  → todo/review/<slug>/round-N-ar.md │
   │  subagent: codebase-eng-review   → todo/review/<slug>/round-N-er.md │
-  │  subagent: codebase-doc-review   → todo/review/<slug>/round-N-dc.md │
+  │  subagent: doc-review   → todo/review/<slug>/round-N-dc.md │
   │  subagent: security-review   → todo/review/<slug>/round-N-sr.md │
   │  subagent: codebase-ux-review    → todo/review/<slug>/round-N-ux.md │
   │                               (triage: skip if no user-facing surface) │
@@ -72,7 +72,7 @@ Before anything else, find what's being reviewed:
    - `git diff $(git merge-base HEAD main 2>/dev/null || git merge-base HEAD master 2>/dev/null || echo HEAD~5)...HEAD --stat 2>/dev/null | head -30` — code already on the branch may implicitly define scope
 
 If no plan is found, **stop** and tell the user:
-> "No plan found. Run `/codebase-draft` first to produce a design document, then come back to `/codebase-board-review`."
+> "No plan found. Run `/codebase-draft-prd` first to produce a design document, then come back to `/codebase-board-review`."
 
 If a plan is found, summarise it in 2-3 sentences so the user can confirm you've read the right
 thing before proceeding.
@@ -109,7 +109,7 @@ codebase-arch-review     change touches only a single existing service with
                      boundary changes, and no new infrastructure
 codebase-eng-review      change is purely documentation or config with no
                      code changes
-codebase-doc-review      change is purely internal/infra with no user-facing
+doc-review      change is purely internal/infra with no user-facing
                      surface, no API changes, no new commands or config
 security-review      change has no user input, no auth changes, no new
                      API endpoints, no secrets, no new K8s workloads
@@ -131,7 +131,7 @@ Triage complete
 research-handbook        RUN | SKIP (reason)
 codebase-arch-review     RUN | SKIP (reason)
 codebase-eng-review      RUN | SKIP (reason)
-codebase-doc-review      RUN | SKIP (reason)
+doc-review      RUN | SKIP (reason)
 security-review          RUN | SKIP (reason)
 codebase-ux-review       RUN | SKIP (reason)
 ──────────────────────────────────────────────────────
@@ -163,7 +163,7 @@ Run up to **3 rounds**. In each round:
    | research-handbook | Problem Statement, Goals, Design (full), Open Questions |
    | codebase-arch-review | Problem Statement, Goals, Design (full), Non-Goals, Open Questions |
    | codebase-eng-review | Problem Statement, Goals, Design (full), Implementation Plan, Implementation Checklist, Open Questions |
-   | codebase-doc-review | Problem Statement, Goals, Non-Goals, Implementation Plan (step titles only) |
+   | doc-review | Problem Statement, Goals, Non-Goals, Implementation Plan (step titles only) |
    | security-review | Problem Statement, Design (full), Implementation Plan (step titles only), Open Questions |
    | codebase-ux-review | Problem Statement, Goals, Non-Goals, Design (full), Open Questions |
 
@@ -236,7 +236,7 @@ Priority hierarchy (most important first — never skip these):
 - codebase-arch-review: Step 0 scope assessment → service boundary diagram → ADRs
 - codebase-eng-review: Step 0 scope challenge → test diagram → critical gaps
 - research-handbook: assumption verification → dependency health → obsolescence
-- codebase-doc-review: mandatory doc list → gaps
+- doc-review: mandatory doc list → gaps
 - security-review: auth/authz → injection → secrets
 
 Your job:
@@ -319,7 +319,7 @@ Reviewer roles:
   technology selection, failure domains. Write ADRs to `docs/adr/` for significant decisions.
 - **codebase-eng-review**: Review implementation correctness, test coverage, performance, edge cases.
   Produce a test plan artifact in the task file.
-- **codebase-doc-review**: Identify every doc that needs updating — README, ARCHITECTURE, API docs,
+- **doc-review**: Identify every doc that needs updating — README, ARCHITECTURE, API docs,
   runbooks, CHANGELOG, ADRs, CONTRIBUTING. Add gaps to the plan.
 - **security-review**: Check secrets, auth, input validation, injection vectors, supply chain,
   Kubernetes workload security.
@@ -339,7 +339,7 @@ Reviewer roles:
 
    The script prints one status line per reviewer and exits `0` when all are done, `1` if
    any are still running. Reviewer codes: `dr` research-handbook, `ar` codebase-arch-review,
-   `er` codebase-eng-review, `dc` codebase-doc-review, `sr` security-review.
+   `er` codebase-eng-review, `dc` doc-review, `sr` security-review.
 
    After each poll, emit the status table directly in your response as plain prose — **NOT
    inside a code block, NOT inside backticks**. The table must be readable inline. Example:
@@ -451,7 +451,7 @@ No user action required unless they want to override.
 research-handbook        ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
 codebase-arch-review     ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
 codebase-eng-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
-codebase-doc-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
+doc-review      ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
 security-review          ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
 codebase-ux-review       ✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC   amended: Y/N   decisions: N
 ──────────────────────────────────────────────────────────────────
@@ -493,7 +493,7 @@ Rounds:  {N completed}
 research-handbook        {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
 codebase-arch-review     {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
 codebase-eng-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
-codebase-doc-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
+doc-review      {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
 security-review          {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
 codebase-ux-review       {✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP}  {N issues}
 ------------------------------------------------------------
@@ -547,7 +547,7 @@ per-reviewer detail is gone forever.
    | research-handbook | ✅ PASS | N | <one-line summary> |
    | codebase-arch-review | ✅ PASS | Y | <one-line summary> |
    | codebase-eng-review | ✅ PASS | N | <one-line summary> |
-   | codebase-doc-review | ✅ PASS | N | <one-line summary> |
+   | doc-review | ✅ PASS | N | <one-line summary> |
    | security-review | ⚠️ WARN | N | <one-line summary> |
    | codebase-ux-review | — SKIP | N | — |
 
@@ -584,7 +584,7 @@ per-reviewer detail is gone forever.
    </details>
 
    <details>
-   <summary>codebase-doc-review — Round N (✅ PASS)</summary>
+   <summary>doc-review — Round N (✅ PASS)</summary>
 
    <!-- paste full contents of todo/review/<slug>/round-N-dc.md here -->
 

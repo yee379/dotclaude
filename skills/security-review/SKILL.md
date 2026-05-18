@@ -10,7 +10,7 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/codebase-draft → /codebase-board-review (board, parallel with codebase-arch-review, codebase-eng-review, codebase-doc-review)
+/codebase-draft-prd → /codebase-board-review (board, parallel with codebase-arch-review, codebase-eng-review, doc-review)
       │
       ▼
 /security-review       ← YOU ARE HERE: security gate: secrets, auth, input validation,

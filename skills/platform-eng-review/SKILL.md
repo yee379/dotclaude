@@ -8,7 +8,7 @@ description: Engineering review of platform implementation plans — Helm chart 
 ## Workflow position
 
 ```
-/platform-draft
+/platform-draft-prd
       │
       ▼
 /platform-board-review ──── runs these reviewers in parallel ────┐
@@ -18,7 +18,7 @@ description: Engineering review of platform implementation plans — Helm chart 
       │   /platform-security-review                         │
       │   /platform-ops-review                              │
       │   /platform-eng-review  ← YOU ARE HERE              │
-      │   /platform-doc-review                              │
+      │   /doc-review                              │
       └─────────────────────────────────────────────────────┘
 ```
 

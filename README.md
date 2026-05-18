@@ -57,11 +57,11 @@ Plan, review, and close out a feature — in order.
 
 | Skill | Purpose |
 |---|---|
-| `codebase-draft` | Feature planning — problem framing, user stories, requirements, ADRs, system design |
+| `codebase-draft-prd` | Feature planning — problem framing, user stories, requirements, ADRs, system design |
 | `codebase-board-review` | Orchestrates all codebase reviewers in parallel; iterates until all pass |
 | `codebase-arch-review` | Architecture review — service boundaries, data ownership, consistency, failure domains |
 | `codebase-eng-review` | Eng manager review — execution plan, data flow, edge cases, test coverage |
-| `codebase-doc-review` | Pre-implementation docs planning — identifies every doc needing update |
+| `doc-review` | Pre-implementation docs planning — identifies every doc needing update |
 | `codebase-design-review` | Design critique on a plan — rates each dimension 0–10 and fixes to get there |
 | `codebase-ux-review` | UX plan review from a scientist/end-user perspective; triage-gated |
 | `codebase-closeout` | Post-ship doc sync — README, ARCHITECTURE, CHANGELOG, todo/ close-out |
@@ -79,14 +79,14 @@ Plan, review, and apply a Kubernetes/infrastructure change — in order.
 
 | Skill | Purpose |
 |---|---|
-| `platform-draft` | Platform change planning — feasibility, capacity, infra design, operational readiness, ADRs |
+| `platform-draft-prd` | Platform change planning — feasibility, capacity, infra design, operational readiness, ADRs |
 | `platform-board-review` | Orchestrates all platform reviewers in parallel; iterates until all pass |
 | `codebase-arch-review` | Architecture review (platform mode) — cluster topology, namespaces, network, storage, multi-tenancy |
 | `platform-capacity-review` | Cluster capacity and feasibility — CPU, memory, storage, networking, control-plane headroom |
 | `platform-security-review` | K8s security — RBAC, network policies, secrets, pod security, mTLS, image supply chain |
 | `platform-ops-review` | Operational readiness — runbooks, monitoring, alerting, incident response |
 | `platform-eng-review` | Helm chart quality, manifest correctness, resource tuning, health probes, rollout strategy |
-| `platform-doc-review` | Pre-implementation platform docs planning — runbooks, architecture diagrams, ADRs |
+| `doc-review` | Pre-implementation platform docs planning — runbooks, architecture diagrams, ADRs |
 
 ### Platform ops
 

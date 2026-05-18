@@ -29,7 +29,7 @@ State the detected mode at the top of your review: `> Mode: Platform` or `> Mode
       │                                                 │
       │   /codebase-arch-review  ← YOU ARE HERE             │
       │   /codebase-eng-review                              │
-      │   /codebase-doc-review                              │
+      │   /doc-review                              │
       │   /security-review                              │
       │                                                 │
       └─────────────────────────────────────────────────┘
@@ -50,7 +50,7 @@ implementation → /codebase-closeout → /prod-release
       │   /platform-security-review                         │
       │   /platform-ops-review                              │
       │   /platform-eng-review                              │
-      │   /platform-doc-review                              │
+      │   /doc-review                              │
       └─────────────────────────────────────────────────────┘
 ```
 
