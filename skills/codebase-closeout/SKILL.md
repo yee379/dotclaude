@@ -99,7 +99,7 @@ Read each documentation file and cross-reference it against the diff. Use these 
 - Does it describe all features and capabilities visible in the diff?
 - Are install/setup instructions consistent with the changes?
 - Are examples, demos, and usage descriptions still valid?
-- Are troubleshooting steps still accurate?
+- Are troubleshoot steps still accurate?
 
 **ARCHITECTURE.md:**
 - Do ASCII diagrams and component descriptions match the current code?

@@ -1,5 +1,5 @@
 ---
-name: troubleshooting
+name: troubleshoot
 description: Disciplined diagnostic workflow for code bugs, performance regressions, Kubernetes issues, and infrastructure incidents. Reproduce → map dependencies → hypothesise → instrument → confirm → fix → post-mortem. Domain-specific commands in references/.
 triggers:
   - "diagnose"

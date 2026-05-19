@@ -141,7 +141,7 @@ Is the documentation written for the user, not the implementer?
 - Are there concrete S3DF examples — real paths, real queue names, real resource specs?
 - Is the language free of internal jargon (team names, internal project codes, acronyms
   without expansion)?
-- Is there a troubleshooting section for the most common failure modes?
+- Is there a troubleshoot section for the most common failure modes?
 - Is the docs structure logical from a user's journey (get started → common tasks → reference)?
 - Are there known limitations or gotchas called out explicitly?
 
@@ -279,7 +279,7 @@ State the verdict clearly, followed by:
 
 ### Changes Made to Plan
 - [ ] Added quickstart example with S3DF-specific paths
-- [ ] Added troubleshooting section for auth failures
+- [ ] Added troubleshoot section for auth failures
 - [ ] Added open question: which queue names to use in examples?
 - ...
 ```

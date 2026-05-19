@@ -157,7 +157,7 @@ If `TODO.md` does not exist:
 
 ### During Work
 
-- After hitting a problem — add a `### Problem:` entry to `## Problems & Solutions` immediately; if the problem was diagnosed with `/troubleshooting`, record the findings here
+- After hitting a problem — add a `### Problem:` entry to `## Problems & Solutions` immediately; if the problem was diagnosed with `/troubleshoot`, record the findings here
 - Tick checklist items as they complete
 - At end of session — update checklist and status in the task file **and mirror the status change in `TODO.md`**; update the Summary line
 
@@ -246,6 +246,6 @@ For critical outage response where waiting for `/platform-board-review` is not v
 | `/platform-draft-prd` | Run first; output written into `## Platform Design` (Architecture, Key Decisions, Capacity Assessment) and `## Implementation Plan`. Overwrite placeholder text — do not append. |
 | `/platform-board-review` | Gate the design before applying to cluster; board verdict mapped to task status via the Board Verdict → Status Mapping table |
 | `/k8s-deploy` | How-to skill invoked during implementation; **write deployment outcome back to task file `## Deployment Log` after every apply** |
-| `/troubleshooting` | Invoked when an incident needs diagnosis; record findings as a `### Problem:` entry in `## Problems & Solutions` |
+| `/troubleshoot` | Invoked when an incident needs diagnosis; record findings as a `### Problem:` entry in `## Problems & Solutions` |
 | `/research-handbook` | Research findings saved to `todo/research/<slug>/`; link from the task file's `## Open Questions` or `## Platform Design` section |
 | `/codebase-scout` | May surface platform-level tech debt — log it here as a new task |
