@@ -100,7 +100,7 @@ Include a recommended answer so they can be resolved quickly.
 
 ## Board Review
 
-> *Populated by `/codebase-board-review` after the board completes. Do not fill manually.*
+> *Populated by `/board-review` after the board completes. Do not fill manually.*
 
 **Verdict:** CLEAR TO BUILD | CLEAR WITH WARNINGS | BLOCKED | UNSTABLE
 **Date:** YYYY-MM-DD

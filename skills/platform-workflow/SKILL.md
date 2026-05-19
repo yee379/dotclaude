@@ -15,7 +15,7 @@ Items tracked here include: onboarding a new application to the cluster, infrast
 - Planning infrastructure changes (namespace strategy, network policies, storage classes, etc.)
 - Tracking operational health work (runbook gaps, monitoring coverage, alert tuning)
 - Capacity planning and feasibility assessment
-- After running `/platform-draft-prd` or `/platform-board-review` — persist the output
+- After running `/platform-draft-prd` or `/board-review` — persist the output
 - When picking up platform work started in a previous session
 - When asked to "track this platform change", "what platform work is outstanding?", or "show me platform status"
 
@@ -81,7 +81,7 @@ Legal status transitions — do not skip steps:
 
 ```
 📋 Preparing  →  ⬜ Open           after /platform-draft-prd completes
-⬜ Open        →  🔎 In Review      when /platform-board-review starts
+⬜ Open        →  🔎 In Review      when /board-review starts
 🔎 In Review   →  🔍 Reviewed       board verdict: CLEAR TO APPLY or CLEAR WITH WARNINGS
 🔎 In Review   →  ⬜ Open           board verdict: BLOCKED or UNSTABLE (rework required)
 🔍 Reviewed    →  🔄 In Progress    branch created, implementation begins
@@ -131,12 +131,12 @@ If `TODO.md` does not exist:
 4. Add a row to `TODO.md` — set priority, status `📋 Preparing`, branch `—`, PR `—`
 5. Update the Summary line in `TODO.md`
 6. Ask: "Shall I run `/platform-draft-prd` now to flesh out the design?"
-7. Once `/platform-draft-prd` completes: set status to `⬜ Open` in both task file and `TODO.md`, then ask: "Shall I run `/platform-board-review`?"
+7. Once `/platform-draft-prd` completes: set status to `⬜ Open` in both task file and `TODO.md`, then ask: "Shall I run `/board-review`?"
 8. After board review completes:
    - Map the verdict to a status using the Board Verdict → Status Mapping table
    - Update status in both task file and `TODO.md`
    - If CLEAR TO APPLY or CLEAR WITH WARNINGS: proceed to step 9
-   - If BLOCKED or UNSTABLE: address findings, then re-run `/platform-board-review` from step 7
+   - If BLOCKED or UNSTABLE: address findings, then re-run `/board-review` from step 7
 9. After CLEAR TO APPLY / CLEAR WITH WARNINGS:
    - Create branch: `git checkout -b platform/<slug>`
    - Set status to `🔄 In Progress` in both task file and `TODO.md`; fill in the Branch column
@@ -217,13 +217,13 @@ Task files are **never deleted** — they are permanent institutional memory.
 
 ### P0 Emergency (bypassing board review)
 
-For critical outage response where waiting for `/platform-board-review` is not viable:
+For critical outage response where waiting for `/board-review` is not viable:
 
 1. Create the task file and `TODO.md` row as normal — status `📋 Preparing`
 2. Create branch: `platform/hotfix-<slug>`
 3. Set status to `🔄 In Progress` immediately
 4. Implement and apply
-5. Run `/platform-board-review` **retrospectively** after the cluster is stable
+5. Run `/board-review` **retrospectively** after the cluster is stable
 6. Record the rationale for bypassing in the task file's `## Key Decisions` section
 
 ---
@@ -244,7 +244,7 @@ For critical outage response where waiting for `/platform-board-review` is not v
 | Skill | How it integrates |
 |-------|------------------|
 | `/platform-draft-prd` | Run first; output written into `## Platform Design` (Architecture, Key Decisions, Capacity Assessment) and `## Implementation Plan`. Overwrite placeholder text — do not append. |
-| `/platform-board-review` | Gate the design before applying to cluster; board verdict mapped to task status via the Board Verdict → Status Mapping table |
+| `/board-review` | Gate the design before applying to cluster; board verdict mapped to task status via the Board Verdict → Status Mapping table |
 | `/k8s-deploy` | How-to skill invoked during implementation; **write deployment outcome back to task file `## Deployment Log` after every apply** |
 | `/troubleshoot` | Invoked when an incident needs diagnosis; record findings as a `### Problem:` entry in `## Problems & Solutions` |
 | `/research-handbook` | Research findings saved to `todo/research/<slug>/`; link from the task file's `## Open Questions` or `## Platform Design` section |

@@ -26,7 +26,7 @@ the backlog that `/codebase-workflow` tracks.
 /codebase-draft-prd          ← turns thin task file into a full design
       │
       ▼
-/codebase-board-review → implementation → /codebase-closeout → /prod-release
+/board-review → implementation → /codebase-closeout → /prod-release
 ```
 
 ---
@@ -428,7 +428,7 @@ After writing items, always suggest what to do next based on what was found:
 |-------|------------------|
 | `/codebase-workflow` | Scout writes task files in the same format; `/codebase-workflow` picks them up |
 | `/codebase-draft-prd` | Scout writes thin task files; `/codebase-draft-prd` fills in the design when the item is picked |
-| `/codebase-board-review` | Scout does not gate items — that happens later when a design exists |
+| `/board-review` | Scout does not gate items — that happens later when a design exists |
 | `/security-review` | Scout's security lens is a quick pass; `/security-review` is the deep audit |
 | `/twelve-factor-standards` | Scout's production lens overlaps; `/twelve-factor-standards` is the systematic checklist |
 | `/code-review` | Scout finds structural patterns; `/code-review` reviews specific changes |

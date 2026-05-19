@@ -32,7 +32,7 @@ Sub-questions to investigate:
 Output saved to `todo/research/<slug>/` and linked from the task file's Design section.
 The findings feed directly into Phase 1 (problem framing) and Phase 3 (ADRs).
 
-### Mode 2: Plan fact-checking (called from /codebase-board-review — board member)
+### Mode 2: Plan fact-checking (called from /board-review — board member)
 
 Targeted verification *after* the plan exists. Goal: surface only the factual unknowns that
 would change design decisions if answered. **This mode is deliberately narrow and fast** —
@@ -151,7 +151,7 @@ No paid MCPs or external services required.
 
 **First: identify which mode you are in.**
 
-- If the prompt contains a plan file path, plan content, or says "board review" / "codebase-board-review"
+- If the prompt contains a plan file path, plan content, or says "board review" / "board-review"
   / "fact-check" → **Mode 2**. Skip Steps 1–3 below entirely. Go directly to the
   Mode 2 claim-extraction process described above, then use the Mode 2 subagent profile.
 - Otherwise → **Mode 1**. Follow Steps 1–6 below.

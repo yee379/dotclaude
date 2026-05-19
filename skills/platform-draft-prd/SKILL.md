@@ -27,7 +27,7 @@ When a task number is given, glob `todo/<number>-*.md` to find the task file bef
       ├── Phase 1–9: Design, capacity, ADRs, security, risk
       │
       ▼
-/platform-board-review → implementation → /platform-workflow (close out)
+/board-review → implementation → /platform-workflow (close out)
 ```
 
 **This skill assumes a platform task file already exists** (created by `/platform-workflow`). If not, create one first.
@@ -466,4 +466,4 @@ When `/platform-draft-prd` finishes, immediately:
 
 Then prompt:
 
-> "Plan written and status set to ⬜ Open. Ready to run `/platform-board-review` to gate this through the board before applying to the cluster?"
+> "Plan written and status set to ⬜ Open. Ready to run `/board-review` to gate this through the board before applying to the cluster?"

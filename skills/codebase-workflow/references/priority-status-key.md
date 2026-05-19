@@ -6,9 +6,9 @@
 
 ## Status Key
 - 📋 Preparing — task created, codebase-draft-prd not yet run
-- ⬜ Open — codebase-draft-prd complete, awaiting /codebase-board-review
-- 🔎 In Review — codebase-board-review board is actively running
-- 🔍 Reviewed — plan approved by codebase-board-review board, ready to implement
+- ⬜ Open — codebase-draft-prd complete, awaiting /board-review
+- 🔎 In Review — board-review board is actively running
+- 🔍 Reviewed — plan approved by board-review board, ready to implement
 - 🔄 In Progress — active development
 - 🏁 Implementation Done — code complete, PR not yet raised
 - 👀 PR Open — PR raised, awaiting code review and merge

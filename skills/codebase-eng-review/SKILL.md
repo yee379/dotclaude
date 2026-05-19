@@ -10,7 +10,7 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/codebase-draft-prd → /codebase-board-review (board, parallel with codebase-arch-review, doc-review, security-review)
+/codebase-draft-prd → /board-review (board, parallel with codebase-arch-review, doc-review, security-review)
       │
       ▼
 /codebase-eng-review       ← YOU ARE HERE: implementation gate: code quality, test coverage,
@@ -21,7 +21,7 @@ compatibility: opencode
 
 Run after `/codebase-arch-review` has validated the structural decisions and before writing code. This skill reviews **execution** — whether the implementation plan is correct, testable, and complete. `codebase-arch-review` reviews **structure** — the decisions that are expensive to reverse.
 
-To run all gates in sequence automatically, use `/codebase-board-review` instead of invoking each skill individually.
+To run all gates in sequence automatically, use `/board-review` instead of invoking each skill individually.
 
 ---
 
@@ -29,7 +29,7 @@ Review this plan thoroughly before making any code changes. For every issue or r
 
 ## Subagent mode
 
-When this skill runs inside `/codebase-board-review` the orchestrator will provide:
+When this skill runs inside `/board-review` the orchestrator will provide:
 - `Plan file:` — path to read from disk
 - `Output file:` — path to write findings to (e.g. `todo/review/<slug>/round-N-er.md`)
 

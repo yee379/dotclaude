@@ -25,7 +25,7 @@ State the detected mode at the top of your review: `> Mode: Platform` or `> Mode
 /codebase-draft-prd
       │
       ▼
-/codebase-board-review ──── runs these reviewers in parallel ────┐
+/board-review ──── runs these reviewers in parallel ────┐
       │                                                 │
       │   /codebase-arch-review  ← YOU ARE HERE             │
       │   /codebase-eng-review                              │
@@ -43,7 +43,7 @@ implementation → /codebase-closeout → /prod-release
 /platform-draft-prd
       │
       ▼
-/platform-board-review ──── runs these reviewers in parallel ────┐
+/board-review ──── runs these reviewers in parallel ────┐
       │                                                     │
       │   /codebase-arch-review (platform mode) ← YOU ARE HERE  │
       │   /platform-capacity-review                         │
@@ -56,7 +56,7 @@ implementation → /codebase-closeout → /prod-release
 
 When invoked standalone (outside a board-review), run **after** the draft skill and **before** the eng-review. This skill reviews **structure** — the decisions that are expensive to reverse.
 
-To run all gates in sequence automatically, use `/codebase-board-review` or `/platform-board-review` instead of invoking each skill individually.
+To run all gates in sequence automatically, use `/board-review` or `/board-review` instead of invoking each skill individually.
 
 ---
 
@@ -68,7 +68,7 @@ Do NOT make code changes. Do NOT start implementation. Your only job is to revie
 
 ## Subagent mode
 
-When this skill runs inside `/codebase-board-review` the orchestrator will provide:
+When this skill runs inside `/board-review` the orchestrator will provide:
 - `Plan file:` — path to read from disk
 - `Output file:` — path to write findings to (e.g. `todo/review/<slug>/round-N-ar.md`)
 

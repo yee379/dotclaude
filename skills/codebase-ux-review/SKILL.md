@@ -1,6 +1,6 @@
 ---
 name: codebase-ux-review
-description: "User experience plan review through the eyes of a typical S3DF SLAC scientist. Evaluates discoverability, onboarding clarity, documentation quality, error UX, and workflow fit before implementation. Triage-gated board member — /codebase-board-review includes it automatically when the change has user-facing surface area. Invoke explicitly with 'ux review', 'user experience review', or 'review from a user perspective'."
+description: "User experience plan review through the eyes of a typical S3DF SLAC scientist. Evaluates discoverability, onboarding clarity, documentation quality, error UX, and workflow fit before implementation. Triage-gated board member — /board-review includes it automatically when the change has user-facing surface area. Invoke explicitly with 'ux review', 'user experience review', or 'review from a user perspective'."
 ---
 
 # /codebase-ux-review: User Experience Plan Review
@@ -37,7 +37,7 @@ You think and evaluate through the lens of a **SLAC S3DF scientist**:
 
 ## Subagent mode
 
-When this skill runs inside `/codebase-board-review` the orchestrator will provide:
+When this skill runs inside `/board-review` the orchestrator will provide:
 - `Plan file:` — path to read from disk
 - `Output file:` — path to write findings to (e.g. `todo/review/<slug>/round-N-ux.md`)
 
@@ -84,7 +84,7 @@ When this skill runs inside `/codebase-board-review` the orchestrator will provi
 
 ## When to Use This Skill
 
-This skill is **triage-gated** — `/codebase-board-review` evaluates at triage whether the change has user-facing surface area and includes it automatically if so. It is skipped for pure internal/infra changes with no user-facing surface.
+This skill is **triage-gated** — `/board-review` evaluates at triage whether the change has user-facing surface area and includes it automatically if so. It is skipped for pure internal/infra changes with no user-facing surface.
 
 Invoke it directly when the feature has significant user-facing surface area:
 - New CLI tools, APIs, or services that scientists will directly interact with

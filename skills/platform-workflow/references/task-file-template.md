@@ -114,7 +114,7 @@ Record every "we chose X over Y because Z".
 
 ## Board Review
 
-> *Populated by `/platform-board-review` after the board completes. Do not fill manually.*
+> *Populated by `/board-review` after the board completes. Do not fill manually.*
 
 **Verdict:** CLEAR TO APPLY | CLEAR WITH WARNINGS | BLOCKED | UNSTABLE
 **Date:** YYYY-MM-DD

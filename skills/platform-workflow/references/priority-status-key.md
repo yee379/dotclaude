@@ -6,8 +6,8 @@
 
 ## Status Key
 - 📋 Preparing — task created, platform-draft-prd not yet run
-- ⬜ Open — platform-draft-prd complete, awaiting /platform-board-review
-- 🔎 In Review — platform-board-review board is actively running
+- ⬜ Open — platform-draft-prd complete, awaiting /board-review
+- 🔎 In Review — board-review board is actively running
 - 🔍 Reviewed — plan approved by board, ready to implement
 - 🔄 In Progress — active work
 - 🏁 Implementation Done — complete, PR not yet raised

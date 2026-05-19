@@ -11,7 +11,7 @@ description: Engineering review of platform implementation plans — Helm chart 
 /platform-draft-prd
       │
       ▼
-/platform-board-review ──── runs these reviewers in parallel ────┐
+/board-review ──── runs these reviewers in parallel ────┐
       │                                                     │
       │   /platform-arch-review                             │
       │   /platform-capacity-review                         │

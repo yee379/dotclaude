@@ -11,7 +11,7 @@ description: Platform capacity and feasibility review. Assesses whether the clus
 /platform-draft-prd
       │
       ▼
-/platform-board-review ──── runs these reviewers in parallel ────┐
+/board-review ──── runs these reviewers in parallel ────┐
       │                                                     │
       │   /platform-arch-review                             │
       │   /platform-capacity-review  ← YOU ARE HERE         │

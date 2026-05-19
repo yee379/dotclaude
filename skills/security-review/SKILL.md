@@ -10,7 +10,7 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/codebase-draft-prd → /codebase-board-review (board, parallel with codebase-arch-review, codebase-eng-review, doc-review)
+/codebase-draft-prd → /board-review (board, parallel with codebase-arch-review, codebase-eng-review, doc-review)
       │
       ▼
 /security-review       ← YOU ARE HERE: security gate: secrets, auth, input validation,
@@ -21,13 +21,13 @@ implementation → /codebase-closeout → /prod-release
 
 Run after `/codebase-eng-review` and before promoting to production. This skill checks that the implementation is safe to ship — not just correct. Any security finding here should block `prod-release` until resolved.
 
-To run all gates in sequence automatically, use `/codebase-board-review` instead of invoking each skill individually.
+To run all gates in sequence automatically, use `/board-review` instead of invoking each skill individually.
 
 ---
 
 ## Subagent mode
 
-When this skill runs inside `/codebase-board-review` the orchestrator will provide:
+When this skill runs inside `/board-review` the orchestrator will provide:
 - `Plan file:` — path to read from disk
 - `Output file:` — path to write findings to (e.g. `todo/review/<slug>/round-N-sr.md`)
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# consolidate-round.sh — called by /full-review after all reviewers complete
-# Extracts the minimum content needed from each reviewer output file so the
-# main session doesn't need to read full files or construct ad-hoc bash.
+# consolidate-round.sh — called by /board-review after all reviewers complete
+# Extracts the minimum content needed from each reviewer output file.
 #
 # Usage: consolidate-round.sh <review_dir> <round> [reviewer_codes...]
 #
@@ -10,9 +9,17 @@
 #   STATUS: PASS | PASS WITH WARNINGS | FAIL | TRUNCATED | MISSING
 #   AMENDED: YES | NO
 #   DECISIONS: <count of ## Decision: entries>
+#   BLOCKING: <count>
 #   SUMMARY:
 #   <up to 10 lines from ## Summary section>
 #   ---
+#
+# Reviewer codes:
+#   Codebase: dr=research-handbook  ar=codebase-arch-review  er=codebase-eng-review
+#             dc=doc-review  sr=security-review  ux=codebase-ux-review
+#   Platform: pa=codebase-arch-review(platform)  cr=platform-capacity-review
+#             ps=platform-security-review  po=platform-ops-review
+#             pe=platform-eng-review  dc=doc-review
 #
 # Example:
 #   consolidate-round.sh todo/review/007-my-feature 1 dr ar er dc sr
@@ -24,11 +31,17 @@ REVIEWERS=("$@")
 
 code_to_name() {
   case "$1" in
-    dr) echo "research-handbook"   ;;
-    ar) echo "plan-arch-review" ;;
-    er) echo "plan-eng-review" ;;
-    dc) echo "plan-doc-review" ;;
+    dr) echo "research-handbook" ;;
+    ar) echo "codebase-arch-review" ;;
+    er) echo "codebase-eng-review" ;;
+    dc) echo "doc-review" ;;
     sr) echo "security-review" ;;
+    ux) echo "codebase-ux-review" ;;
+    pa) echo "codebase-arch-review(platform)" ;;
+    cr) echo "platform-capacity-review" ;;
+    ps) echo "platform-security-review" ;;
+    po) echo "platform-ops-review" ;;
+    pe) echo "platform-eng-review" ;;
     *)  echo "$1" ;;
   esac
 }
@@ -45,7 +58,6 @@ for code in "${REVIEWERS[@]}"; do
     continue
   fi
 
-  # Status — look for ## Status section
   if grep -q "^## Status" "$file" 2>/dev/null; then
     status_line=$(grep -A1 "^## Status" "$file" | tail -1 | tr -d '[:space:]')
     case "$status_line" in
@@ -58,7 +70,6 @@ for code in "${REVIEWERS[@]}"; do
     echo "STATUS: TRUNCATED"
   fi
 
-  # Amended — look for non-empty ## Amendments section
   if grep -q "^## Amendments" "$file" 2>/dev/null; then
     amended_content=$(awk '/^## Amendments/{found=1; next} found && /^##/{exit} found{print}' "$file" | grep -v "^$" | head -1)
     if [[ -n "$amended_content" ]]; then
@@ -70,15 +81,12 @@ for code in "${REVIEWERS[@]}"; do
     echo "AMENDED: NO"
   fi
 
-  # Decision count
   decision_count=$(grep -c "^### Decision:" "$file" 2>/dev/null || echo 0)
   echo "DECISIONS: $decision_count"
 
-  # Blocking decision count
-  blocking_count=$(grep -c "blocking" "$file" 2>/dev/null || echo 0)
+  blocking_count=$(grep -c "Severity.*blocking" "$file" 2>/dev/null || echo 0)
   echo "BLOCKING: $blocking_count"
 
-  # Summary — extract ## Summary section, up to 10 lines
   echo "SUMMARY:"
   awk '/^## Summary/{found=1; next} found && /^##/{exit} found{print}' "$file" \
     | grep -v "^$" \

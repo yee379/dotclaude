@@ -11,7 +11,7 @@ description: Platform-level security review for Kubernetes infrastructure change
 /platform-draft-prd
       │
       ▼
-/platform-board-review ──── runs these reviewers in parallel ────┐
+/board-review ──── runs these reviewers in parallel ────┐
       │                                                     │
       │   /platform-arch-review                             │
       │   /platform-capacity-review                         │

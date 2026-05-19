@@ -10,7 +10,7 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/codebase-draft-prd → /codebase-board-review → implementation
+/codebase-draft-prd → /board-review → implementation
       │
       ▼
 /codebase-closeout         ← YOU ARE HERE: feature has landed — close out the task

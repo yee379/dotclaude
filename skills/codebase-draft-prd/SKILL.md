@@ -39,12 +39,12 @@ When a task number is given, glob `todo/<number>-*.md` (zero-padded or not) to f
 /codebase-draft-prd            ← YOU ARE HERE: problem framing, requirements, system design, ADRs
       │
       ▼
-/codebase-board-review → implementation → /codebase-closeout → /prod-release
+/board-review → implementation → /codebase-closeout → /prod-release
 ```
 
 Use `/codebase-draft-prd` first — before architecture review or implementation. Its output (problem statement, requirements, rough design, ADRs) is the input that `codebase-arch-review` needs to do a meaningful structural review.
 
-Once the plan exists, run `/codebase-board-review` to gate it through the complete review pipeline in one go.
+Once the plan exists, run `/board-review` to gate it through the complete review pipeline in one go.
 
 ---
 
@@ -463,11 +463,11 @@ When `/codebase-draft-prd` finishes writing the plan into the task file, **immed
 
 1. Set `**Status:**` in the task file to `⬜ Open`
 2. Update the matching row in `TODO.md` to `⬜ Open`
-3. Do **not** set status to `🔍 Reviewed` — that is reserved for after `/codebase-board-review` passes.
+3. Do **not** set status to `🔍 Reviewed` — that is reserved for after `/board-review` passes.
 
 Then prompt the user:
 
-> "Plan written and status set to ⬜ Open. Ready to run `/codebase-board-review` to gate this through
+> "Plan written and status set to ⬜ Open. Ready to run `/board-review` to gate this through
 > the board before implementation?"
 
 ---

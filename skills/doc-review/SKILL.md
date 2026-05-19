@@ -1,6 +1,6 @@
 ---
 name: doc-review
-description: Pre-implementation documentation planning review. Challenges plan terminology against the domain model, then checks that every doc needing an update is explicitly called out in the plan — README, ARCHITECTURE, API docs, runbooks, CHANGELOG, ADRs, capacity baselines — before any code or cluster change is made. Works in codebase mode (application features) and platform mode (Kubernetes/infrastructure). Pairs with /codebase-closeout which executes updates post-ship. Use when asked to "check the docs plan", "documentation review", or as part of /codebase-board-review or /platform-board-review.
+description: Pre-implementation documentation planning review. Challenges plan terminology against the domain model, then checks that every doc needing an update is explicitly called out in the plan — README, ARCHITECTURE, API docs, runbooks, CHANGELOG, ADRs, capacity baselines — before any code or cluster change is made. Works in codebase mode (application features) and platform mode (Kubernetes/infrastructure). Pairs with /codebase-closeout which executes updates post-ship. Use when asked to "check the docs plan", "documentation review", or as part of /board-review or /board-review.
 ---
 
 # Documentation Review
@@ -20,7 +20,7 @@ State the detected mode: `> Mode: Platform` or `> Mode: Codebase`.
 
 **Codebase mode:**
 ```
-/codebase-draft-prd → /codebase-board-review (board, parallel with codebase-arch-review, codebase-eng-review, security-review)
+/codebase-draft-prd → /board-review (board, parallel with codebase-arch-review, codebase-eng-review, security-review)
       │
       ▼
 /doc-review ← YOU ARE HERE: documentation planning gate
@@ -34,7 +34,7 @@ implementation → /codebase-closeout → /prod-release
 /platform-draft-prd
       │
       ▼
-/platform-board-review ──── runs these reviewers in parallel ────┐
+/board-review ──── runs these reviewers in parallel ────┐
       │                                                     │
       │   /codebase-arch-review (platform mode)             │
       │   /platform-capacity-review                         │
@@ -47,7 +47,7 @@ implementation → /codebase-closeout → /prod-release
 
 **The handoff (codebase mode):** This skill plans what documentation needs to change. `/codebase-closeout` executes those changes after the code ships. If this review is skipped, `codebase-closeout` has to reverse-engineer intent from a diff and will miss context and the "why" behind changes.
 
-To run all gates automatically, use `/codebase-board-review` or `/platform-board-review`.
+To run all gates automatically, use `/board-review` or `/board-review`.
 
 ---
 
@@ -69,7 +69,7 @@ Do NOT make code changes. Do NOT make cluster changes. Do NOT update docs now. Y
 
 ## Subagent mode
 
-When this skill runs inside `/codebase-board-review` or `/platform-board-review` the orchestrator will provide:
+When this skill runs inside `/board-review` or `/board-review` the orchestrator will provide:
 - `Plan file:` — path to read from disk
 - `Output file:` — path to write findings to (e.g. `todo/review/<slug>/round-N-dc.md`)
 

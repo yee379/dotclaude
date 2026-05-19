@@ -108,8 +108,8 @@ git checkout -b feat/<slug>
      > if you'd like a full plan instead."
 6. **Once `/codebase-draft-prd` completes:** set status to `⬜ Open` in both the task file and
    `TODO.md`. Then ask:
-   > "Plan is written. Shall I run `/codebase-board-review` now to gate it through the board?"
-7. Only after `/codebase-board-review` gives CLEAR TO BUILD (status → `🔍 Reviewed`): create the branch
+   > "Plan is written. Shall I run `/board-review` now to gate it through the board?"
+7. Only after `/board-review` gives CLEAR TO BUILD (status → `🔍 Reviewed`): create the branch
    and begin implementation (status → `🔄 In Progress`).
 
 ### Planning a Task
@@ -120,7 +120,7 @@ implementation.** Ask first:
 > "The design section for #N is sparse. Shall I run `/codebase-draft-prd` now to flesh it out
 > before we start building?"
 
-- If yes → run `/codebase-draft-prd`, then ask about `/codebase-board-review`.
+- If yes → run `/codebase-draft-prd`, then ask about `/board-review`.
 - If the user wants to add context first → wait, then proceed.
 - Never silently skip to code.
 
@@ -136,7 +136,7 @@ implementation.** Ask first:
    Save findings to `todo/research/<slug>/` and link from the task file's Design section.
 4. Add Open Questions for anything that requires a decision before implementation starts.
 5. Present the plan for approval before writing code.
-6. Once approved, run `/codebase-board-review` to gate the design before implementation begins.
+6. Once approved, run `/board-review` to gate the design before implementation begins.
 
 **Task file origin → next step:**
 
@@ -145,8 +145,8 @@ implementation.** Ask first:
 | `/codebase-scout` | 📋 Preparing | Problem Statement already written — run `/codebase-draft-prd` directly |
 | Added manually (thin) | 📋 Preparing | Fill Problem Statement first, then run `/codebase-draft-prd` |
 | Previous session (partial design) | 📋 Preparing | Resume `/codebase-draft-prd` from where the Design section left off |
-| `/codebase-draft-prd` already run | ⬜ Open | Design is complete — run `/codebase-board-review` |
-| `/codebase-board-review` passed | 🔍 Reviewed | CLEAR TO BUILD — create branch, begin implementation |
+| `/codebase-draft-prd` already run | ⬜ Open | Design is complete — run `/board-review` |
+| `/board-review` passed | 🔍 Reviewed | CLEAR TO BUILD — create branch, begin implementation |
 
 The task file *is* the plan. Don't maintain a separate plan document unless the design is
 complex enough to warrant a linked deep-dive.
@@ -203,7 +203,7 @@ The task file is **never deleted** — it becomes a permanent record.
 5. Add a row to `TODO.md` with priority and status `📋 Preparing`
 6. Commit: `git add TODO.md todo/ && git commit -m "docs(todo): add #<n> <title>"`
 7. **Do not create a branch or begin implementation yet.** The next step is `/codebase-draft-prd`
-   (which advances status to `⬜ Open`), then `/codebase-board-review` (which advances to `🔍 Reviewed`).
+   (which advances status to `⬜ Open`), then `/board-review` (which advances to `🔍 Reviewed`).
    A task is not ready to implement until it has passed the board.
 
 ### Reviewing the Backlog
@@ -315,10 +315,10 @@ includes design decisions, problems encountered, and trade-offs.
 | Trigger | What to update |
 |---------|---------------|
 | New task created | Add row with priority, status 📋 Preparing, branch `—`, PR `—` |
-| codebase-draft-prd completes | Status → ⬜ Open in task file and TODO.md; prompt user to run /codebase-board-review |
-| codebase-board-review starts | Status → 🔎 In Review in task file and TODO.md |
-| codebase-board-review passes (CLEAR TO BUILD / CLEAR WITH WARNINGS) | Status → 🔍 Reviewed; board review summary merged into task file; `todo/review/<slug>/` deleted |
-| codebase-board-review blocked or unstable | Status → 📋 Preparing (revert to pre-review); board review summary merged into task file; `todo/review/<slug>/` deleted; blocking issues noted in Problems & Solutions |
+| codebase-draft-prd completes | Status → ⬜ Open in task file and TODO.md; prompt user to run /board-review |
+| board-review starts | Status → 🔎 In Review in task file and TODO.md |
+| board-review passes (CLEAR TO BUILD / CLEAR WITH WARNINGS) | Status → 🔍 Reviewed; board review summary merged into task file; `todo/review/<slug>/` deleted |
+| board-review blocked or unstable | Status → 📋 Preparing (revert to pre-review); board review summary merged into task file; `todo/review/<slug>/` deleted; blocking issues noted in Problems & Solutions |
 | Implementation starts (branch created) | Status → 🔄 In Progress in task file and TODO.md, Branch → `feat/<slug>` |
 | Implementation complete (all checklist items ticked) | Status → 🏁 Implementation Done in task file and TODO.md |
 | PR opened | Status → 👀 PR Open, PR → `#<number>` |
@@ -365,7 +365,7 @@ A common question is where skills like `tdd-standards`, `code-standards`, `agent
 and `twelve-factor-standards` belong. The answer: they belong in the **plan**, not the implementation.
 
 ```
-codebase-draft-prd → codebase-board-review → implementation → codebase-closeout → prod-release
+codebase-draft-prd → board-review → implementation → codebase-closeout → prod-release
      ↑                ↑                  ↑
   standards       standards          just execute
   inform the      enforced by        the plan;
@@ -373,7 +373,7 @@ codebase-draft-prd → codebase-board-review → implementation → codebase-clo
                   and others         already baked in
 ```
 
-- **Standards** are inputs to `codebase-draft-prd` and enforced during `codebase-board-review`. By the time
+- **Standards** are inputs to `codebase-draft-prd` and enforced during `board-review`. By the time
   you're writing code, the approach should already comply — the plan was reviewed against them.
 - **`code-review`** is the implementation **exit gate** — run it before marking a task
   `🏁 Implementation Done`. It catches drift from the plan and anything the reviewers missed.
@@ -391,7 +391,7 @@ was underspecified — update the task file's Design section and note it in Prob
 |-------|------------------|
 | `/codebase-scout` | Run to proactively generate backlog candidates; writes task files directly into `todo/` |
 | `/codebase-draft-prd` | Run first; paste or link the output into the task file's **Design** section |
-| `/codebase-board-review` | Run the review pipeline against the design before starting implementation |
+| `/board-review` | Run the review pipeline against the design before starting implementation |
 | `/research-handbook` | Research findings saved to `todo/research/<slug>/`; linked from task file |
 | `/code-review` | Review findings that require fixes become new task checklist items or new backlog items |
 | `/security-review` | Security gaps discovered become P0/P1 backlog items |

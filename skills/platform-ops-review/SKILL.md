@@ -1,6 +1,6 @@
 ---
 name: platform-ops-review
-description: Platform operational readiness review. Evaluates runbook coverage, monitoring and alerting completeness, on-call support model, incident response preparedness, and observability for a proposed platform change. Ensures the cluster is operable — not just functional — before a change is applied. Use when asked to "check ops readiness", "is there a runbook?", "are we ready to support this?", or as part of /platform-board-review.
+description: Platform operational readiness review. Evaluates runbook coverage, monitoring and alerting completeness, on-call support model, incident response preparedness, and observability for a proposed platform change. Ensures the cluster is operable — not just functional — before a change is applied. Use when asked to "check ops readiness", "is there a runbook?", "are we ready to support this?", or as part of /board-review.
 ---
 
 # Platform Ops Review
@@ -11,7 +11,7 @@ description: Platform operational readiness review. Evaluates runbook coverage, 
 /platform-draft-prd
       │
       ▼
-/platform-board-review ──── runs these reviewers in parallel ────┐
+/board-review ──── runs these reviewers in parallel ────┐
       │                                                     │
       │   /platform-arch-review                             │
       │   /platform-capacity-review                         │
