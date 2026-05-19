@@ -115,7 +115,7 @@ Task(subagent_type="general-purpose", prompt="
 - **`/codebase-eng-review` Step 0 (Scope Challenge)** — run for any new custom utility, helper, or integration before counting it as implementation work. If a library already provides it, the scope shrinks.
 
 ### With planner agent
-The `/codebase-draft` skill should invoke researcher before Phase 1 (Architecture Review):
+The `/codebase-draft-prd` skill should invoke researcher before Phase 1 (Architecture Review):
 - Researcher identifies available tools
 - Planner incorporates them into the implementation plan
 - Avoids "reinventing the wheel" in the plan

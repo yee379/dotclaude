@@ -11,7 +11,7 @@ Explore the codebase and project state to surface prioritised improvement candid
 write accepted ones into the backlog as first-class task files.
 
 This skill is **generative and exploratory**, not evaluative. It asks "what *should* we build
-or fix?" rather than "is this plan safe to build?". It runs before `/codebase-draft`, feeding
+or fix?" rather than "is this plan safe to build?". It runs before `/codebase-draft-prd`, feeding
 the backlog that `/codebase-workflow` tracks.
 
 ## Workflow position
@@ -23,7 +23,7 @@ the backlog that `/codebase-workflow` tracks.
 /codebase-workflow    ← user picks an item, task file already exists
       │
       ▼
-/codebase-draft          ← turns thin task file into a full design
+/codebase-draft-prd          ← turns thin task file into a full design
       │
       ▼
 /codebase-board-review → implementation → /codebase-closeout → /prod-release
@@ -367,7 +367,7 @@ For each accepted candidate:
    - Priority and Status (`⬜ Open`)
    - Source: `> *Surfaced by /codebase-scout on <date> — <lens> lens*`
    - Leave Design and Implementation Plan sections as stubs — those get filled by
-     `/codebase-draft` when the item is picked up.
+     `/codebase-draft-prd` when the item is picked up.
 
 3. **Add a row to `TODO.md`** with the correct priority, `⬜ Open` status, branch `—`, PR `—`.
 
@@ -427,7 +427,7 @@ After writing items, always suggest what to do next based on what was found:
 | Skill | How it integrates |
 |-------|------------------|
 | `/codebase-workflow` | Scout writes task files in the same format; `/codebase-workflow` picks them up |
-| `/codebase-draft` | Scout writes thin task files; `/codebase-draft` fills in the design when the item is picked |
+| `/codebase-draft-prd` | Scout writes thin task files; `/codebase-draft-prd` fills in the design when the item is picked |
 | `/codebase-board-review` | Scout does not gate items — that happens later when a design exists |
 | `/security-review` | Scout's security lens is a quick pass; `/security-review` is the deep audit |
 | `/twelve-factor-standards` | Scout's production lens overlaps; `/twelve-factor-standards` is the systematic checklist |

@@ -1,5 +1,5 @@
 ---
-name: platform-draft
+name: platform-draft-prd
 description: Structured platform change planning — feasibility framing, capacity assessment, infrastructure design, operational readiness requirements, security posture, ADRs, and a definition of done before any cluster change is made. Use when planning a new application onboarding, infrastructure change, capacity upgrade, or operational improvement.
 ---
 
@@ -10,8 +10,8 @@ A structured approach to planning platform and infrastructure changes before tou
 ## When to Trigger
 
 - `platform <number>` or `platform #<number>` — plan a specific platform task
-- `/platform-draft` — explicit invocation
-- "plan this platform change", "draft the platform plan", "run platform-draft"
+- `/platform-draft-prd` — explicit invocation
+- "plan this platform change", "draft the platform plan", "run platform-draft-prd"
 - Before onboarding any new application or microservice to the cluster
 - Before any significant infrastructure change (namespace strategy, network topology, storage, etc.)
 
@@ -20,7 +20,7 @@ When a task number is given, glob `todo/<number>-*.md` to find the task file bef
 ## Workflow position
 
 ```
-/platform-draft        ← YOU ARE HERE
+/platform-draft-prd        ← YOU ARE HERE
       │
       ├── Phase 0.5: Discovery Interview (ask why, what, who — ALWAYS)
       ├── Phase 0:   Research (if unknowns remain)
@@ -459,7 +459,7 @@ Slice 4 (production, 1d): Promote — smoke test, confirm alerts live
 
 ## Status update on completion
 
-When `/platform-draft` finishes, immediately:
+When `/platform-draft-prd` finishes, immediately:
 
 1. Set `**Status:**` in the task file to `⬜ Open`
 2. Update the matching row in `TODO.md` to `⬜ Open`

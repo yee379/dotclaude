@@ -1,11 +1,11 @@
 ---
-name: codebase-draft
+name: codebase-draft-prd
 description: Structure outline feature planning and architectural design — user interview, problem framing, user stories, requirements, module design, ADRs, system design, trade-offs, sequencing, and a definition of done before writing any code. Output can be written to the task file and/or submitted as a GitHub issue.
 triggers:
   - "plan #\\d+"
   - "plan \\d+"
   - "plan todo #?\\d+"
-  - "/codebase-draft"
+  - "/codebase-draft-prd"
   - "write a prd"
   - "write-a-prd"
   - "create a prd"
@@ -25,8 +25,8 @@ Activate this skill when the user says any of the following:
 - `plan #<number>` — e.g. "plan #3", "plan #007"
 - `plan todo <number>` — e.g. "plan todo 3", "plan todo 007"
 - `plan todo #<number>` — e.g. "plan todo #3", "plan todo #007"
-- `/codebase-draft` — explicit invocation
-- "plan this out", "let's plan", "run codebase-draft" on a task
+- `/codebase-draft-prd` — explicit invocation
+- "plan this out", "let's plan", "run codebase-draft-prd" on a task
 - `outline <number>` - e.g. "outline 3", "outline 007"
 - `structure outline <number>` - e.g. "structure outline 3", "structure outline 007"
 - "write a PRD", "create a PRD", "write-a-prd", "product requirements document"
@@ -36,13 +36,13 @@ When a task number is given, glob `todo/<number>-*.md` (zero-padded or not) to f
 ## Workflow position
 
 ```
-/codebase-draft            ← YOU ARE HERE: problem framing, requirements, system design, ADRs
+/codebase-draft-prd            ← YOU ARE HERE: problem framing, requirements, system design, ADRs
       │
       ▼
 /codebase-board-review → implementation → /codebase-closeout → /prod-release
 ```
 
-Use `/codebase-draft` first — before architecture review or implementation. Its output (problem statement, requirements, rough design, ADRs) is the input that `codebase-arch-review` needs to do a meaningful structural review.
+Use `/codebase-draft-prd` first — before architecture review or implementation. Its output (problem statement, requirements, rough design, ADRs) is the input that `codebase-arch-review` needs to do a meaningful structural review.
 
 Once the plan exists, run `/codebase-board-review` to gate it through the complete review pipeline in one go.
 
@@ -459,7 +459,7 @@ A feature is done when ALL of the following are true:
 
 ### Status update on completion
 
-When `/codebase-draft` finishes writing the plan into the task file, **immediately**:
+When `/codebase-draft-prd` finishes writing the plan into the task file, **immediately**:
 
 1. Set `**Status:**` in the task file to `⬜ Open`
 2. Update the matching row in `TODO.md` to `⬜ Open`

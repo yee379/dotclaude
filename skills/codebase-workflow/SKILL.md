@@ -11,7 +11,7 @@ Maintain a `todo/` directory as a prioritised backlog where every item is a firs
 
 - Starting a new feature or task
 - When asked "what should we work on next?" or "what's left to do?", "what to do with todo <number>?", "tell me more about todo <number>?", "what is the plan for todo <number>?"
-- After running `/codebase-draft` or any design/planning skill — persist the output
+- After running `/codebase-draft-prd` or any design/planning skill — persist the output
 - When picking up work that was started in a previous session
 - When a task is completed and needs closing out
 - When asked to add a new item to the backlog
@@ -98,15 +98,15 @@ git checkout -b feat/<slug>
 3. Fill in at minimum: Problem Statement and Goals
 4. **Add a row to `TODO.md` immediately** — priority, status `📋 Preparing`, branch `—`, PR `—`
 5. **Before touching code, ask:**
-   > "Task #N is ready to plan. Shall I run `/codebase-draft` now to flesh out the design,
+   > "Task #N is ready to plan. Shall I run `/codebase-draft-prd` now to flesh out the design,
    > or would you like to add more context to the Problem Statement first?"
-   - If the user confirms → run `/codebase-draft` immediately.
-   - If the user wants to add context first → wait, then run `/codebase-draft` once ready.
+   - If the user confirms → run `/codebase-draft-prd` immediately.
+   - If the user wants to add context first → wait, then run `/codebase-draft-prd` once ready.
    - The only exception: genuinely trivial tasks where the fix is a single obvious change
      (e.g. "add a 30s timeout to one function"). Even then, say so explicitly:
-     > "This looks trivial enough to skip codebase-draft — proceeding directly. Let me know
+     > "This looks trivial enough to skip codebase-draft-prd — proceeding directly. Let me know
      > if you'd like a full plan instead."
-6. **Once `/codebase-draft` completes:** set status to `⬜ Open` in both the task file and
+6. **Once `/codebase-draft-prd` completes:** set status to `⬜ Open` in both the task file and
    `TODO.md`. Then ask:
    > "Plan is written. Shall I run `/codebase-board-review` now to gate it through the board?"
 7. Only after `/codebase-board-review` gives CLEAR TO BUILD (status → `🔍 Reviewed`): create the branch
@@ -117,22 +117,22 @@ git checkout -b feat/<slug>
 When a task file exists but the Design section is empty or sparse, **do not start
 implementation.** Ask first:
 
-> "The design section for #N is sparse. Shall I run `/codebase-draft` now to flesh it out
+> "The design section for #N is sparse. Shall I run `/codebase-draft-prd` now to flesh it out
 > before we start building?"
 
-- If yes → run `/codebase-draft`, then ask about `/codebase-board-review`.
+- If yes → run `/codebase-draft-prd`, then ask about `/codebase-board-review`.
 - If the user wants to add context first → wait, then proceed.
 - Never silently skip to code.
 
 1. **Read the task file first** — always start here, never from a blank slate. The problem
    statement and goals are already written (by `/codebase-scout`, manually, or from a previous
    session). Do not re-derive them; build on what's there.
-2. **Run `/codebase-draft`** to fill in the design — it will read the task file's Problem
+2. **Run `/codebase-draft-prd`** to fill in the design — it will read the task file's Problem
    Statement and Goals as its Phase 1 input, skipping the problem-identification step.
    All output (requirements, architecture, ADRs, delivery slices) gets written back into
    the task file's **Design** and **Implementation Plan** sections.
 3. **Research first if needed** — if the Design section is empty *and* the technology is
-   unfamiliar, run `/research-handbook` or `/search-first` before calling `/codebase-draft`.
+   unfamiliar, run `/research-handbook` or `/search-first` before calling `/codebase-draft-prd`.
    Save findings to `todo/research/<slug>/` and link from the task file's Design section.
 4. Add Open Questions for anything that requires a decision before implementation starts.
 5. Present the plan for approval before writing code.
@@ -142,10 +142,10 @@ implementation.** Ask first:
 
 | Where the task file came from | Status | Next step |
 |-------------------------------|--------|-----------|
-| `/codebase-scout` | 📋 Preparing | Problem Statement already written — run `/codebase-draft` directly |
-| Added manually (thin) | 📋 Preparing | Fill Problem Statement first, then run `/codebase-draft` |
-| Previous session (partial design) | 📋 Preparing | Resume `/codebase-draft` from where the Design section left off |
-| `/codebase-draft` already run | ⬜ Open | Design is complete — run `/codebase-board-review` |
+| `/codebase-scout` | 📋 Preparing | Problem Statement already written — run `/codebase-draft-prd` directly |
+| Added manually (thin) | 📋 Preparing | Fill Problem Statement first, then run `/codebase-draft-prd` |
+| Previous session (partial design) | 📋 Preparing | Resume `/codebase-draft-prd` from where the Design section left off |
+| `/codebase-draft-prd` already run | ⬜ Open | Design is complete — run `/codebase-board-review` |
 | `/codebase-board-review` passed | 🔍 Reviewed | CLEAR TO BUILD — create branch, begin implementation |
 
 The task file *is* the plan. Don't maintain a separate plan document unless the design is
@@ -202,7 +202,7 @@ The task file is **never deleted** — it becomes a permanent record.
 4. Assign a priority tier (P0–P3)
 5. Add a row to `TODO.md` with priority and status `📋 Preparing`
 6. Commit: `git add TODO.md todo/ && git commit -m "docs(todo): add #<n> <title>"`
-7. **Do not create a branch or begin implementation yet.** The next step is `/codebase-draft`
+7. **Do not create a branch or begin implementation yet.** The next step is `/codebase-draft-prd`
    (which advances status to `⬜ Open`), then `/codebase-board-review` (which advances to `🔍 Reviewed`).
    A task is not ready to implement until it has passed the board.
 
@@ -315,7 +315,7 @@ includes design decisions, problems encountered, and trade-offs.
 | Trigger | What to update |
 |---------|---------------|
 | New task created | Add row with priority, status 📋 Preparing, branch `—`, PR `—` |
-| codebase-draft completes | Status → ⬜ Open in task file and TODO.md; prompt user to run /codebase-board-review |
+| codebase-draft-prd completes | Status → ⬜ Open in task file and TODO.md; prompt user to run /codebase-board-review |
 | codebase-board-review starts | Status → 🔎 In Review in task file and TODO.md |
 | codebase-board-review passes (CLEAR TO BUILD / CLEAR WITH WARNINGS) | Status → 🔍 Reviewed; board review summary merged into task file; `todo/review/<slug>/` deleted |
 | codebase-board-review blocked or unstable | Status → 📋 Preparing (revert to pre-review); board review summary merged into task file; `todo/review/<slug>/` deleted; blocking issues noted in Problems & Solutions |
@@ -355,7 +355,7 @@ When asked "what are we working on?" or "show me project status", always read `T
 7. **Never delete task files.** They are institutional memory. Cancelled tasks get `❌ Won't Do` status and a reason.
 8. **One branch per task.** Don't mix unrelated work on a branch — it breaks the task ↔ branch ↔ PR traceability.
 9. **Update before ending a session.** If you close your laptop without updating the task file and TODO.md, the context is gone.
-10. **Link, don't duplicate.** If `/codebase-draft` produced a detailed doc, link to it rather than copying it. The task file is the hub, not the whole archive.
+10. **Link, don't duplicate.** If `/codebase-draft-prd` produced a detailed doc, link to it rather than copying it. The task file is the hub, not the whole archive.
 
 ---
 
@@ -365,7 +365,7 @@ A common question is where skills like `tdd-standards`, `code-standards`, `agent
 and `twelve-factor-standards` belong. The answer: they belong in the **plan**, not the implementation.
 
 ```
-codebase-draft → codebase-board-review → implementation → codebase-closeout → prod-release
+codebase-draft-prd → codebase-board-review → implementation → codebase-closeout → prod-release
      ↑                ↑                  ↑
   standards       standards          just execute
   inform the      enforced by        the plan;
@@ -373,7 +373,7 @@ codebase-draft → codebase-board-review → implementation → codebase-closeou
                   and others         already baked in
 ```
 
-- **Standards** are inputs to `codebase-draft` and enforced during `codebase-board-review`. By the time
+- **Standards** are inputs to `codebase-draft-prd` and enforced during `codebase-board-review`. By the time
   you're writing code, the approach should already comply — the plan was reviewed against them.
 - **`code-review`** is the implementation **exit gate** — run it before marking a task
   `🏁 Implementation Done`. It catches drift from the plan and anything the reviewers missed.
@@ -390,7 +390,7 @@ was underspecified — update the task file's Design section and note it in Prob
 | Skill | How it integrates |
 |-------|------------------|
 | `/codebase-scout` | Run to proactively generate backlog candidates; writes task files directly into `todo/` |
-| `/codebase-draft` | Run first; paste or link the output into the task file's **Design** section |
+| `/codebase-draft-prd` | Run first; paste or link the output into the task file's **Design** section |
 | `/codebase-board-review` | Run the review pipeline against the design before starting implementation |
 | `/research-handbook` | Research findings saved to `todo/research/<slug>/`; linked from task file |
 | `/code-review` | Review findings that require fixes become new task checklist items or new backlog items |
