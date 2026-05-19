@@ -118,8 +118,8 @@ Kubernetes and cloud operations.
 | Skill | Purpose |
 |---|---|
 | `k8s-deploy` | Helm, vcluster, namespace promotion, health probes |
-| `k8s-troubleshooting` | Cluster diagnostics, pod logs, storage, networking |
-| `system-troubleshooting` | Node/service diagnostics via Loki, InfluxDB, Prometheus |
+| `troubleshooting` | Cluster diagnostics, pod logs, storage, networking |
+| `troubleshooting` | Node/service diagnostics via Loki, InfluxDB, Prometheus |
 
 ### Workflows
 

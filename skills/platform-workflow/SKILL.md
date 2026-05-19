@@ -15,7 +15,7 @@ Items tracked here include: onboarding a new application to the cluster, infrast
 - Planning infrastructure changes (namespace strategy, network policies, storage classes, etc.)
 - Tracking operational health work (runbook gaps, monitoring coverage, alert tuning)
 - Capacity planning and feasibility assessment
-- After running `/platform-draft` or `/platform-board-review` — persist the output
+- After running `/platform-draft-prd` or `/platform-board-review` — persist the output
 - When picking up platform work started in a previous session
 - When asked to "track this platform change", "what platform work is outstanding?", or "show me platform status"
 
@@ -80,7 +80,7 @@ If the status in a task file disagrees with `TODO.md`, **the task file is author
 Legal status transitions — do not skip steps:
 
 ```
-📋 Preparing  →  ⬜ Open           after /platform-draft completes
+📋 Preparing  →  ⬜ Open           after /platform-draft-prd completes
 ⬜ Open        →  🔎 In Review      when /platform-board-review starts
 🔎 In Review   →  🔍 Reviewed       board verdict: CLEAR TO APPLY or CLEAR WITH WARNINGS
 🔎 In Review   →  ⬜ Open           board verdict: BLOCKED or UNSTABLE (rework required)
@@ -130,8 +130,8 @@ If `TODO.md` does not exist:
 3. Fill in at minimum: Problem Statement and Goals
 4. Add a row to `TODO.md` — set priority, status `📋 Preparing`, branch `—`, PR `—`
 5. Update the Summary line in `TODO.md`
-6. Ask: "Shall I run `/platform-draft` now to flesh out the design?"
-7. Once `/platform-draft` completes: set status to `⬜ Open` in both task file and `TODO.md`, then ask: "Shall I run `/platform-board-review`?"
+6. Ask: "Shall I run `/platform-draft-prd` now to flesh out the design?"
+7. Once `/platform-draft-prd` completes: set status to `⬜ Open` in both task file and `TODO.md`, then ask: "Shall I run `/platform-board-review`?"
 8. After board review completes:
    - Map the verdict to a status using the Board Verdict → Status Mapping table
    - Update status in both task file and `TODO.md`
@@ -157,7 +157,7 @@ If `TODO.md` does not exist:
 
 ### During Work
 
-- After hitting a problem — add a `### Problem:` entry to `## Problems & Solutions` immediately; if the problem was diagnosed with `/k8s-troubleshooting`, record the findings here
+- After hitting a problem — add a `### Problem:` entry to `## Problems & Solutions` immediately; if the problem was diagnosed with `/troubleshooting`, record the findings here
 - Tick checklist items as they complete
 - At end of session — update checklist and status in the task file **and mirror the status change in `TODO.md`**; update the Summary line
 
@@ -243,9 +243,9 @@ For critical outage response where waiting for `/platform-board-review` is not v
 
 | Skill | How it integrates |
 |-------|------------------|
-| `/platform-draft` | Run first; output written into `## Platform Design` (Architecture, Key Decisions, Capacity Assessment) and `## Implementation Plan`. Overwrite placeholder text — do not append. |
+| `/platform-draft-prd` | Run first; output written into `## Platform Design` (Architecture, Key Decisions, Capacity Assessment) and `## Implementation Plan`. Overwrite placeholder text — do not append. |
 | `/platform-board-review` | Gate the design before applying to cluster; board verdict mapped to task status via the Board Verdict → Status Mapping table |
 | `/k8s-deploy` | How-to skill invoked during implementation; **write deployment outcome back to task file `## Deployment Log` after every apply** |
-| `/k8s-troubleshooting` | Invoked when an incident needs diagnosis; record findings as a `### Problem:` entry in `## Problems & Solutions` |
+| `/troubleshooting` | Invoked when an incident needs diagnosis; record findings as a `### Problem:` entry in `## Problems & Solutions` |
 | `/research-handbook` | Research findings saved to `todo/research/<slug>/`; link from the task file's `## Open Questions` or `## Platform Design` section |
 | `/codebase-scout` | May surface platform-level tech debt — log it here as a new task |
