@@ -98,9 +98,43 @@ Do not proceed until reproduced.
 
 ---
 
-## Phase 3 — Hypothesise
+## Phase 3 — Map dependencies
 
-Generate **3–5 ranked hypotheses** before testing any of them. Single-hypothesis generation anchors on the first plausible idea.
+Before generating hypotheses, build a dependency map of the failing component. This prevents hypothesising about symptoms rather than causes, and reveals causal chains that span multiple components.
+
+For each component in the failure path, identify:
+
+**Upstream dependencies** — what does this component call or depend on?
+- Code: modules, services, databases, caches, queues, external APIs
+- Infra `[INFRA]`: other services on the node, shared storage, network paths, DNS, upstream load balancers
+
+**Downstream dependents** — what calls or depends on this component?
+- What breaks or degrades if this component is slow, wrong, or down?
+- This defines the blast radius before you touch anything.
+
+**Cause → effect for each dependency** — for every upstream, state what its failure would look like at the failing component:
+
+```
+Component: [failing thing]
+
+Upstream:
+  [dep A]  →  if A fails/degrades, this component shows [specific symptom]
+  [dep B]  →  if B fails/degrades, this component shows [specific symptom]
+
+Downstream:
+  [dependent C]  ←  our failure appears there as [specific symptom]
+  [dependent D]  ←  our failure appears there as [specific symptom]
+```
+
+**Key question:** Is the symptom you're seeing consistent with a failure in an upstream dependency? If yes, the root cause is likely higher in the chain — don't fix a downstream symptom when the upstream is broken.
+
+**For infra** `[INFRA]`: check whether multiple services are failing simultaneously — shared upstream cause (same DB, same NFS mount, same network switch) is the most common explanation for correlated failures.
+
+---
+
+## Phase 4 — Hypothesise
+
+Generate **3–5 ranked hypotheses** before testing any of them. Single-hypothesis generation anchors on the first plausible idea. Use the dependency map from Phase 3 to ensure hypotheses target causes, not symptoms.
 
 Each hypothesis must be **falsifiable** — state its prediction:
 
@@ -112,9 +146,9 @@ If you cannot state the prediction, the hypothesis is a vibe — discard or shar
 
 ---
 
-## Phase 4 — Instrument
+## Phase 5 — Instrument
 
-Each probe must map to a specific prediction from Phase 3. **Change one variable at a time.**
+Each probe must map to a specific prediction from Phase 4. **Change one variable at a time.**
 
 ### Code bugs
 
@@ -141,7 +175,7 @@ See [Infra Query Reference](#infra-query-reference) for specific PromQL / LogQL 
 
 ---
 
-## Phase 5 — Confirm root cause
+## Phase 6 — Confirm root cause
 
 **Do not apply a fix until you can state the root cause in one sentence.**
 
@@ -163,7 +197,7 @@ Examples:
 
 ---
 
-## Phase 6 — Fix
+## Phase 7 — Fix
 
 ### Code bugs
 
@@ -185,7 +219,7 @@ See [Remediation Quick Reference](#remediation-quick-reference).
 
 ---
 
-## Phase 7 — Cleanup + post-mortem
+## Phase 8 — Cleanup + post-mortem
 
 Required before declaring done:
 
