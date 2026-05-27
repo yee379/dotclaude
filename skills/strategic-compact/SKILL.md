@@ -10,23 +10,11 @@ Suggests manual `/compact` at strategic points in your workflow rather than rely
 
 ## When to Activate
 
-- Running long sessions that approach context limits (150K+ tokens)
+- Running long sessions that approach context limits (850K+ tokens)
 - Working on multi-phase tasks (research → plan → implement → test)
 - Switching between unrelated tasks within the same session
 - After completing a major milestone and starting new work
 - When responses slow down or become less coherent (context pressure)
-
-## Why Strategic Compaction?
-
-Auto-compaction triggers at arbitrary points:
-- Often mid-task, losing important context
-- No awareness of logical task boundaries
-- Can interrupt complex multi-step operations
-
-Strategic compaction at logical boundaries:
-- **After exploration, before execution** — Compact research context, keep implementation plan
-- **After completing a milestone** — Fresh start for next phase
-- **Before major context shifts** — Clear exploration context before different task
 
 ## How It Works
 
@@ -95,30 +83,6 @@ Understanding what persists helps you compact with confidence:
 4. **Read the suggestion** — The hook tells you *when*, you decide *if*
 5. **Write before compacting** — Save important context to files or memory before compacting
 6. **Use `/compact` with a summary** — Add a custom message: `/compact Focus on implementing auth middleware next`
-
-## Token Optimization Patterns
-
-### Trigger-Table Lazy Loading
-Instead of loading full skill content at session start, use a trigger table that maps keywords to skill paths. Skills load only when triggered, reducing baseline context by 50%+:
-
-| Trigger | Skill | Load When |
-|---------|-------|-----------|
-| "test", "tdd", "coverage" | tdd-standards | User mentions testing |
-| "security", "auth", "xss" | security-review | Security-related work |
-| "deploy", "ci/cd" | deployment-patterns | Deployment context |
-
-### Context Composition Awareness
-Monitor what's consuming your context window:
-- **CLAUDE.md files** — Always loaded, keep lean
-- **Loaded skills** — Each skill adds 1-5K tokens
-- **Conversation history** — Grows with each exchange
-- **Tool results** — File reads, search results add bulk
-
-### Duplicate Instruction Detection
-Common sources of duplicate context:
-- Same rules in both `~/.claude/rules/` and project `.claude/rules/`
-- Skills that repeat CLAUDE.md instructions
-- Multiple skills covering overlapping domains
 
 ## Related
 

@@ -322,47 +322,7 @@ def user_factory(db_session):
 
 ### pyproject.toml
 
-```toml
-[project]
-name = "myservice"
-version = "0.1.0"
-requires-python = ">=3.11"
-dependencies = [
-    "fastapi>=0.110",
-    "uvicorn[standard]>=0.29",
-    "pydantic>=2.6",
-    "pydantic-settings>=2.2",
-    "sqlalchemy[asyncio]>=2.0",
-    "asyncpg>=0.29",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=8",
-    "pytest-asyncio>=0.23",
-    "pytest-cov>=5",
-    "httpx>=0.27",
-    "aiosqlite>=0.20",
-    "ruff>=0.4",
-    "mypy>=1.9",
-]
-
-[tool.ruff]
-line-length = 100
-target-version = "py311"
-select = ["E", "F", "I", "N", "UP", "B", "SIM", "ANN"]
-ignore = ["ANN101", "ANN102"]
-
-[tool.mypy]
-python_version = "3.11"
-strict = true
-ignore_missing_imports = true
-
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-testpaths = ["tests"]
-addopts = "--cov=src --cov-report=term-missing --cov-fail-under=80"
-```
+See `references/pyproject-template.toml` for a complete project configuration baseline.
 
 ### Essential commands
 
@@ -385,59 +345,4 @@ pytest --cov=src --cov-report=html
 
 # Run service
 uvicorn myservice.main:app --reload --port 8000
-```
-
----
-
-## Anti-Patterns to Avoid
-
-```python
-# BAD: mutable default argument
-def add_tag(item, tags=[]):
-    tags.append(item)
-    return tags       # shares list across calls!
-
-# GOOD
-def add_tag(item, tags: list[str] | None = None) -> list[str]:
-    if tags is None:
-        tags = []
-    tags.append(item)
-    return tags
-
-# BAD: bare except
-try:
-    result = risky()
-except:
-    pass              # swallows KeyboardInterrupt, SystemExit
-
-# GOOD
-try:
-    result = risky()
-except SpecificError as e:
-    logger.error("Operation failed: %s", e)
-    raise
-
-# BAD: string formatting in logging (evaluated even if not logged)
-logger.debug("Processing user: " + str(user))
-
-# GOOD: lazy formatting
-logger.debug("Processing user: %s", user)
-
-# BAD: type() for isinstance checks
-if type(value) == list:
-    ...
-
-# GOOD
-if isinstance(value, list):
-    ...
-
-# BAD: synchronous code in async function
-async def get_data():
-    time.sleep(1)    # blocks the event loop!
-    return fetch()
-
-# GOOD
-async def get_data():
-    await asyncio.sleep(1)
-    return await fetch()
 ```

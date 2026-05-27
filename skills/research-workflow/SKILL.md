@@ -271,31 +271,7 @@ present options, charge files commit to an answer based on the weight of evidenc
 
 ### Charge file structure
 
-```markdown
-# Charge N: <verbatim question from CHARGE.md>
-
-> **Status:** Answered | Partial | Open
-> **Primary sources:** `reports/foo.md`, `reports/bar.md`, `concepts/baz.md`
-
-## Answer
-
-[2–5 sentence direct answer to the charge question. State a position. Cite reports inline
-as [→ slug.md §section]. Do not hedge unless the evidence is genuinely ambiguous — in that
-case, state why it is ambiguous and what would resolve it.]
-
-## Evidence
-
-### <Report or concept title> — `<filename>`
-
-- **Key finding:** "[direct quote or tight paraphrase]" (§section-name)
-- **Key finding:** "[direct quote or tight paraphrase]" (§section-name)
-[…repeat for each primary source; omit sources that add no new evidence for this charge]
-
-## Residual Open Questions
-
-1. [Specific unresolved question — what decision or information would close it]
-2. …
-```
+Load `references/templates/charge.md` as the file template.
 
 **Status values:**
 
@@ -397,41 +373,7 @@ and fit with the project. They are reference material, not opinions.
 
 **Required structure**:
 
-```markdown
-# <Full Name>
-
-> **Type:** Concept Reference
-> **Applied in:** [Report Title](../reports/slug.md), …
-
-*Generated: YYYY-MM-DD | Confidence: High/Medium/Low (<method>)*
-
----
-
-## 1. What It Is
-[1–3 sentence plain-English description]
-
-## 2. How It Works
-[Architecture, data flow, key mechanisms — use diagrams/code blocks as needed]
-
-## 3. Key Facts
-
-| Fact | Detail |
-|------|--------|
-| Spec / RFC | … |
-| Current version | … |
-| Maturity | … |
-| Language / runtime | … |
-| License | … |
-
-## 4. Relevance to This Project
-[How this connects to the project's core problems or goals — use sub-headings if needed]
-
-## 5. Known Gaps / Limitations
-[Sharp edges, things it does NOT do, open issues, CVEs if relevant]
-
-## Sources
-- [Name](URL) — fetched YYYY-MM-DD
-```
+Load `references/templates/concept.md` as the file template.
 
 **Survey documents** (multiple items side-by-side) may use a numbered section hierarchy
 (`## 1.`, `### 2.1`) and comparison tables instead of the single-entry template. Still
@@ -450,37 +392,7 @@ Opinionated, cited, addressed to the project team.
 
 **Required structure**:
 
-```markdown
-# <Title>
-
-> **Type:** Report
-> **Concept References:** [Concept Name](../concepts/slug.md), …
-> **See also:** [Report Title](../reports/slug.md), …
-
-*Generated: YYYY-MM-DD | Confidence: High/Medium/Low (<method>)*
-
----
-
-## Executive Summary
-[2–4 sentences: problem, finding, recommendation]
-
----
-
-## Part 1: <Background Section Title>
-[Context — what triggered this, which problem it addresses]
-
-## Part 2: <Analysis Section Title>
-[Detailed findings with tables, code blocks, comparisons]
-
-## Part 3: <Recommendations Section Title>
-1. **<Action>** — <rationale>
-
-## Open Questions
-- …
-
-## Sources
-- [Name](URL) — fetched YYYY-MM-DD
-```
+Load `references/templates/report.md` as the file template.
 
 Section titles are flexible — use whatever fits the content. Required fixed anchors:
 **Executive Summary**, **Recommendations** (or equivalent), **Open Questions**, **Sources**.
@@ -551,20 +463,22 @@ Prefer sources in this order — never cite a lower tier if a higher one is avai
 
 ### Model selection
 
-Use **copilot-claude-opus-4.6** for:
+> Configure your preferred model names in settings — these are environment-specific.
+
+Use a **high-capability model (e.g. opus tier)** for:
 - Any task requiring synthesis across many sources
 - Security analysis, CVE assessment, or compliance gap analysis
 - Reports where recommendations will inform architectural decisions
 - Any situation where a previous attempt produced a confidence level of Medium or below
 
-Use **copilot-claude-sonnet-4.6** for:
+Use a **fast model (e.g. sonnet tier)** for:
 - Straightforward single-source concept entries (e.g. cataloguing a well-documented RFC)
 - Index and README updates
 - Scratch file checkpoints
 
 When launching subagents, **assign model explicitly** — research subagents doing multi-source
-synthesis should use copilot-claude-opus-4.6; subagents doing mechanical tasks (writing a file from notes already
-gathered) can use copilot-claude-sonnet-4.6.
+synthesis should use a high-capability model (e.g. opus tier); subagents doing mechanical tasks (writing a file from notes already
+gathered) can use a fast model (e.g. sonnet tier).
 
 ### What to do when sources or information conflict
 
@@ -615,7 +529,7 @@ If a relevant file exists, **amend it** rather than creating a duplicate:
 - **Corroborate** every non-trivial claim with a second source before writing it down (see Epistemic Standards)
 - **WebSearch** for version history, CVEs, and recent changes — use to validate or challenge what primary sources say
 - **Read** prior `concepts/` and `reports/` files for context already established
-- Invoke **`deep-research`** for broad multi-source investigations; assign it copilot-claude-opus-4.6 for synthesis tasks
+- Invoke **`deep-research`** for broad multi-source investigations; assign it a high-capability model (e.g. opus tier) for synthesis tasks
 
 ### Step 4 — Write the file
 

@@ -91,23 +91,7 @@ Output format:
 - Relying on globally installed binaries (`curl`, `imagemagick`, `ffmpeg`) not in the image
 - Base image pinned to a mutable tag (`FROM python:3.12` — tag can change)
 
-```dockerfile
-# BAD — mutable tag, no lockfile guarantee
-FROM python:3.12
-RUN pip install -r requirements.txt
-
-# GOOD — pinned digest, lockfile, non-root
-FROM python:3.12-slim@sha256:a1b2c3...
-COPY uv.lock pyproject.toml ./
-RUN pip install uv && uv sync --frozen
-USER 1001
-```
-
-**Checklist:**
-- [ ] Lockfile committed and used in CI (`--frozen` / `--ci` flag)
-- [ ] Base image pinned to digest, not just tag
-- [ ] Vulnerability scan in CI (`trivy image`, `grype`) blocks on CRITICAL/HIGH
-- [ ] Automated dependency updates (Dependabot / Renovate)
+> For implementation examples, see `/python-patterns` or `/k8s-deploy`.
 
 ---
 
@@ -121,56 +105,7 @@ USER 1001
 - Per-environment config files in the repo (`config/prod.yaml`)
 - Secrets stored as plain env vars in CI/CD YAML
 
-```python
-# BAD — hardcoded config
-DATABASE_URL = "postgresql://user:s3cr3t@db:5432/app"
-DEBUG = True
-
-# GOOD — validated at startup, fails fast if missing
-from pydantic_settings import BaseSettings
-
-class Settings(BaseSettings):
-    database_url: str          # raises at startup if absent
-    redis_url: str
-    debug: bool = False
-    log_level: str = "INFO"
-
-    class Config:
-        env_file = ".env"      # local dev only — never committed
-
-settings = Settings()
-```
-
-```yaml
-# BAD — secret value in K8s manifest
-env:
-  - name: DB_PASSWORD
-    value: "s3cr3t"
-
-# GOOD — External Secrets Operator syncs from Vault/AWS SM
-apiVersion: external-secrets.io/v1beta1
-kind: ExternalSecret
-metadata:
-  name: api-secrets
-spec:
-  refreshInterval: 1h
-  secretStoreRef:
-    name: vault-backend
-    kind: ClusterSecretStore
-  target:
-    name: api-secrets
-  data:
-    - secretKey: DATABASE_URL
-      remoteRef:
-        key: prod/api/database-url
-```
-
-**Checklist:**
-- [ ] No secrets or URLs hardcoded in source
-- [ ] `.env` in `.gitignore`; never committed
-- [ ] Config validated at startup (Pydantic Settings, Viper, Zod)
-- [ ] Sensitive values in secrets manager (Vault, AWS SM, Doppler), not plain env vars
-- [ ] K8s: `ConfigMap` for non-sensitive, External Secrets Operator for sensitive
+> For implementation examples, see `/python-patterns` or `/security-review`.
 
 ---
 
@@ -196,11 +131,6 @@ db = psycopg2.connect(settings.database_url)
 # In prod: DATABASE_URL=postgresql://rds.amazonaws.com/myapp
 ```
 
-**Checklist:**
-- [ ] No environment-conditional backing service logic in code
-- [ ] All service URLs/credentials sourced from config (Factor III)
-- [ ] Health check verifies backing service connectivity at startup
-- [ ] Circuit breaker / retry logic for transient failures (Resilience4j, tenacity)
 
 ---
 
@@ -217,19 +147,7 @@ db = psycopg2.connect(settings.database_url)
 - Baking secrets into the image at build time
 - Running `npm install` or `pip install` at container startup
 
-```
-# GOOD pipeline shape
-[CI: git push]
-    → build: docker build → push ghcr.io/org/api:abc1234   # immutable artifact
-    → release: attach values-staging.yaml → ArgoCD syncs   # release = artifact + config
-    → run: K8s schedules pods from that release             # never modify running containers
-```
-
-**Checklist:**
-- [ ] One image built once in CI; same image promoted dev → staging → prod
-- [ ] Image tagged with immutable ref (git SHA or semver), never `:latest` in prod
-- [ ] No secrets baked into image layers (`docker history` clean)
-- [ ] No dependency installation at container startup
+> For implementation examples, see `/k8s-deploy`.
 
 ---
 
@@ -243,29 +161,7 @@ db = psycopg2.connect(settings.database_url)
 - Sticky sessions required (load balancer must always route user to same pod)
 - "Snowflake" servers that have been manually configured and can't be replaced
 
-```python
-# BAD — in-process session state
-app.sessions = {}
-
-@app.post("/login")
-def login(user_id: str):
-    app.sessions[user_id] = {"logged_in_at": time.time()}  # lost on pod restart
-
-# GOOD — session stored in Redis backing service
-import redis
-r = redis.from_url(settings.redis_url)
-
-@app.post("/login")
-def login(user_id: str):
-    r.setex(f"session:{user_id}", 3600, json.dumps({"logged_in_at": time.time()}))
-```
-
-**Checklist:**
-- [ ] No in-process session or user state (use Redis/Memcached)
-- [ ] File uploads go to object storage (S3, GCS), not local disk
-- [ ] App can be killed and restarted without data loss or user impact
-- [ ] No sticky sessions required — any pod can serve any request
-- [ ] K8s: `Deployment` (stateless), `StatefulSet` only for genuinely stateful services
+> For implementation examples, see `/python-patterns`.
 
 ---
 
@@ -291,11 +187,6 @@ if __name__ == "__main__":
 
 K8s: container declares `containerPort`; `Service` routes to it. TLS terminated at ingress (cert-manager), not in the app process.
 
-**Checklist:**
-- [ ] Port configurable via `PORT` env var (not hardcoded)
-- [ ] Web server is a declared dependency, not a host assumption
-- [ ] TLS terminated at ingress layer (cert-manager), not in the app process
-
 ---
 
 ### VIII. Concurrency — Scale out via the process model
@@ -313,12 +204,6 @@ K8s: container declares `containerPort`; `Service` routes to it. TLS terminated 
 # worker: scales on queue depth (HPA or KEDA)
 ```
 
-**Checklist:**
-- [ ] Web and worker process types are separate Deployments
-- [ ] Each process type scales on its own relevant metric (HTTP RPS vs queue depth)
-- [ ] HPA configured; consider KEDA for event-driven workloads
-- [ ] Worker processes are idempotent (safe to process the same message twice)
-
 ---
 
 ### IX. Disposability — Fast startup, graceful shutdown
@@ -330,60 +215,7 @@ K8s: container declares `containerPort`; `Service` routes to it. TLS terminated 
 - No `SIGTERM` handler — Kubernetes kills the pod and in-flight requests are dropped
 - Non-idempotent job processing causes duplicate side-effects on restart
 
-```python
-# GOOD — graceful shutdown handler
-import signal, sys
-from contextlib import asynccontextmanager
-from fastapi import FastAPI
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # startup
-    await db.connect()
-    yield
-    # shutdown — called on SIGTERM
-    await db.disconnect()
-
-app = FastAPI(lifespan=lifespan)
-```
-
-```yaml
-# K8s — tuned for zero-drop shutdown
-spec:
-  terminationGracePeriodSeconds: 60    # must be > longest expected request
-  containers:
-    - name: api
-      lifecycle:
-        preStop:
-          exec:
-            command: ["sleep", "5"]    # wait for load balancer to stop routing
-      readinessProbe:
-        httpGet:
-          path: /readyz
-          port: 8080
-        periodSeconds: 5
-        failureThreshold: 2
-      livenessProbe:
-        httpGet:
-          path: /healthz
-          port: 8080
-        periodSeconds: 30
-        failureThreshold: 3
-      startupProbe:
-        httpGet:
-          path: /healthz
-          port: 8080
-        periodSeconds: 5
-        failureThreshold: 30           # 150s max startup budget
-```
-
-**Checklist:**
-- [ ] `SIGTERM` handler drains in-flight requests before exiting
-- [ ] `preStop` sleep (5–15s) gives load balancer time to stop routing
-- [ ] `terminationGracePeriodSeconds` ≥ longest expected request duration
-- [ ] Readiness probe removes pod from rotation before it shuts down
-- [ ] Worker: unacked messages returned to queue on shutdown
-- [ ] `PodDisruptionBudget` keeps minimum replicas alive during node drains
+> For implementation examples, see `/k8s-deploy`.
 
 ---
 
@@ -416,12 +248,6 @@ services:
     image: redis:7-alpine        # same version as production ElastiCache
 ```
 
-**Checklist:**
-- [ ] Same database engine and major version in dev and prod
-- [ ] Docker Compose (or Testcontainers) for local backing services
-- [ ] Same OCI image promoted through environments — never rebuild per environment
-- [ ] Ephemeral preview environments for every PR (ArgoCD, Vercel, Railway)
-- [ ] Feature flags (LaunchDarkly, Unleash) to decouple deploy from release
 
 ---
 
@@ -435,30 +261,9 @@ services:
 - Unstructured plaintext logs with no correlation ID
 - Metrics not exposed; no tracing instrumentation
 
-```python
-# GOOD — structured JSON logging with correlation ID
-import structlog
-logger = structlog.get_logger()
-
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    request_id = request.headers.get("x-request-id", str(uuid4()))
-    with structlog.contextvars.bound_contextvars(request_id=request_id):
-        response = await call_next(request)
-        logger.info("request", method=request.method, path=request.url.path, status=response.status_code)
-    return response
-```
-
 Use OpenTelemetry for distributed tracing — instrument at the framework level (FastAPI middleware, SQLAlchemy events) so traces propagate automatically across services.
 
-**Checklist:**
-- [ ] All output to `stdout`/`stderr` — no file logging in the container
-- [ ] Structured JSON logs (structlog, Pino, zerolog, logback)
-- [ ] Correlation / trace ID on every log line
-- [ ] No PII or secrets in log output
-- [ ] `GET /metrics` Prometheus endpoint exposed
-- [ ] OpenTelemetry instrumentation for distributed tracing
-- [ ] Log aggregation: Fluent Bit DaemonSet → Loki or Elastic
+> For implementation examples, see `/python-patterns` or `/k8s-deploy`.
 
 ---
 
@@ -472,54 +277,7 @@ Use OpenTelemetry for distributed tracing — instrument at the framework level 
 - Hotfixing prod data via SSH from a developer's laptop
 - Cron jobs not using the same container image as the app
 
-```yaml
-# GOOD — migration as a K8s Job (runs before the new Deployment rolls out)
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: api-migrate-v1-4-0
-spec:
-  ttlSecondsAfterFinished: 300
-  template:
-    spec:
-      restartPolicy: Never
-      containers:
-        - name: migrate
-          image: ghcr.io/org/api:1.4.0    # same image as the app
-          command: ["python", "-m", "alembic", "upgrade", "head"]
-          envFrom:
-            - secretRef:
-                name: api-secrets         # same config as the app
-```
-
-```yaml
-# GOOD — scheduled task as CronJob
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  name: api-cleanup
-spec:
-  schedule: "0 2 * * *"
-  jobTemplate:
-    spec:
-      template:
-        spec:
-          restartPolicy: OnFailure
-          containers:
-            - name: cleanup
-              image: ghcr.io/org/api:1.4.0
-              command: ["python", "-m", "tasks.cleanup_expired_sessions"]
-              envFrom:
-                - secretRef:
-                    name: api-secrets
-```
-
-**Checklist:**
-- [ ] Migrations run as a K8s Job or init container, not at app startup
-- [ ] Migrations are idempotent and backward-compatible with the previous app version
-- [ ] Admin tasks use the same container image and config as the app
-- [ ] No direct prod access from developer laptops; use `kubectl exec` with RBAC
-- [ ] Jobs have `ttlSecondsAfterFinished` to auto-clean completed objects
+> For implementation examples, see `/k8s-deploy`.
 
 ---
 

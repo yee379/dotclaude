@@ -13,7 +13,7 @@ description: Platform capacity and feasibility review. Assesses whether the clus
       ▼
 /board-review ──── runs these reviewers in parallel ────┐
       │                                                     │
-      │   /platform-arch-review                             │
+      │   /codebase-arch-review (platform mode)             │
       │   /platform-capacity-review  ← YOU ARE HERE         │
       │   /platform-security-review                         │
       │   /platform-ops-review                              │
@@ -22,7 +22,7 @@ description: Platform capacity and feasibility review. Assesses whether the clus
       └─────────────────────────────────────────────────────┘
 ```
 
-**Model routing: `sonnet`.** Capacity review is primarily quantitative — checking headroom, identifying resource gaps, flagging thresholds. Escalate specific architectural concerns to `platform-arch-review`.
+**Model routing: `sonnet`.** Capacity review is primarily quantitative — checking headroom, identifying resource gaps, flagging thresholds. Escalate specific architectural concerns to `codebase-arch-review (platform mode)`.
 
 Do NOT make cluster changes. Assess whether the cluster can absorb this change and what gaps need to be addressed first.
 

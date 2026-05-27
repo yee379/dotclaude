@@ -56,7 +56,7 @@ implementation → /codebase-closeout → /prod-release
 
 When invoked standalone (outside a board-review), run **after** the draft skill and **before** the eng-review. This skill reviews **structure** — the decisions that are expensive to reverse.
 
-To run all gates in sequence automatically, use `/board-review` or `/board-review` instead of invoking each skill individually.
+To run all gates in sequence automatically, use `/board-review` instead of invoking each skill individually.
 
 ---
 
@@ -166,6 +166,8 @@ If the complexity check triggers, use AskUserQuestion to surface it before proce
 
 ## Review sections (after Step 0)
 
+**Global stop rule — applies to every section below:** When you find an issue, call AskUserQuestion — one issue per call, never batched. Present 2–3 options, state your recommendation, and explain WHY mapped to a specific architectural instinct. Do not proceed past a section until all its issues are resolved. In subagent mode, suppress AskUserQuestion — write a structured `### Decision:` entry in `## Decisions Required` and continue with the best safe default.
+
 ### 1. Service boundaries and data ownership
 
 The most expensive architectural mistake is the wrong service split. Wrong splits require distributed transactions, dual writes, or data duplication — all of which compound over time.
@@ -195,8 +197,6 @@ Example shape only:
 
 **Testability check:** For each boundary, ask: can this service or module be tested in isolation? What does a test require — a real database, mocks, a stub service? If testing a single unit requires standing up 3 or more services, the architecture has a coupling problem that will slow delivery and mask bugs. Testability is an architectural property — flag coupling problems here, not in eng-review, because fixing them requires changing the boundaries, not the implementation.
 
-**STOP.** For each issue found in this section, call AskUserQuestion individually. One issue per call. Present options, state recommendation, explain WHY. Do NOT batch. Only proceed after ALL issues resolved.
-
 ---
 
 ### 2. Consistency and data flow
@@ -209,8 +209,6 @@ Evaluate:
 - **Schema evolution:** How do services handle schema changes? Is there a backward/forward compatibility story?
 
 Draw an ASCII data flow diagram for the primary write path and primary read path if they differ significantly.
-
-**STOP.** One AskUserQuestion per issue. Only proceed after ALL issues resolved.
 
 ---
 
@@ -231,8 +229,6 @@ Flag:
 
 Draw a failure domain map showing which failures are contained vs which cascade.
 
-**STOP.** One AskUserQuestion per issue. Only proceed after ALL issues resolved.
-
 ---
 
 ### 4. Technology and infrastructure choices
@@ -250,8 +246,6 @@ For each technology or infrastructure choice in the plan:
 
 Apply the boring-by-default principle aggressively. The question is never "is this technology good?" but "does the marginal benefit over the boring alternative justify the innovation token cost?"
 
-**STOP.** One AskUserQuestion per issue. Only proceed after ALL issues resolved.
-
 ---
 
 ### 5. Operational and deployment topology
@@ -267,8 +261,6 @@ Architecture does not end at the service boundary diagram. Evaluate:
 - **Scaling topology:** Which services need to scale horizontally? Are they stateless? Is there a shared resource (DB, cache) that will become the bottleneck first?
 
 **12-factor check:** Run `/twelve-factor-standards` if the plan introduces new services, changes how config/secrets are managed, touches the build/release/run pipeline, or modifies backing service topology. The 12-factor methodology is the canonical checklist for cloud-native operational correctness — config externalisation, stateless processes, log treatment, and disposability are all architectural properties, not deployment details.
-
-**STOP.** One AskUserQuestion per issue. Only proceed after ALL issues resolved.
 
 ---
 
@@ -328,8 +320,6 @@ Cluster
       └── postgres (StatefulSet, PVC: 100Gi gp3)
 ```
 
-**STOP.** One AskUserQuestion per issue. (In subagent mode: write to Decisions Required and continue.)
-
 ---
 
 #### P2. Network boundaries and data flow
@@ -341,8 +331,6 @@ Cluster
 - **External dependencies:** Which external services does this workload reach? Are they reachable from the cluster's network position?
 
 Draw an ASCII network flow diagram for the primary traffic path.
-
-**STOP.** One AskUserQuestion per issue.
 
 ---
 
@@ -358,8 +346,6 @@ For each new workload:
 
 Draw a failure domain map.
 
-**STOP.** One AskUserQuestion per issue.
-
 ---
 
 #### P4. Storage and data topology
@@ -370,8 +356,6 @@ Draw a failure domain map.
 - **Stateful placement:** Is the StatefulSet pinned to a specific zone? Does that create a failure domain problem?
 - **Migration path:** If the storage class needs to change in future, how painful is the migration?
 
-**STOP.** One AskUserQuestion per issue.
-
 ---
 
 #### P5. Operational and deployment topology (platform)
@@ -381,8 +365,6 @@ Draw a failure domain map.
 - **GitOps alignment:** Does this change fit the existing GitOps workflow? Is the manifest path correct?
 - **Configuration management:** Configuration separated from code and image?
 - **Dev/staging/prod parity:** Can this change be tested in staging before production?
-
-**STOP.** One AskUserQuestion per issue.
 
 ### Platform mode: completion summary
 

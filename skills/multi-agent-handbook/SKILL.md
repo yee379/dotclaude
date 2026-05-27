@@ -74,10 +74,10 @@ claude -p "Create a conventional commit for all staged changes. Use 'feat: add O
 
 **With model routing:**
 ```bash
-# Model tier aliases (Claude Code resolves these to current model IDs):
-#   --model opus   → claude-opus-4-7
-#   --model sonnet → claude-sonnet-4-6
-#   --model haiku  → claude-haiku-4-5-20251001
+# Model tiers (Claude Code resolves these to current IDs automatically):
+#   opus   — most capable; use for complex reasoning, planning, and review
+#   sonnet — balanced; default for most tasks
+#   haiku  — fastest/cheapest; use for simple transformations and classification
 
 # Research with opus (deep reasoning)
 claude -p --model opus "Analyze the codebase architecture and write a plan for adding caching..."
@@ -153,22 +153,7 @@ PROMPT 1 (Orchestrator)              PROMPT 2 (Sub-Agents)
 
 Create `.claude/commands/infinite.md`:
 
-```markdown
-Parse the following arguments from $ARGUMENTS:
-1. spec_file — path to the specification markdown
-2. output_dir — where iterations are saved
-3. count — integer 1-N or "infinite"
-
-PHASE 1: Read and deeply understand the specification.
-PHASE 2: List output_dir, find highest iteration number. Start at N+1.
-PHASE 3: Plan creative directions — each agent gets a DIFFERENT theme/approach.
-PHASE 4: Deploy sub-agents in parallel (Task tool). Each receives:
-  - Full spec text
-  - Current directory snapshot
-  - Their assigned iteration number
-  - Their unique creative direction
-PHASE 5 (infinite mode): Loop in waves of 3-5 until context is low.
-```
+See `references/subagent-prompts.md` — "Infinite Agentic Loop" for the full subagent prompt.
 
 **Invoke:**
 ```bash

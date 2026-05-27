@@ -244,90 +244,7 @@ test('updates user', () => {
 
 ## Testing Patterns
 
-### Unit Test Pattern (Jest/Vitest)
-```typescript
-import { render, screen, fireEvent } from '@testing-library/react'
-import { Button } from './Button'
-
-describe('Button Component', () => {
-  it('renders with correct text', () => {
-    render(<Button>Click me</Button>)
-    expect(screen.getByText('Click me')).toBeInTheDocument()
-  })
-
-  it('calls onClick when clicked', () => {
-    const handleClick = jest.fn()
-    render(<Button onClick={handleClick}>Click</Button>)
-    fireEvent.click(screen.getByRole('button'))
-    expect(handleClick).toHaveBeenCalledTimes(1)
-  })
-
-  it('is disabled when disabled prop is true', () => {
-    render(<Button disabled>Click</Button>)
-    expect(screen.getByRole('button')).toBeDisabled()
-  })
-})
-```
-
-### API Integration Test Pattern
-```typescript
-import { NextRequest } from 'next/server'
-import { GET } from './route'
-
-describe('GET /api/items', () => {
-  it('returns items successfully', async () => {
-    const request = new NextRequest('http://localhost/api/items')
-    const response = await GET(request)
-    const data = await response.json()
-
-    expect(response.status).toBe(200)
-    expect(data.success).toBe(true)
-    expect(Array.isArray(data.data)).toBe(true)
-  })
-
-  it('validates query parameters', async () => {
-    const request = new NextRequest('http://localhost/api/items?limit=invalid')
-    const response = await GET(request)
-    expect(response.status).toBe(400)
-  })
-
-  it('handles database errors gracefully', async () => {
-    const request = new NextRequest('http://localhost/api/items')
-    // Mock db failure and assert 500 + error shape
-  })
-})
-```
-
-### E2E Test Pattern (Playwright)
-```typescript
-import { test, expect } from '@playwright/test'
-
-test('user can search and filter items', async ({ page }) => {
-  await page.goto('/items')
-  await expect(page.locator('h1')).toContainText('Items')
-
-  await page.fill('input[placeholder="Search"]', 'widget')
-  await page.waitForResponse(resp => resp.url().includes('/api') && resp.status() === 200)
-
-  const results = page.locator('[data-testid="item-card"]')
-  await expect(results).toHaveCount(5, { timeout: 5000 })
-  await expect(results.first()).toContainText('widget', { ignoreCase: true })
-
-  await page.click('button:has-text("Active")')
-  await expect(results).toHaveCount(3)
-})
-
-test('user can create a new item', async ({ page }) => {
-  await page.goto('/dashboard')
-
-  await page.fill('input[name="name"]', 'Test Item')
-  await page.fill('textarea[name="description"]', 'Test description')
-  await page.click('button[type="submit"]')
-
-  await expect(page.locator('[data-testid="success-message"]')).toBeVisible()
-  await expect(page).toHaveURL(/\/items\/test-item/)
-})
-```
+See `references/examples.md` for unit, integration, and E2E test boilerplate examples by framework.
 
 ## Test File Organization
 
@@ -354,87 +271,7 @@ src/
 
 ## Mocking Guidelines
 
-### Mock at system boundaries only
-
-**Do mock:**
-- External APIs (payment, email, third-party services)
-- Databases — but prefer a real test database over mocking
-- Time and randomness
-- File system when I/O is the bottleneck
-
-**Don't mock** your own classes, modules, or internal collaborators. If you feel the urge to mock something you control, that's a signal the interface needs redesigning, not a testing problem.
-
-### Design for mockability
-
-**Use dependency injection** — pass external dependencies in rather than creating them internally:
-
-```typescript
-// Easy to mock
-function processPayment(order, paymentClient) {
-  return paymentClient.charge(order.total);
-}
-
-// Hard to mock — creates its own dependency
-function processPayment(order) {
-  const client = new StripeClient(process.env.STRIPE_KEY);
-  return client.charge(order.total);
-}
-```
-
-**Prefer SDK-style interfaces over generic fetchers** — one function per operation, not one function with conditional logic:
-
-```typescript
-// GOOD: each function is independently mockable
-const api = {
-  getUser: (id) => fetch(`/users/${id}`),
-  getOrders: (userId) => fetch(`/users/${userId}/orders`),
-  createOrder: (data) => fetch('/orders', { method: 'POST', body: data }),
-};
-
-// BAD: mocking requires conditional logic inside the mock
-const api = {
-  fetch: (endpoint, options) => fetch(endpoint, options),
-};
-```
-
-SDK-style means each mock returns one specific shape, no conditional logic in test setup, and it's immediately clear which endpoints a test exercises.
-
-### Mock implementations
-
-Mock the internal adapter (`@/lib/db`), not the vendor SDK (`@supabase/supabase-js`). Return minimal stable shapes. Always provide a failure path mock alongside the success path.
-
-```typescript
-// Database mock
-jest.mock('@/lib/db', () => ({
-  db: {
-    from: jest.fn(() => ({
-      select: jest.fn(() => ({
-        eq: jest.fn(() => Promise.resolve({
-          data: [{ id: '1', name: 'Test Item' }],
-          error: null
-        }))
-      }))
-    }))
-  }
-}))
-
-// Cache / Vector Store mock
-jest.mock('@/lib/cache', () => ({
-  searchByVector: jest.fn(() => Promise.resolve([
-    { id: 'item-1', score: 0.95 }
-  ])),
-  checkHealth: jest.fn(() => Promise.resolve({ connected: true }))
-}))
-
-// External API / Embedding mock
-const EMBEDDING_DIMENSIONS = 1536  // match your model's output dimension
-
-jest.mock('@/lib/embeddings', () => ({
-  generateEmbedding: jest.fn(() => Promise.resolve(
-    new Array(EMBEDDING_DIMENSIONS).fill(0.1)
-  ))
-}))
-```
+See `references/mocking.md` for mock factory patterns and database/cache/service mock implementations.
 
 ## Test Coverage Verification
 
@@ -507,19 +344,6 @@ npm test && npm run lint   # pre-commit
 - name: Upload Coverage
   uses: codecov/codecov-action@v4
 ```
-
-## Best Practices
-
-1. **Vertical slices** — one test → one implementation, never bulk RED then bulk GREEN
-2. **Behavior not implementation** — test what it does, not how it does it
-3. **One assertion per test** — focus on a single observable outcome
-4. **Descriptive names** — describe WHAT, not HOW
-5. **Mock system boundaries only** — never mock what you control
-6. **Dependency injection** — design interfaces to be testable from the start
-7. **Test error paths** — not just happy paths
-8. **Keep tests fast** — unit tests < 50ms each
-9. **Independent tests** — each test sets up its own data
-10. **Review coverage reports** — identify gaps, not just hit the number
 
 ## Success Metrics
 

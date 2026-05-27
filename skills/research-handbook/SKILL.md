@@ -203,6 +203,13 @@ You are a research agent. Your job:
    - Recency of sources (prefer last 12 months)
    - Potentially interesting/useful facets that warrant further research
 
+5. After the facts, add a short analysis layer (3–5 bullets max):
+   - **Implications**: what do these facts suggest that sources don't state explicitly?
+   - **Tensions**: where do sources contradict or pull in different directions?
+   - **Absences**: what would you expect to find but didn't? (signal in the silence)
+   - **Patterns**: recurring themes across different sources or angles
+   One precise sentence per bullet. No padding — omit any that yield nothing useful.
+
 Search strategy:
 - Try 2-3 keyword variations (e.g. broad → specific → news-focused)
 - Prioritize: official docs, academic, reputable news > blogs > forums
@@ -226,6 +233,14 @@ Once all subagents complete, consolidate their persisted files:
 - Merge findings, deduplicate sources, and resolve any conflicts
 - If a subagent was interrupted, its partial file still contains whatever it managed to persist — include it and note the gap
 
+Before drafting the report, run a cross-cutting synthesis pass:
+- **Cross-question patterns**: what themes surface across multiple sub-questions? Name them explicitly — don't leave them implicit.
+- **Hidden implications**: what does the combined evidence suggest that no single source states directly?
+- **Meaningful gaps**: what's conspicuously absent, and what does that absence signal?
+- **Tension resolution**: where sub-questions pointed in different directions, state the tension rather than papering over it.
+
+These become the backbone of `## Patterns & Implications` and `## Key Takeaways` — not filler, not restatements of facts already in the theme sections.
+
 Then synthesize into a single report:
 
 ```markdown
@@ -246,8 +261,13 @@ Then synthesize into a single report:
 ## 3. [Third Major Theme]
 ...
 
+## Patterns & Implications
+- [Cross-cutting pattern not visible in any single theme — name it precisely]
+- [Hidden implication: what the combined evidence suggests, not what sources state]
+- [Meaningful tension or absence — if the silence says something, say what]
+
 ## Key Takeaways
-- [Actionable insight 1]
+- [Actionable insight 1 — not a restatement of a finding above]
 - [Actionable insight 2]
 - [Actionable insight 3]
 
@@ -289,6 +309,9 @@ Each subagent is self-contained: it searches, fetches, extracts key facts, **wri
 5. **No hallucination.** If you don't know, say "insufficient data found."
 6. **Separate fact from inference.** Label estimates, projections, and opinions clearly.
 7. **Note fetch failures.** If pages were blocked or unavailable, list them in Methodology.
+8. **Insight density over completeness.** Prefer 3 precise insights over 10 surface summaries. If a finding adds no new understanding, cut it.
+9. **Implication ≠ restatement.** "X is growing" is a fact. "X growing while Y is flat suggests the market is consolidating around one approach" is an insight. Aim for the latter.
+10. **Name patterns explicitly.** If the same theme appears across multiple sub-questions, call it out as a pattern in `## Patterns & Implications` — don't leave it buried or implicit.
 
 ## Examples
 

@@ -340,72 +340,21 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 ---
 
-## 6. Kubernetes Security
+## 6. Kubernetes Security (Application Deployment)
 
-```yaml
-# Pod Security — least privilege
-spec:
-  securityContext:
-    runAsNonRoot: true
-    runAsUser: 1001
-    fsGroup: 1001
-  containers:
-    - name: api
-      securityContext:
-        allowPrivilegeEscalation: false
-        readOnlyRootFilesystem: true
-        capabilities:
-          drop: ["ALL"]
-      # Writeable paths mounted explicitly
-      volumeMounts:
-        - name: tmp
-          mountPath: /tmp
-  volumes:
-    - name: tmp
-      emptyDir: {}
-```
+For full platform-layer security review (RBAC policies, NetworkPolicy topology, multi-tenancy, service mesh), use `/platform-security-review`.
 
-```yaml
-# NetworkPolicy — default deny, explicit allow
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: api-netpol
-  namespace: prod
-spec:
-  podSelector:
-    matchLabels:
-      app: api
-  policyTypes: [Ingress, Egress]
-  ingress:
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              name: ingress-nginx
-      ports:
-        - port: 8080
-  egress:
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              name: database
-      ports:
-        - port: 5432
-    - ports:
-        - port: 53     # DNS
-          protocol: UDP
-```
-
-**Checklist:**
-- [ ] Containers run as non-root (`runAsNonRoot: true`)
-- [ ] `allowPrivilegeEscalation: false`
-- [ ] `readOnlyRootFilesystem: true` (mount writable paths explicitly)
-- [ ] All capabilities dropped (`drop: ["ALL"]`)
-- [ ] NetworkPolicy: default deny with explicit ingress/egress rules
-- [ ] RBAC: ServiceAccount has only required permissions (no `cluster-admin`)
-- [ ] Secrets not mounted as env vars on pods that don't need them
-- [ ] Image scanning in CI (Trivy, Grype) — no critical CVEs in prod images
-- [ ] Admission controller (OPA/Gatekeeper or Kyverno) enforcing pod security standards
+Application-level deployment checklist:
+- [ ] Container runs as non-root (`runAsNonRoot: true`, `runAsUser` set)
+- [ ] Read-only root filesystem (`readOnlyRootFilesystem: true`)
+- [ ] Privileged mode disabled (`privileged: false`, `allowPrivilegeEscalation: false`)
+- [ ] NetworkPolicy applied (default-deny + explicit ingress/egress rules)
+- [ ] RBAC: ServiceAccount has least-privilege permissions only
+- [ ] Secrets injected via mounted volume or external-secrets, not environment variables
+- [ ] No secrets in image layers or ConfigMaps
+- [ ] Image referenced by digest (not mutable tag) in production
+- [ ] Image vulnerability scan passes in CI (trivy/grype)
+- [ ] CISA KEV check: no known-exploited CVEs in base image or deps
 
 ---
 

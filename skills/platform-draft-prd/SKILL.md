@@ -65,24 +65,7 @@ Keep exploring and asking until you can restate the full plan — problem, appro
 
 ### Questions to cover (ask only those not already answerable from exploration):
 
-**Purpose & motivation**
-- What is the underlying operational or business problem this change solves? (Not "deploy X" — what breaks, slows down, or becomes risky without this?)
-- Why now? What changed that makes this the right time?
-- Who is asking for this, and what outcome are they expecting?
-
-**Logic & approach**
-- What approach is proposed, and why that approach over alternatives? Have simpler options been ruled out (e.g. config change, existing operator, a different tool)?
-- Is there prior art — internal or external — for this pattern on this cluster or elsewhere?
-- What is the expected failure mode if this goes wrong, and how would recovery work?
-
-**Applicability & scope**
-- Which environments does this apply to (staging only, production, all)? Does the rollout need to be phased?
-- Are there other services, namespaces, or teams that will be affected — even indirectly?
-- Are there compliance, security, or regulatory constraints that shape the design?
-- Is there a hard deadline or dependency on another change?
-
-**Unknowns**
-- What are you least certain about in this plan? What should be researched or validated before committing?
+Load `references/discovery-questions.md` — ask each question in order, waiting for the user's answer before proceeding to the next.
 
 ---
 
@@ -201,50 +184,7 @@ Dedicated namespace — isolation benefit outweighs management overhead.
 
 Answer each item below. If an item is not applicable, say so in one line.
 
-```
-Migration pattern:
-  [ ] Expand-contract (add new resource/path, migrate consumers, remove old)
-  [ ] Parallel run (old + new run simultaneously, compare outputs)
-  [ ] Rolling replace (drain nodes/pods in waves, no hard cutover)
-  [ ] Hard cutover (maintenance window, all-at-once)
-  Chosen: ___ — Rationale: ___
-
-Workload impact during transition:
-  Which running workloads are affected during the change (not just after)?
-    ___
-  Will any pods be restarted, drained, or rescheduled as part of this change?
-    ___
-  Is there a safe apply order that minimises disruption?
-    ___
-
-Version skew:
-  Can the old and new versions of affected components run simultaneously?  Y / N
-  If N — what is the required apply order or maintenance window?
-    ___
-  Maximum safe skew window (how long both versions can coexist):
-    ___
-
-Rollback cost:
-  Can the change be fully reversed without data loss or manual intervention?  Y / N
-  If N — what is the point of no return and how do we communicate it?
-    ___
-  Estimated rollback time:  ___
-  State at risk if rollback is needed (PVC data, CRD state, etc.):  ___
-
-Deprecation / retirement:
-  If replacing an existing resource or interface — when is the old one removed?
-    ___
-  What depends on the old resource and must be migrated first?
-    ___
-
-Traffic / connection migration:
-  Is a gradual traffic shift required (canary, weighted routing)?  Y / N
-  If Y — tool (Istio weights / NGINX / DNS TTL), initial %, and observation window:
-    ___
-  DNS or endpoint cutover required?  Y / N
-  If Y — TTL reduction plan and rollback DNS path:
-    ___
-```
+Load `references/migration-template.md` and fill in each field. Skip sections that don't apply to this change type.
 
 ---
 
@@ -291,98 +231,7 @@ Ingress: nginx → auth-api (path: /auth/*)
 
 Answer each item. If an item does not apply, say so in one line.
 
-#### Pre-change baseline (run before applying anything)
-
-Document the current healthy state so regressions are detectable:
-
-```
-Dependency health pre-check:
-  All upstream dependencies confirmed healthy before applying:
-  - Database:       ___  (healthy / degraded / unknown)
-  - Cache:          ___
-  - External APIs:  ___
-  - Message queues: ___
-  - Other services: ___
-  If any dependency is degraded: STOP — do not deploy into a degraded environment.
-  Deploying into degraded dependencies causes misattributed incidents.
-
-Metric baseline snapshot (record immediately before applying):
-  Error rate:    ___  (e.g. 0.03%)
-  p95 latency:   ___  (e.g. 42ms)
-  RPS:           ___  (e.g. 1200 req/s)
-  Pod count:     ___  (e.g. 4 running / 4 desired)
-  CPU usage:     ___  (e.g. 34% of request)
-  Memory usage:  ___  (e.g. 61% of request)
-  Recorded at:   ___  (timestamp + where stored: task file / runbook / CI artifact)
-
-Baseline smoke test:
-  Script:  ___  (must be a repeatable script, not a manual step)
-  Asserts: ___  (e.g. HTTP 200 on /healthz, pod count N, secret present)
-  Result recorded at: ___
-
-Existing integration/E2E tests that must still pass after the change:
-  - ___  (test suite name / script path)
-  - ___
-```
-
-#### Post-change verification (run immediately after each slice applies)
-
-For each delivery slice, define what must pass before the next slice begins:
-
-```
-Slice N — smoke test:
-  Script:  ___
-  Asserts: ___  (what does "working" look like for this slice specifically?)
-  Timing:  run immediately after apply, before proceeding
-
-Metric delta comparison (compare against baseline snapshot, not absolute thresholds):
-  Error rate:    before ___ / after ___  — delta acceptable?  Y / N
-  p95 latency:   before ___ / after ___  — delta acceptable?  Y / N
-  RPS:           before ___ / after ___  — unexpected drop?   Y / N
-  Pod count:     before ___ / after ___  — all desired pods running?  Y / N
-  CPU usage:     before ___ / after ___  — unexpected spike?  Y / N
-  Memory usage:  before ___ / after ___  — unexpected spike?  Y / N
-  Rollback if: error rate delta > +1%, latency delta > 2×, RPS drops > 20%, or any
-               metric change cannot be explained by the change itself.
-
-End-to-end test (full user/system flow, not just health checks):
-  Script/suite:  ___
-  Covers:  ___  (which user-visible or system-level behaviours are exercised?)
-  Must pass before: production promotion / next slice / flag enable
-
-Integration tests (cross-service or cross-namespace correctness):
-  Script/suite:  ___
-  Covers:  ___  (which service interactions does this verify?)
-  Must pass before: ___
-```
-
-#### Negative-path tests (things that should be blocked)
-
-For changes involving NetworkPolicy, RBAC, auth, or access controls:
-
-```
-What should be blocked after this change?
-  - ___  (e.g. pod in namespace X cannot reach namespace Y)
-Negative test script:  ___  (verifies the block is in place)
-```
-
-#### Rollback verification
-
-```
-Rollback smoke test:
-  After rolling back, what must pass to confirm the cluster is back to baseline?
-  Script:  ___
-  Asserts: ___
-```
-
-#### Test ownership and execution
-
-```
-Who runs the tests?        ___  (platform team / CI pipeline / both)
-When are they run?         ___  (automated on every apply / manual gate / both)
-Where are results stored?  ___  (CI artifact / task file / runbook)
-What happens on failure?   ___  (block promotion / alert on-call / rollback immediately)
-```
+Load `references/smoke-test-template.md` and fill in each section. Every production change requires a pre-apply baseline entry.
 
 ---
 
