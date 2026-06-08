@@ -8,7 +8,7 @@ description: Platform operational readiness review. Evaluates runbook coverage, 
 ## Workflow position
 
 ```
-/platform-draft-prd
+/draft-prd
       │
       ▼
 /board-review ──── runs these reviewers in parallel ────┐

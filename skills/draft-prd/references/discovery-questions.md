@@ -4,7 +4,7 @@
 - Who is asking for this, and what outcome are they expecting?
 
 **Logic & approach**
-- What approach is proposed, and why that approach over alternatives? Have simpler options been ruled out (e.g. config change, existing operator, a different tool)?
+- What approach is proposed, and why that approach over alternatives? Have simpler options been ruled out (e.g. config change, existing library, a different tool, or doing nothing)?
 - Is there prior art — internal or external — for this pattern on this cluster or elsewhere?
 - What is the expected failure mode if this goes wrong, and how would recovery work?
 

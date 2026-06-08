@@ -8,7 +8,7 @@ origin: ECC
 
 Runs a board of parallel reviewers. If any reviewer amends the plan, the whole board re-reviews the updated plan. The round repeats until all reviewers pass in the same round without further changes. Maximum 3 rounds.
 
-**This skill assumes a plan already exists.** If you don't have one yet, run `/codebase-draft-prd` (codebase) or `/platform-draft-prd` (platform) first.
+**This skill assumes a plan already exists.** If you don't have one yet, run `/draft-prd` first.
 
 **This skill does not implement anything.** It convenes the board, tracks rounds, and tells you when you're clear to proceed.
 

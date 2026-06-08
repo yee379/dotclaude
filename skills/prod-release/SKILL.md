@@ -10,7 +10,7 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/codebase-draft-prd → /board-review → implementation → /codebase-closeout
+/draft-prd → /board-review → implementation → /codebase-closeout
       │
       ▼
 /prod-release          ← YOU ARE HERE: environment promotion, smoke tests, feature flag
@@ -350,6 +350,6 @@ Once smoke tests pass and the rollout is complete, update the task tracking:
 1. In the task file (`todo/<number>-<slug>.md`): set `**Status:**` to `🚀 Deployed`
 2. In `TODO.md`: flip the status column to `🚀 Deployed`
 
-> **Note:** This skill uses `🚀 Deployed` as the terminal status for codebase tasks. The platform workflow (`/platform-workflow`) uses `🚀 Applied` for Kubernetes changes — the different labels reflect the different deployment verbs (code deployed vs manifests applied). Check which workflow you're in before updating status.
+> **Note:** This skill uses `🚀 Deployed` as the terminal status for codebase tasks. The platform workflow (`/prd-workflow`) uses `🚀 Applied` for Kubernetes changes — the different labels reflect the different deployment verbs (code deployed vs manifests applied). Check which workflow you're in before updating status.
 
 This is the terminal state — the feature is live in production.

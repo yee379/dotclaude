@@ -20,7 +20,7 @@ State the detected mode: `> Mode: Platform` or `> Mode: Codebase`.
 
 **Codebase mode:**
 ```
-/codebase-draft-prd → /board-review (board, parallel with codebase-arch-review, codebase-eng-review, security-review)
+/draft-prd → /board-review (board, parallel with codebase-arch-review, codebase-eng-review, security-review)
       │
       ▼
 /doc-review ← YOU ARE HERE: documentation planning gate
@@ -31,7 +31,7 @@ implementation → /codebase-closeout → /prod-release
 
 **Platform mode:**
 ```
-/platform-draft-prd
+/draft-prd
       │
       ▼
 /board-review ──── runs these reviewers in parallel ────┐

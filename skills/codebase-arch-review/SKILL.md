@@ -22,7 +22,7 @@ State the detected mode at the top of your review: `> Mode: Platform` or `> Mode
 
 **Codebase mode:**
 ```
-/codebase-draft-prd
+/draft-prd
       │
       ▼
 /board-review ──── runs these reviewers in parallel ────┐
@@ -40,7 +40,7 @@ implementation → /codebase-closeout → /prod-release
 
 **Platform mode:**
 ```
-/platform-draft-prd
+/draft-prd
       │
       ▼
 /board-review ──── runs these reviewers in parallel ────┐

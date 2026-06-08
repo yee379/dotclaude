@@ -37,7 +37,7 @@ What this task deliberately does not do.
 
 ## Platform Design
 
-> *Populated by `/platform-draft-prd`. Output is written into Architecture/Topology, Key Decisions, and Capacity Assessment subsections below. Overwrite placeholder text — do not append.*
+> *Populated by `/draft-prd`. Output is written into Architecture/Topology, Key Decisions, and Capacity Assessment subsections below. Overwrite placeholder text — do not append.*
 
 ### Architecture / Topology
 
@@ -72,7 +72,7 @@ Record every "we chose X over Y because Z".
 
 ## Implementation Plan
 
-> *Populated by `/platform-draft-prd`. Overwrite placeholder steps below.*
+> *Populated by `/draft-prd`. Overwrite placeholder steps below.*
 
 ### Step 1 — Namespace and RBAC
 ### Step 2 — Helm chart / manifests
@@ -146,3 +146,4 @@ Record every "we chose X over Y because Z".
 **Verification:** (what was checked — health, tool list, logs, end-to-end test)
 **Issues encountered:** none | (description + resolution)
 **Rollback taken:** no | yes — rolled back to <sha> because <reason>
+**Tests run:** list any test suites executed post-apply and their outcome

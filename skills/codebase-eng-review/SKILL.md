@@ -10,7 +10,7 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/codebase-draft-prd → /board-review (board, parallel with codebase-arch-review, doc-review, security-review)
+/draft-prd → /board-review (board, parallel with codebase-arch-review, doc-review, security-review)
       │
       ▼
 /codebase-eng-review       ← YOU ARE HERE: implementation gate: code quality, test coverage,

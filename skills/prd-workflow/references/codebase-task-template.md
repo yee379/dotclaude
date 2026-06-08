@@ -108,7 +108,7 @@ Include a recommended answer so they can be resolved quickly.
 
 | Reviewer | Result | Amended | Key findings |
 |---|---|---|---|
-| research-handbook | — | — | — |
+| research | — | — | — |
 | codebase-arch-review | — | — | — |
 | codebase-eng-review | — | — | — |
 | doc-review | — | — | — |

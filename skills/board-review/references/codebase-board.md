@@ -6,7 +6,7 @@ All reviewers run at **opus**. Do not downgrade to Sonnet.
 
 | Reviewer | Code | Role |
 |---|---|---|
-| research-handbook | `dr` | Fact-check plan assumptions, check dependency health, identify obsolescence risks and simplification opportunities. See `/research-handbook` Mode 2 guidelines. |
+| research | `dr` | Fact-check plan assumptions, check dependency health, identify obsolescence risks and simplification opportunities. See `/research` Mode 2 guidelines. |
 | codebase-arch-review | `ar` | Evaluate service boundaries, data ownership, consistency models, technology selection, failure domains. Write ADRs to `docs/adr/` for significant decisions. |
 | codebase-eng-review | `er` | Review implementation correctness, test coverage, performance, edge cases. Produce a test plan artifact in the task file. |
 | doc-review | `dc` | Identify every doc that needs updating — README, ARCHITECTURE, API docs, runbooks, CHANGELOG, ADRs, CONTRIBUTING. Add gaps to the plan. |
@@ -19,7 +19,7 @@ All reviewers run at **opus**. Do not downgrade to Sonnet.
 
 | Reviewer | Skip if… |
 |---|---|
-| research-handbook | the technology and approach are well-understood — no unknowns that would make the plan speculative |
+| research | the technology and approach are well-understood — no unknowns that would make the plan speculative |
 | codebase-arch-review | change touches only a single existing service with no new data stores, no new async channels, no service boundary changes, and no new infrastructure |
 | codebase-eng-review | change is purely documentation or config with no code changes |
 | doc-review | change is purely internal/infra with no user-facing surface, no API changes, no new commands or config |
@@ -30,7 +30,7 @@ All reviewers run at **opus**. Do not downgrade to Sonnet.
 
 | Reviewer | Sections to include |
 |---|---|
-| research-handbook | Problem Statement, Goals, Design (full), Open Questions |
+| research | Problem Statement, Goals, Design (full), Open Questions |
 | codebase-arch-review | Problem Statement, Goals, Design (full), Non-Goals, Open Questions |
 | codebase-eng-review | Problem Statement, Goals, Design (full), Implementation Plan, Implementation Checklist, Open Questions |
 | doc-review | Problem Statement, Goals, Non-Goals, Implementation Plan (step titles only) |
@@ -45,14 +45,14 @@ Most important sections first — subagents complete these before lower-priority
 
 - codebase-arch-review: Step 0 scope assessment → service boundary diagram → ADRs
 - codebase-eng-review: Step 0 scope challenge → test diagram → critical gaps
-- research-handbook: assumption verification → dependency health → obsolescence
+- research: assumption verification → dependency health → obsolescence
 - doc-review: mandatory doc list → gaps
 - security-review: auth/authz → injection → secrets
 
 ## Final summary metrics block
 
 ```
-research-handbook        {✅/⚠️/❌/—}  {N issues}
+research        {✅/⚠️/❌/—}  {N issues}
 codebase-arch-review     {✅/⚠️/❌/—}  {N issues}
 codebase-eng-review      {✅/⚠️/❌/—}  {N issues}
 doc-review               {✅/⚠️/❌/—}  {N issues}
@@ -69,7 +69,7 @@ Blocking issues:       {N}
 ## Round dashboard rows
 
 ```
-research-handbook        ✅/⚠️/❌/—/✂️   amended: Y/N   decisions: N
+research        ✅/⚠️/❌/—/✂️   amended: Y/N   decisions: N
 codebase-arch-review     ✅/⚠️/❌/—/✂️   amended: Y/N   decisions: N
 codebase-eng-review      ✅/⚠️/❌/—/✂️   amended: Y/N   decisions: N
 doc-review               ✅/⚠️/❌/—/✂️   amended: Y/N   decisions: N
@@ -86,7 +86,7 @@ codebase-ux-review       ✅/⚠️/❌/—/✂️   amended: Y/N   decisions: N
 
 ## No-plan stop message
 
-> "No plan found. Run `/codebase-draft-prd` first to produce a design document, then come back to `/board-review`."
+> "No plan found. Run `/draft-prd` first to produce a design document, then come back to `/board-review`."
 
 ## After-review: next steps
 
@@ -97,7 +97,7 @@ If verdict is CLEAR TO BUILD or CLEAR WITH WARNINGS:
 
 #NNN todo/<slug>.md
      ↓
-/codebase-workflow   ← track progress, keep TODO.md in sync
+/prd-workflow            ← track progress, keep TODO.md in sync
      ↓
 /tdd-standards       ← tests first, then implementation
      ↓

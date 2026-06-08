@@ -8,7 +8,7 @@ description: Platform capacity and feasibility review. Assesses whether the clus
 ## Workflow position
 
 ```
-/platform-draft-prd
+/draft-prd
       │
       ▼
 /board-review ──── runs these reviewers in parallel ────┐

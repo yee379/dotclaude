@@ -8,7 +8,7 @@ description: Engineering review of platform implementation plans — Helm chart 
 ## Workflow position
 
 ```
-/platform-draft-prd
+/draft-prd
       │
       ▼
 /board-review ──── runs these reviewers in parallel ────┐
@@ -166,7 +166,7 @@ spec:
 - [ ] Deprecated APIs or resources identified and migration path documented
 - [ ] Traffic migration strategy defined if applicable (weight shifting, DNS cutover)
 
-> For detailed migration planning templates, see `/platform-draft-prd` Phase 3.5.
+> For detailed migration planning templates, see `/draft-prd` Phase 3.5.
 
 ---
 

@@ -355,7 +355,7 @@ For each fixable finding, in impact order:
 
 ### 8c. Commit
 
-Stage and commit following the git discipline in `/codebase-workflow` (stage by name, one
+Stage and commit following the git discipline in `/prd-workflow` (stage by name, one
 commit per fix — never bundle multiple fixes). Message format:
 
 ```

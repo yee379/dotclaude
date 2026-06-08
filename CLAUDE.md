@@ -20,14 +20,15 @@ When the user's intent matches a pattern below, invoke the listed skill via the 
 
 | Intent | Skill / Tool |
 |---|---|
-| Plan a feature, design a system, draft a PRD, "what should we build", "how should we approach" | `codebase-draft-prd` or `platform-draft-prd` |
+| Plan a feature, design a system, draft a PRD, "what should we build", "how should we approach" | `draft-prd` |
+| Stress-test a plan, "grill me", relentless design interview | `draft-prd` (Grill Mode) |
 | Review a plan, gate a design, "is this ready", "board review this" | `board-review` |
 | Write code for a new feature, fix a bug, refactor — any implementation task | `tdd-standards` |
 | Debug an issue, diagnose a failure, "why is X broken", "help me troubleshoot" | `troubleshoot` |
-| Research a topic, "deep dive", "what's the current state of", competitive analysis | `research-handbook` |
+| Research a topic, "deep dive", "what's the current state of", competitive analysis | `research` |
 | Search for existing libraries/tools before writing custom code | `search-first` |
 | Challenge or reframe a research question, steelman an approach | `research-scout` |
-| Track tasks, "what's outstanding", "pick up where we left off", show status | `codebase-workflow` or `platform-workflow` |
+| Track tasks, "what's outstanding", "pick up where we left off", show status | `prd-workflow` |
 | Discover tech debt, generate backlog ideas, "what should we improve" | `codebase-scout` |
 | Review a PR or code diff | `code-review` |
 | Security concerns, "is this safe", audit for vulnerabilities | `security-review` |

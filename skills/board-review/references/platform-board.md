@@ -86,7 +86,7 @@ doc-review                ✅/⚠️/❌/—/✂️   amended: Y/N   decisions: 
 
 ## No-plan stop message
 
-> "No platform plan found. Run `/platform-draft-prd` first to produce a design document, then come back to `/board-review`."
+> "No platform plan found. Run `/draft-prd` first to produce a design document, then come back to `/board-review`."
 
 ## After-review: next steps
 
@@ -97,11 +97,11 @@ If verdict is CLEAR TO APPLY or CLEAR WITH WARNINGS:
 
 #NNN todo/<slug>.md
      ↓
-/platform-workflow   ← track progress, keep TODO.md in sync
+/prd-workflow            ← track progress, keep TODO.md in sync
      ↓
 /k8s-deploy          ← implement the changes
      ↓
-/platform-workflow   ← close out, mark 🚀 Applied
+/prd-workflow            ← close out, mark 🚀 Applied
 ```
 
 If verdict is BLOCKED or UNSTABLE:

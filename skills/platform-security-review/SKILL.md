@@ -8,7 +8,7 @@ description: Platform-level security review for Kubernetes infrastructure change
 ## Workflow position
 
 ```
-/platform-draft-prd
+/draft-prd
       │
       ▼
 /board-review ──── runs these reviewers in parallel ────┐

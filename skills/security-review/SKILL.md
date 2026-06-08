@@ -10,7 +10,7 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/codebase-draft-prd → /board-review (board, parallel with codebase-arch-review, codebase-eng-review, doc-review)
+/draft-prd → /board-review (board, parallel with codebase-arch-review, codebase-eng-review, doc-review)
       │
       ▼
 /security-review       ← YOU ARE HERE: security gate: secrets, auth, input validation,
@@ -136,45 +136,7 @@ env:
 
 ## 2. Authentication
 
-```python
-# JWT verification — verify signature AND claims
-import jwt
-from datetime import datetime, timezone
-
-def verify_token(token: str) -> dict:
-    try:
-        payload = jwt.decode(
-            token,
-            settings.jwt_secret,
-            algorithms=["HS256"],     # specify explicitly — never ["*"]
-            options={"verify_exp": True, "verify_aud": True},
-            audience="api.example.com",
-        )
-    except jwt.ExpiredSignatureError:
-        raise UnauthorizedError("Token expired")
-    except jwt.InvalidTokenError:
-        raise UnauthorizedError("Invalid token")
-    return payload
-
-# Tokens in httpOnly cookies (not localStorage — XSS safe)
-response.set_cookie(
-    key="session",
-    value=token,
-    httponly=True,
-    secure=True,           # HTTPS only
-    samesite="strict",     # CSRF protection
-    max_age=3600,
-)
-```
-
-**Checklist:**
-- [ ] JWT algorithm explicitly specified (not `["*"]`)
-- [ ] Token expiry enforced
-- [ ] Tokens stored in httpOnly, Secure, SameSite=Strict cookies
-- [ ] Refresh token rotation implemented
-- [ ] Brute force protection on login endpoint (rate limiting + lockout)
-- [ ] Password hashing with bcrypt/argon2 (min cost factor 12)
-- [ ] No sensitive data in JWT payload (only user ID + role)
+Load `references/jwt-authentication.md` for JWT verification and secure cookie patterns.
 
 ---
 
@@ -182,50 +144,7 @@ response.set_cookie(
 
 **Check on every request — not just at the gateway.**
 
-```python
-# BAD: assumes gateway enforces auth
-async def get_order(order_id: str, db: Session):
-    return db.query(Order).filter(Order.id == order_id).first()
-
-# GOOD: enforce ownership in handler
-async def get_order(
-    order_id: str,
-    db: Session,
-    current_user: User = Depends(get_current_user),
-):
-    order = db.query(Order).filter(Order.id == order_id).first()
-    if not order:
-        raise NotFoundError("Order", order_id)
-    if order.user_id != current_user.id and current_user.role != Role.ADMIN:
-        raise ForbiddenError()
-    return order
-```
-
-```python
-# RBAC pattern — explicit role checks
-def require_role(*roles: Role):
-    def dependency(current_user: User = Depends(get_current_user)):
-        if current_user.role not in roles:
-            raise ForbiddenError()
-        return current_user
-    return dependency
-
-# Usage
-@router.delete("/users/{id}")
-async def delete_user(
-    id: str,
-    _: User = Depends(require_role(Role.ADMIN)),
-):
-    ...
-```
-
-**Checklist:**
-- [ ] Every endpoint checks auth (no anonymous access to protected routes)
-- [ ] Ownership verified — user can only access their own resources
-- [ ] Role checks performed in service layer, not only at gateway
-- [ ] GraphQL resolvers enforce auth (not just the HTTP layer)
-- [ ] Admin routes protected by role, not just auth
-- [ ] Insecure direct object reference (IDOR) prevented — IDs are opaque or validated
+Load `references/rbac-patterns.md` for ownership check and role dependency patterns.
 
 ---
 
@@ -233,110 +152,13 @@ async def delete_user(
 
 **Never trust user input.**
 
-```python
-# SQL injection prevention — always use parameterised queries
-# BAD
-query = f"SELECT * FROM users WHERE email = '{email}'"
-await db.execute(query)
-
-# GOOD: ORM or parameterised
-user = await db.execute(select(User).where(User.email == email))
-# or raw SQL with params
-await db.execute(text("SELECT * FROM users WHERE email = :email"), {"email": email})
-
-# Command injection prevention
-# BAD
-import subprocess
-result = subprocess.run(f"convert {filename} output.jpg", shell=True)
-
-# GOOD: no shell=True, explicit args
-result = subprocess.run(["convert", filename, "output.jpg"], shell=False, check=True)
-
-# Path traversal prevention
-from pathlib import Path
-
-BASE_DIR = Path("/app/uploads")
-
-def safe_upload_path(filename: str) -> Path:
-    # Strip directory components, get only the filename
-    safe_name = Path(filename).name
-    path = BASE_DIR / safe_name
-    # Verify the resolved path is still inside BASE_DIR
-    path.resolve().relative_to(BASE_DIR.resolve())
-    return path
-```
-
-```python
-# Pydantic for input validation — validate before any processing
-from pydantic import BaseModel, EmailStr, Field, field_validator
-
-class CreateUserRequest(BaseModel):
-    name: str = Field(min_length=1, max_length=100)
-    email: EmailStr
-    role: UserRole
-    age: int = Field(ge=0, le=150)
-
-    @field_validator("name")
-    @classmethod
-    def name_no_html(cls, v: str) -> str:
-        if "<" in v or ">" in v:
-            raise ValueError("Name must not contain HTML")
-        return v.strip()
-```
-
-**Checklist:**
-- [ ] All user inputs validated with schema (Pydantic, marshmallow, etc.)
-- [ ] No SQL string concatenation — ORM or parameterised queries only
-- [ ] No `shell=True` with user-controlled input
-- [ ] File paths sanitised — no directory traversal
-- [ ] File uploads validated: size limit, MIME type, extension allowlist
-- [ ] HTML/template output escaped — no raw user content rendered as HTML
+Load `references/injection-prevention.md` for SQL, command, path traversal, and Pydantic validation patterns.
 
 ---
 
 ## 5. API Security
 
-```python
-# Rate limiting — FastAPI + slowapi
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-
-limiter = Limiter(key_func=get_remote_address)
-
-@app.post("/auth/login")
-@limiter.limit("10/minute")       # aggressive for auth endpoints
-async def login(request: Request, body: LoginRequest):
-    ...
-
-@app.get("/search")
-@limiter.limit("30/minute")
-async def search(request: Request, q: str):
-    ...
-```
-
-```python
-# Security headers middleware
-from starlette.middleware.base import BaseHTTPMiddleware
-
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
-        response = await call_next(request)
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        response.headers["Content-Security-Policy"] = "default-src 'self'"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        return response
-```
-
-**Checklist:**
-- [ ] Rate limiting on all public endpoints (stricter on auth)
-- [ ] CORS configured for explicit allowed origins only (not `*`)
-- [ ] Security headers set (HSTS, CSP, X-Frame-Options, etc.)
-- [ ] API versioning — old versions deprecated, not silently broken
-- [ ] Request body size limit configured at gateway and service
-- [ ] GraphQL: introspection disabled in production
-- [ ] GraphQL: query depth and complexity limits configured
+Load `references/api-security.md` for rate limiting and security headers middleware patterns.
 
 ---
 
@@ -456,88 +278,7 @@ trivy image --vuln-type os ghcr.io/org/api:1.4.2
 
 **Assume breach at every layer.** Defense in depth means no single control failure leads to full compromise. Zero trust means nothing is implicitly trusted — not internal traffic, not service-to-service calls, not the cluster network.
 
-### Zero Trust Principles
-
-```yaml
-# mTLS between services — no implicit trust on internal network
-# (Istio / Linkerd service mesh example)
-apiVersion: security.istio.io/v1beta1
-kind: PeerAuthentication
-metadata:
-  name: default
-  namespace: prod
-spec:
-  mtls:
-    mode: STRICT   # reject plaintext — no exceptions
-```
-
-```yaml
-# AuthorizationPolicy — explicit allow, deny by default
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
-  name: api-authz
-  namespace: prod
-spec:
-  selector:
-    matchLabels:
-      app: api
-  action: ALLOW
-  rules:
-    - from:
-        - source:
-            principals: ["cluster.local/ns/prod/sa/frontend"]
-      to:
-        - operation:
-            methods: ["GET", "POST"]
-            paths: ["/api/*"]
-```
-
-```python
-# Service-to-service auth — short-lived tokens, not long-lived API keys
-# BAD: long-lived shared secret between services
-headers = {"X-Service-Key": "static-secret-shared-forever"}
-
-# GOOD: workload identity / SPIFFE / short-lived JWT
-import google.auth.transport.requests
-import google.oauth2.id_token
-
-def get_service_token(audience: str) -> str:
-    request = google.auth.transport.requests.Request()
-    return google.oauth2.id_token.fetch_id_token(request, audience)
-```
-
-### Defense in Depth Layers
-
-| Layer | Control | Verify |
-|-------|---------|--------|
-| Network | NetworkPolicy / firewall rules | Egress restricted to known destinations |
-| Transport | mTLS between services | Plaintext internal traffic blocked |
-| Application | Auth + authz on every request | No gateway-only auth assumptions |
-| Data | Encryption at rest + in transit | KMS key rotation policy exists |
-| Identity | Workload identity (SPIFFE/IRSA) | No long-lived static credentials |
-| Observability | Audit logs, anomaly detection | Failed auth attempts alerted |
-| Recovery | Incident response runbook | Blast radius limited by RBAC scope |
-
-### Checklist: Defense in Depth
-- [ ] **Layered controls** — auth enforced at gateway AND service layer (not gateway-only)
-- [ ] **Blast radius scoped** — compromising one service cannot pivot to all services
-- [ ] **Egress restricted** — services can only reach known, required destinations
-- [ ] **Secrets have TTLs** — no eternal API keys; rotation automated
-- [ ] **Audit logging** — all auth decisions logged and queryable
-- [ ] **Alerting** — anomalous auth failure rates trigger on-call
-- [ ] **Backups isolated** — backup storage not accessible from production workloads
-- [ ] **Incident runbook exists** — clear steps for credential compromise, data breach
-
-### Checklist: Zero Trust
-- [ ] **Never trust network position** — internal services authenticate each other
-- [ ] **mTLS enforced** between services (service mesh or manual cert management)
-- [ ] **Workload identity** used instead of static credentials (SPIFFE, IRSA, Workload Identity)
-- [ ] **Least privilege per workload** — ServiceAccounts scoped to minimum required
-- [ ] **Device/client attestation** for sensitive operations (MFA, step-up auth)
-- [ ] **Continuous verification** — tokens short-lived; re-auth required after expiry
-- [ ] **Microsegmentation** — NetworkPolicy or service mesh policy limits lateral movement
-- [ ] **No implicit trust for admin tooling** — kubectl, CI runners, deploy pipelines all use short-lived credentials
+Load `references/zero-trust.md` for mTLS, AuthorizationPolicy, workload identity patterns, and defense-in-depth / zero-trust checklists.
 
 ---
 

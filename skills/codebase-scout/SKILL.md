@@ -11,8 +11,8 @@ Explore the codebase and project state to surface prioritised improvement candid
 write accepted ones into the backlog as first-class task files.
 
 This skill is **generative and exploratory**, not evaluative. It asks "what *should* we build
-or fix?" rather than "is this plan safe to build?". It runs before `/codebase-draft-prd`, feeding
-the backlog that `/codebase-workflow` tracks.
+or fix?" rather than "is this plan safe to build?". It runs before `/draft-prd`, feeding
+the backlog that `/prd-workflow` tracks.
 
 ## Workflow position
 
@@ -23,7 +23,7 @@ the backlog that `/codebase-workflow` tracks.
 /codebase-workflow    ← user picks an item, task file already exists
       │
       ▼
-/codebase-draft-prd          ← turns thin task file into a full design
+/draft-prd          ← turns thin task file into a full design
       │
       ▼
 /board-review → implementation → /codebase-closeout → /prod-release
@@ -108,60 +108,23 @@ Before exploring, answer these questions:
 Launch one subagent per active lens, all in parallel (`run_in_background: true`). Each subagent
 explores the codebase for its specific lens and writes findings to a shared scratch file.
 
-**Lenses 1–6** use this codebase-reading subagent prompt:
-
-```
-You are a [LENS NAME] scout subagent.
-
-Your job: explore this codebase and surface concrete improvement candidates
-for the "[LENS NAME]" lens. You are looking for things worth adding to a
-prioritised backlog — not vague suggestions, but specific, actionable problems
-with enough context to write a task file.
-
-Codebase summary (from Step 0):
-<paste README/ARCHITECTURE summary>
-
-Already tracked in TODO.md:
-<paste existing open items — titles only>
-
-Next available TODO number: <N>
-
-Your lens question: <lens question from table above>
-
-Exploration approach:
-1. Glob for relevant file patterns (source files, config, tests, infra, etc.)
-2. Read files that look significant — especially recently-changed ones
-3. Look for the signals listed under your lens (see below)
-4. For each candidate found, write a structured entry to:
-   todo/scout/<run-slug>/<lens-slug>.md
-   Write incrementally — one entry at a time — so progress is not lost.
-
-Candidate entry format:
-### Candidate: <short title>
-- **Lens:** <lens name>
-- **Priority signal:** P0 | P1 | P2 | P3  (your recommendation)
-- **Where:** <file(s) or area of codebase>
-- **Problem:** One sentence — what is concretely wrong or missing today.
-- **Why it matters:** One sentence — what goes wrong if left alone.
-- **Suggested fix:** One sentence — what the solution looks like.
-- **Effort:** trivial (< 1h) | small (half-day) | medium (1-2d) | large (week+)
-- **Dependencies:** Any other items this depends on or enables.
-
-Aim for 3-8 high-signal candidates. Prefer fewer, sharper candidates over many vague ones.
-Do NOT suggest things already in TODO.md.
-Return your findings as a structured list.
-```
+**Lenses 1–6** use the codebase-reading subagent prompt template in `references/lens-codebase-subagent.md`. Load it now and substitute `[LENS NAME]`, the lens question, and the codebase summary before launching each subagent.
 
 **Lens-specific signals to look for:**
 
 ### Lens 1 — Code quality
 - Functions > 50 lines with multiple responsibilities
-- Copy-pasted blocks (same logic in 2+ places)
+- Copy-pasted blocks (same logic in 2+ places) — apply the Rule of Three: three instances = extract
+- Shallow abstractions that pass data through without simplifying it (wrapper that barely wraps)
+- Premature abstractions that generalise before there are two real use cases
 - Missing or incorrect error handling (bare `except`, swallowed errors)
 - Magic numbers / hardcoded strings that should be constants or config
 - Dead code (unused functions, commented-out blocks > 20 lines)
 - Inconsistent naming or style that breaks the mental model
 - Files that import from too many other modules (high fan-in coupling)
+- Parallel data structures updated in lockstep (same field in two places) — usually signals a missing abstraction
+- Divergent change: one module changed for multiple unrelated reasons — split it
+- Shotgun surgery: one conceptual change requires edits across many files — consolidate
 
 ### Lens 2 — Tech debt
 - TODOs, FIXMEs, HACKs in comments — especially ones with dates
@@ -226,59 +189,7 @@ subagent rather than a codebase-reading one.
 when the inward lenses are clean but you want to find the next meaningful feature bets.
 Not suited to sprint-level scouting.
 
-**Subagent prompt for Lens 7:**
-
-```
-You are a market & ecosystem scout subagent for a software project.
-
-Your job: research the broader landscape for this project and surface concrete
-feature or capability gaps — things comparable projects or tools do that this
-one does not, that would be genuinely valuable to users.
-
-Project summary (from README/ARCHITECTURE):
-<paste project description, domain, tech stack, target users>
-
-Already tracked in TODO.md (do not re-suggest):
-<paste existing open items — titles only>
-
-Research approach:
-1. Identify 3-5 directly comparable projects, tools, or products in this domain.
-   For each, use WebSearch + WebFetch to find:
-   - Their feature list / changelog / roadmap
-   - User reviews, GitHub issues, community discussions praising specific features
-   - Recent additions that got strong positive reception
-2. Search for: "[domain] most requested features", "[domain] user pain points",
-   "[tool name] alternatives", "what [tool name] is missing"
-3. Check ecosystem trends: are there patterns in adjacent tools that haven't
-   reached this domain yet?
-4. Cross-reference each candidate against the project summary — discard anything
-   that is clearly already built, out of scope, or architecturally incompatible.
-
-Write findings incrementally to: todo/scout/<run-slug>/market.md
-Write one candidate entry at a time as you find them — do not wait until the end.
-
-Candidate entry format:
-### Candidate: <short title>
-- **Lens:** Market & ecosystem
-- **Priority signal:** P1 | P2 | P3  (P0 is rarely appropriate for market-driven features)
-- **Evidence:** What comparable project has this? Where is user demand documented?
-  (include URL)
-- **Problem:** One sentence — what users cannot do today with this project.
-- **Why it matters:** One sentence — what user need this addresses, grounded in evidence.
-- **Suggested approach:** One sentence — rough direction for implementation.
-- **Effort:** small (half-day) | medium (1-2d) | large (week+) | XL (multi-week)
-- **Already built?** Confirm you checked the project summary — this feature does NOT exist.
-- **Dependencies:** Any other items this depends on or enables.
-
-Aim for 4-8 high-signal candidates grounded in real evidence.
-Every candidate must have a source URL. Do not suggest things without evidence of demand.
-Do NOT suggest things already in TODO.md or clearly present in the project summary.
-```
-
-**Grounding rule:** Every Lens 7 candidate must include a source URL as evidence. Candidates
-without evidence are dropped at consolidation. "It would be nice" is not sufficient — there
-must be a traceable signal (competitor feature, GitHub issue, community post, changelog entry)
-that the feature has real demand.
+Load `references/lens-market-subagent.md` as the subagent prompt template for Lens 7. Substitute the project summary and existing TODO items before launching. The grounding rule is in that file: every candidate must include a source URL — no evidence, no candidate.
 
 ---
 
@@ -367,7 +278,7 @@ For each accepted candidate:
    - Priority and Status (`⬜ Open`)
    - Source: `> *Surfaced by /codebase-scout on <date> — <lens> lens*`
    - Leave Design and Implementation Plan sections as stubs — those get filled by
-     `/codebase-draft-prd` when the item is picked up.
+     `/draft-prd` when the item is picked up.
 
 3. **Add a row to `TODO.md`** with the correct priority, `⬜ Open` status, branch `—`, PR `—`.
 
@@ -395,11 +306,11 @@ git commit -m "docs(todo): add N scout candidates from /codebase-scout [<lens(es
 After writing items, always suggest what to do next based on what was found:
 
 - If any P0 items were added: "There's a P0 item — recommend picking it up immediately with
-  `/codebase-workflow`."
+  `/prd-workflow`."
 - If security items were added: "Consider running `/security-review` for a deeper pass."
 - If production-readiness items were added: "Consider running `/twelve-factor-standards` for a
   systematic audit."
-- If the backlog is now well-stocked: "Run `/codebase-workflow` to review the full backlog
+- If the backlog is now well-stocked: "Run `/prd-workflow` to review the full backlog
   and pick the highest-value item."
 
 ---
@@ -426,8 +337,8 @@ After writing items, always suggest what to do next based on what was found:
 
 | Skill | How it integrates |
 |-------|------------------|
-| `/codebase-workflow` | Scout writes task files in the same format; `/codebase-workflow` picks them up |
-| `/codebase-draft-prd` | Scout writes thin task files; `/codebase-draft-prd` fills in the design when the item is picked |
+| `/prd-workflow` | Scout writes task files in the same format; `/prd-workflow` picks them up |
+| `/draft-prd` | Scout writes thin task files; `/draft-prd` fills in the design when the item is picked |
 | `/board-review` | Scout does not gate items — that happens later when a design exists |
 | `/security-review` | Scout's security lens is a quick pass; `/security-review` is the deep audit |
 | `/twelve-factor-standards` | Scout's production lens overlaps; `/twelve-factor-standards` is the systematic checklist |

@@ -6,7 +6,7 @@
 # Exits 0 if all active reviewers are complete/truncated, 1 if any are still running.
 #
 # Reviewer codes:
-#   Codebase: dr=research-handbook  ar=codebase-arch-review  er=codebase-eng-review
+#   Codebase: dr=research  ar=codebase-arch-review  er=codebase-eng-review
 #             dc=doc-review  sr=security-review  ux=codebase-ux-review
 #   Platform: pa=codebase-arch-review(platform)  cr=platform-capacity-review
 #             ps=platform-security-review  po=platform-ops-review
@@ -22,7 +22,7 @@ REVIEWERS=("$@")
 
 code_to_name() {
   case "$1" in
-    dr) echo "research-handbook       " ;;
+    dr) echo "research       " ;;
     ar) echo "codebase-arch-review    " ;;
     er) echo "codebase-eng-review     " ;;
     dc) echo "doc-review              " ;;

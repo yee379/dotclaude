@@ -1,5 +1,5 @@
 ---
-name: research-handbook
+name: research
 description: Multi-source deep research using parallel subagents and native web fetch. Searches the web, synthesizes findings, and delivers cited reports with source attribution. Use when the user wants thorough research on any topic with evidence and citations.
 origin: ECC
 ---
@@ -13,7 +13,7 @@ Produce thorough, cited research reports from multiple web sources using paralle
 When invoked as part of the planning workflow, research-handbook operates in one of two modes
 depending on where it's called from:
 
-### Mode 1: Feature research (called from /codebase-draft-prd — Phase 0)
+### Mode 1: Feature research (called from /draft-prd — Phase 0)
 
 Open-ended research *before* the plan exists. Goal: ensure the plan is built on solid ground,
 not assumptions.
@@ -313,6 +313,73 @@ Each subagent is self-contained: it searches, fetches, extracts key facts, **wri
 9. **Implication ≠ restatement.** "X is growing" is a fact. "X growing while Y is flat suggests the market is consolidating around one approach" is an insight. Aim for the latter.
 10. **Name patterns explicitly.** If the same theme appears across multiple sub-questions, call it out as a pattern in `## Patterns & Implications` — don't leave it buried or implicit.
 
+## Domain Rubrics
+
+When the topic matches a known domain, replace the generic Step 2 sub-questions with the
+domain rubric below. Rubrics define the mandatory dimensions to investigate — subagents
+should be assigned one dimension cluster each.
+
+---
+
+### AI Agent Framework
+
+Use when researching a framework, SDK, library, or platform that runs AI agents
+(e.g. LangChain, LangGraph, CrewAI, AutoGen, Google ADK, OpenHands, kagent, Hatchet).
+
+**Dimension clusters** (assign one per subagent):
+
+**1. Core architecture & primitives**
+- What is the execution model? (loop, graph, chain, event-driven, stateful/stateless)
+- What are the primary building blocks? (chains, runnables/LCEL, graphs, agents, tasks, tools,
+  memory, retrievers) — which are stable vs experimental?
+- Framework layer vs orchestration layer — what is in-scope and what requires extension?
+- Version history: any major breaking changes in the last 12 months? Version churn?
+
+**2. MCP & external tool integration**
+- Does it support MCP (Model Context Protocol)? Which transports (stdio / SSE / HTTP)?
+- Official or community package? Which MCP spec version?
+- Tool filtering, multi-server support, authentication model.
+- If no MCP: how are external tools connected? Is MCP on the roadmap?
+
+**3. Multi-agent coordination & streaming**
+- Supported multi-agent patterns: supervisor/worker, handoff, tool-as-agent, fan-out,
+  hierarchical subagents. Native or requires an extension?
+- Streaming model: async iterator, SSE, WebSocket, callback. Is it first-class?
+- Event types emitted. Does it stream intermediate tool results or only final tokens?
+- Observability: built-in tracing, cost attribution, session replay. OpenTelemetry support.
+
+**4. K8s deployment & multi-tenancy**
+- Official Helm chart / operator / manifests? Self-hosted platform option?
+- Pod topology recommendation. PVC / storage requirements.
+- Multi-tenancy: per-user session isolation, namespace support, group-scoped access control.
+- Session/state persistence: in-memory, PostgreSQL, Redis? Resume and fork semantics.
+- Budget & resource controls: built-in USD/token caps? Per-session, per-user, per-group?
+
+**5. Ecosystem position & cogito fit**
+- Current adoption and maintenance health (GitHub stars, release cadence, contributor count).
+- Known criticisms: abstraction leaks, debugging difficulty, performance, version churn.
+- Relationship to other frameworks in the stack (e.g. LangChain vs LangGraph).
+- Cogito fit: session isolation, cost controls, real-time streaming to web frontend.
+- Integration with agentgateway (MCP routing), Claude Code / Codex CLI as harness,
+  AgentProfile / AgentPolicy CRD configuration, A2A protocol support.
+
+---
+
+### Auth & Identity Stack
+
+Use when researching an authentication, authorisation, or identity system
+(e.g. Dex, Keycloak, SPIRE, Vault, OAuth 2.x flows, MCP auth profiles).
+
+**Dimension clusters:**
+
+1. Protocol & spec compliance (which RFCs, which grant types, OIDC vs SAML, PKCE, PAR)
+2. Group / claim model (how groups are stored, resolved, propagated through token chain)
+3. Token lifecycle (issuance, rotation, revocation, TTL, refresh semantics)
+4. K8s integration (how it works with ServiceAccount, RBAC, Gateway API, ForwardAuth)
+5. Multi-tenant gaps and federation limits (what it can't do for the target platform)
+
+---
+
 ## Examples
 
 ```
@@ -321,4 +388,6 @@ Each subagent is self-contained: it searches, fetches, extracts key facts, **wri
 "Research the best strategies for bootstrapping a SaaS business"
 "What's happening with the US housing market right now?"
 "Investigate the competitive landscape for AI code editors"
+"Research LangChain for cogito"  → uses AI Agent Framework rubric
+"Research Dex OIDC for S3DF auth"  → uses Auth & Identity Stack rubric
 ```
