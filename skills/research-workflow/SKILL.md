@@ -32,9 +32,58 @@ Then respond to the user's request in one of two ways:
 | User points at a specific topic or asks a question | Work it, or capture it to TOPICS.md if it's new |
 | User says "what's next" or similar | Pick the first `todo` item from TOPICS.md and propose it |
 
+**Proactive topic suggestions** — at every session start, after orienting, scan `README.md`
+and `TOPICS.md` and surface 2–4 candidate topics not currently in the queue. Apply these
+lenses to the existing corpus:
+
+| Lens | Question to ask |
+|------|----------------|
+| **Steelman** | Which `done` report's conclusion is most vulnerable? What would invalidate it? |
+| **Failure mode** | If a key recommendation turns out to be wrong, what breaks and how badly? |
+| **Regulatory / compliance** | Is there a compliance regime, audit requirement, or standards body not yet on the radar? |
+| **Operator / user perspective** | Does the research reflect the people who will *use* the system, not just the people building it? |
+| **Simplification** | What could be removed, consolidated, or replaced with something simpler? |
+| **Outsider domain** | What would a fintech engineer, a security red-teamer, or a distributed systems researcher ask that the current agenda hasn't? |
+| **Contrarian expert** | Who in the field disagrees with the dominant approach, and have we read their argument? |
+
+Present suggestions as a compact checklist — user promotes to `TOPICS.md`, or dismisses.
+One line per suggestion; don't interrupt session flow. Example format:
+
+> **Suggested topics (not yet in queue):**
+> - [ ] `steelman` report — challenge the Keycloak recommendation: what if token volume assumptions are wrong?
+> - [ ] `concept` — CMMC compliance angle on token storage: not currently covered
+> - [ ] `report` — operator runbook gaps: research assumes happy-path provisioning only
+
 **During any conversation**, capture new topics to TOPICS.md immediately when they surface — gaps, dependencies, deferred decisions, technologies mentioned without a concept entry. One-line acknowledgement, don't interrupt the flow.
 
 **Context window**: research sessions accumulate context quickly. Use `/compact` between major tasks (after a concept file is written and before starting the next topic) to keep the context window healthy. The `strategic-compact` skill can suggest good compaction points if active.
+
+---
+
+## Pre-Research: Scout
+
+Before committing to a research topic, invoke `/research-scout` to challenge the framing
+and surface blind spots. The scout is a complement, not a gate — skip it when the topic is
+urgent or already well-defined.
+
+| Situation | Invocation |
+|-----------|-----------|
+| Topic feels obvious or tightly bounded | `/research-scout framing <topic>` |
+| Picking up a `todo` item from a long backlog | `/research-scout framing <topic>` |
+| After a cluster of related reports is done | `/research-scout audit` |
+| Starting research in a new domain | `/research-scout wildcard <domain>` |
+| Completed report drives a major recommendation | `/research-scout steelman <report-slug>` |
+
+Scout outputs are proposals only — the user approves which candidates to promote to
+`TOPICS.md`. See the `research-scout` skill for full mode documentation.
+
+### Typical sequence
+
+```
+1. /research-scout framing <next topic>     ← challenge the framing
+2. User approves 0–N scout candidates → TOPICS.md
+3. Work the topic via normal research-workflow steps below
+```
 
 ---
 
@@ -300,13 +349,20 @@ update the charges materially affected by the new finding.
 **Workflow:**
 
 1. Read `CHARGE.md` — identify the charge question and its number
-2. Read the existing `charges/charge-NN.md` if it exists — understand current status
-3. **Read all reports and concepts cited as primary sources** for this charge (in parallel)
-4. **Scan for newly relevant files** — `ls reports/` and `ls concepts/`, skim `README.md`
+2. Read the existing `charges/charge-NN.md` if it exists — understand current status and its `Generated` date
+3. **Freshness check** — for every report or concept cited as a primary source in the existing charge file:
+   - Check its `Generated` / `Amended` date against the charge's `Generated` date
+   - If any source was **amended after the charge was last written**, flag it:
+     > ⚠️ **Charge drift: `charge-NN.md`**
+     > *Source amended after charge was written:* `reports/<slug>.md` (amended YYYY-MM-DD, charge written YYYY-MM-DD)
+     > *Action:* re-read the amended section and determine whether the charge answer or confidence needs updating
+   - If no sources have been amended since the charge was written, note "Sources current — no drift detected"
+4. **Read all reports and concepts cited as primary sources** for this charge (in parallel)
+5. **Scan for newly relevant files** — `ls reports/` and `ls concepts/`, skim `README.md`
    for any output written since the charge was last updated that bears on the question
-5. Write the answer: commit to a position, cite evidence with `§section` references,
+6. Write the answer: commit to a position, cite evidence with `§section` references,
    list residual open questions
-6. Update `CHARGE.md` — add or refresh the link to the charge file
+7. Update `CHARGE.md` — add or refresh the link to the charge file
 
 **No external research in charge mode.** Charge files synthesise existing `concepts/` and
 `reports/` — they do not originate new research. If the charge cannot be answered from
@@ -383,6 +439,29 @@ required: frontmatter blockquote, confidence line, Relevance section, Sources se
 added as part of any amendment — prepend it immediately after the frontmatter blockquote,
 before the first `---` separator.
 
+**Keywords field** — every concept file must include `**Keywords:**` in its frontmatter
+blockquote. Populate it with acronyms, synonyms, abbreviations, and adjacent terms that
+someone might search for when looking for this concept (e.g. `OIDC, OpenID Connect, OAuth2
+identity layer` for a Keycloak concept). This is the primary index used by `blast-radius.py`
+to discover cross-file relationships — richer keywords = better blast-radius coverage.
+
+**Status field** — every concept file must include `**Status:**` in its frontmatter blockquote:
+
+| Value | Meaning | Re-verify interval |
+|-------|---------|-------------------|
+| `stable` | Settled spec or standard; unlikely to change (e.g. an RFC) | 24 months |
+| `evolving` | Active product, library, or practice; releases change behaviour | 6 months |
+| `deprecated` | Superseded or end-of-life; kept for historical reference | No re-verify needed |
+
+At session start, flag any concept whose `researched` date exceeds its re-verify interval:
+
+> ⚠️ **Stale: `<concept-slug>`**
+> *Status:* evolving · *Last researched:* YYYY-MM-DD · *Due for re-verify*
+> *Action:* add `todo` amendment row to TOPICS.md, or re-verify now if session topic depends on it
+
+**Existing concept files that lack the `**Status:**` field** should have it added as part of
+any amendment — infer from context (most RFCs → `stable`; most vendor tools → `evolving`).
+
 ### Reports (`reports/`)
 
 Report files capture **what you think / recommend** — synthesis, analysis, decision support.
@@ -396,6 +475,11 @@ Load `references/templates/report.md` as the file template.
 
 Section titles are flexible — use whatever fits the content. Required fixed anchors:
 **Executive Summary**, **Recommendations** (or equivalent), **Open Questions**, **Sources**.
+
+**Keywords field** — every report file must include `**Keywords:**` in its frontmatter
+blockquote. Include the main topic terms, any tools/protocols/standards discussed, and
+alternative names or abbreviations used in the body. This widens `blast-radius.py`'s net
+when searching for downstream impact.
 
 ---
 
@@ -524,21 +608,47 @@ If a relevant file exists, **amend it** rather than creating a duplicate:
 
 - **Read `source/`** first — highest-authority inputs; understand what they say before going external
 - **Check `_cache/`** before any WebFetch — use a fresh cached entry rather than re-fetching (see Cache-first fetch protocol)
+- **Lateral read before deep read** — before investing a full WebFetch on any external source, spend one search vetting it: who wrote it, what is their affiliation or incentive, is it primary spec or secondary commentary? Downweight or skip sources that fail this check. This prevents low-credibility sources from shaping the output.
 - **WebFetch** primary sources first (RFCs, spec pages, official docs) — these are tier-1 and tier-2 sources;
   write each result to `_cache/` (cleaned) immediately after fetching
 - **Corroborate** every non-trivial claim with a second source before writing it down (see Epistemic Standards)
 - **WebSearch** for version history, CVEs, and recent changes — use to validate or challenge what primary sources say
 - **Read** prior `concepts/` and `reports/` files for context already established
-- Invoke **`deep-research`** for broad multi-source investigations; assign it a high-capability model (e.g. opus tier) for synthesis tasks
+- Invoke **`/research`** for broad multi-source investigations — it handles parallel subagents, lateral source vetting, adversarial pass, and synthesis; assign it a high-capability model (e.g. opus tier)
 
 ### Step 4 — Write the file
 
 - Every factual claim gets a source link or inline citation
-- State a confidence level with method on every file
+- **Per-claim confidence** — for key claims, label confidence inline rather than relying solely on the document-level confidence line:
+  - `*High — RFC text*`, `*Medium — two secondary sources*`, `*Low — single blog post, unverified*`
+  - Reserve Low-confidence claims for cases where no better source was found; pair with a note on what would raise it
+- State a document-level confidence level with method on every file (High/Medium/Low + sources used)
 - Fenced code blocks for JSON/YAML/config with inline `//` comments
 - Tables for comparisons and compatibility matrices
 - Tone: technical, precise, direct — audience is a domain expert on this project
 - Cross-link bidirectionally: concept files list `Applied in` reports; reports list `Concept References`
+- **Populate `**Keywords:**`** in the frontmatter blockquote — acronyms, synonyms, alternative names,
+  and adjacent terms that someone might search for. This is the index `blast-radius.py` uses to
+  find cross-file relationships; omitting it means the file is invisible to future blast-radius scans.
+
+**For reports: adversarial challenge before writing Recommendations**
+
+Before committing recommendations to disk, run a self-adversarial pass:
+
+1. List the 3–5 key premises the recommendations rest on
+2. For each premise: what is the strongest counter-argument or failure mode?
+3. Are there known practitioners, posts, or issues that contradict the conclusion?
+4. Would the recommendation change under different constraints (scale, team size, compliance regime)?
+
+If any challenge is material, either: (a) strengthen the claim with corroborating evidence, (b) lower its confidence label, or (c) add it to **Open Questions**. Never leave a material challenge unaddressed.
+
+**Open Questions must be escalated to TOPICS.md**
+
+Every item in a report's Open Questions section that is not resolved in the same session must be captured as a `todo` row in `TOPICS.md` immediately after the file is written — before moving to Step 5. Use the report filename in the notes column as the dependency:
+
+> `| 🔹 P3 | 🔲 todo | concept | <topic> | — | Open question from reports/<slug>.md: <question text> |`
+
+Run `blast-radius.py` on the new topic before assigning its priority. Do not leave Open Questions as dead-ends in the report without a corresponding queue entry.
 
 ### Step 5 — Update the index
 
@@ -553,6 +663,22 @@ Then update `TOPICS.md`:
 - **Remove** the completed topic row entirely
 - Add any follow-on topics or newly discovered gaps as `todo` rows — run `blast-radius.py` on each new topic before assigning its priority
 - If a blocker was encountered, update status to `blocked` with a reason
+
+**Post-output suggestion pass** — after every new concept or report, before running
+`priority-audit.py`, apply the lenses below to the file just written and surface any
+candidates not already in `TOPICS.md`. Present as a checklist; user promotes or dismisses.
+
+| Lens | What to generate |
+|------|-----------------|
+| **Adversarial** | A `steelman` report that argues the opposite conclusion, or a report on the most likely failure mode of this recommendation |
+| **Dependency gap** | Concepts or standards referenced in this file that have no entry in `concepts/` yet |
+| **Outside-in** | What a regulator, an attacker, or an end-user would ask after reading this that the file doesn't answer |
+| **Contrarian** | A known dissenting view or alternative approach not covered — worth a concept or report of its own? |
+| **Simplification** | Is there a simpler alternative the file implicitly rules out without explicitly evaluating? |
+| **Temporal** | If the file's `Status` is `evolving`, flag a re-verify reminder as a `deferred` TOPICS.md entry dated 6 months out |
+
+Keep the checklist to 3 items maximum — prioritise the highest-signal suggestions.
+
 - **Run `priority-audit.py --recount` after writing any new output file** — it detects TOPICS.md items whose blast radius has grown, so their priority and notes can be updated in one pass:
 
 ```bash
@@ -578,8 +704,104 @@ See [`SUBAGENT-GUIDE.md`](./SUBAGENT-GUIDE.md) for: Step 0 scratch file protocol
   section with a JSON/YAML example.
 - When a report references a catalogued concept, link to it:
   `See [concept entry](../concepts/slug.md)`.
-- If deep research is needed across many sources, invoke `deep-research` first, then layer in
+- If deep research is needed across many sources, invoke `/research` first, then layer in
   project-specific framing.
 - Never create a file without first checking both output directories for duplicates.
 - Draft RFC/spec citations: pin the version number, not just a generic name.
 - Add `— fetched YYYY-MM-DD` to each Sources entry so staleness is trackable.
+
+---
+
+## Programmatic Tool Calling
+
+This skill uses the three Anthropic PTC techniques from
+[Advanced Tool Use](https://www.anthropic.com/engineering/advanced-tool-use) to reduce
+token consumption and improve accuracy on multi-step research operations.
+
+### Technique 1 — Tool Search (load index first, schemas on demand)
+
+Before calling any research tool, load the lightweight index (~500 tokens):
+
+```
+Read: research/tools/index.json
+```
+
+Pick only the tool names you need, then load their full schemas:
+
+```
+Read: research/tools/schemas/<tool_name>.json
+```
+
+Never load all schemas upfront. A typical research session needs 2–3 tools — loading only
+those saves 85% of the schema-token cost.
+
+### Technique 2 — Programmatic Tool Calling (write Python, keep results off-context)
+
+When a task requires multiple tool calls — searching, checking for duplicates, reading
+two concepts, inspecting the topic queue — write a Python code block instead of calling
+tools one-by-one in prose. Intermediate results stay in the execution environment and
+never enter the context window.
+
+```python
+import sys, os
+sys.path.insert(0, "research/tools")
+from research_tools import search_concepts, search_reports, get_concept, list_topics, blast_radius
+
+# Check what's already covered before starting work
+existing_concepts = search_concepts("SkillNet skill registry")
+existing_reports  = search_reports("SkillNet integration AKH")
+todo_items        = list_topics(status="todo")
+
+# Only read full files if a match is found
+if existing_concepts["total"] > 0:
+    full = get_concept(existing_concepts["matches"][0]["file"])
+
+# Check priority before adding a new topic
+priority = blast_radius(["npm", "PyPI", "registry"])
+```
+
+**When to use PTC vs direct tools:**
+
+| Situation | Approach |
+|-----------|----------|
+| Single file read (known path) | Use Read tool directly |
+| Single Bash command (known invocation) | Use Bash tool directly |
+| 2+ tool calls with no dependency between them | Write Python; batch all calls |
+| Need to filter/transform before reading files | Write Python |
+| Checking for duplicates before creating | Write Python (search first, get if found) |
+| Session start orientation (topics + index scan) | Write Python |
+
+### Technique 3 — Tool Use Examples (read examples before calling)
+
+Every schema in `research/tools/schemas/` includes an `examples` array showing exact
+input/output pairs. Before calling any tool, read the `examples` field — it shows
+parameter conventions, optional field defaults, and edge cases that the JSON Schema
+alone cannot express.
+
+```python
+import json
+schema = json.loads(open("research/tools/schemas/catalogue_concept.json").read())
+for ex in schema["examples"]:
+    print(ex["description"])   # explains WHEN to use this pattern
+    print(ex["input"])          # shows exact field values
+    print(ex["output"])         # shows what the tool returns
+```
+
+### Available tools
+
+| Tool | Side effects | When to use |
+|------|-------------|-------------|
+| `search_concepts` | No | Before creating a concept, to check for duplicates |
+| `search_reports` | No | Before creating a report, to check for duplicates |
+| `get_concept` | No | Read a concept file without knowing its path |
+| `get_report` | No | Read a report file without knowing its path |
+| `list_topics` | No | Session start orientation; check blocked/todo items |
+| `blast_radius` | No | Before adding any TOPICS.md row (required by priority rules) |
+| `catalogue_concept` | **Yes** | Schema only — actual write uses Write tool after human review |
+| `write_report` | **Yes** | Schema only — actual write uses Write tool after human review |
+| `answer_charge` | **Yes** | Schema only — actual write uses Write tool after human review |
+
+**Note on write tools:** `catalogue_concept`, `write_report`, and `answer_charge` schemas
+define the structured input for human review. Use them to validate your intent before
+writing — call the schema, confirm the fields look correct, then use the Write tool to
+actually create the file per the existing workflow steps.

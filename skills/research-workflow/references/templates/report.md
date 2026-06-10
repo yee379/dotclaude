@@ -2,6 +2,7 @@
 
 > **Type:** Report
 > **Concept References:** [Concept Title](../concepts/slug.md), …
+> **Keywords:** acronym, synonym, related-term, …
 
 *Generated: YYYY-MM-DD | Confidence: High/Medium/Low (<method>)*
 

@@ -2,6 +2,8 @@
 
 > **Type:** Concept Reference
 > **Applied in:** [Report Title](../reports/slug.md), …
+> **Keywords:** acronym, synonym, related-term, …
+> **Status:** stable | evolving | deprecated
 
 *Generated: YYYY-MM-DD | Confidence: High/Medium/Low (<method>)*
 
