@@ -1,6 +1,6 @@
 ---
 name: tdd-standards
-description: Use this skill when writing new features, fixing bugs, or refactoring code. Enforces test-driven development with vertical slicing, behavior-focused tests, and 80%+ coverage including unit, integration, and E2E tests.
+description: Use this skill when writing new features, fixing bugs, or refactoring code. Enforces test-driven development with vertical slicing, behavior-focused tests, and 100%+ coverage including unit, integration, and E2E tests.
 origin: ECC
 ---
 
@@ -19,6 +19,8 @@ origin: ECC
 **Core principle**: Tests should verify behavior through public interfaces, not implementation details. Code can change entirely; tests shouldn't.
 
 Good tests are integration-style: they exercise real code paths through public APIs. They describe *what* the system does, not *how* it does it. "User can checkout with valid cart" tells you exactly what capability exists and survives any internal refactor.
+
+**Business logic is the highest-priority test target.** Before thinking about coverage numbers, ask: have the domain rules been tested? Pricing calculations, eligibility checks, state transitions, authorization rules, workflow invariants — these are the tests that catch regressions that matter. A codebase with 95% coverage but no business logic tests is more fragile than one at 75% that covers every domain rule.
 
 **Warning sign**: If you rename an internal function and tests fail without any change in observable behavior, those tests were testing implementation, not behavior.
 
@@ -41,10 +43,20 @@ RIGHT (vertical):
 
 ### 2. Coverage Requirements
 
-- Minimum 80% coverage (unit + integration + E2E) — a floor, not a goal
-- **You can't test everything** — focus on critical paths and complex logic, not every edge case
+- **100% coverage target** (unit + integration + E2E)
+- Pragmatic exceptions are allowed — generated code, third-party adapters, and trivial boilerplate may be excluded via coverage config — but every exclusion must be explicit and justified, never silent
+- Focus on critical paths, complex logic, and business rules first; fill remaining gaps to reach 100%
 - Error scenarios tested
 - Boundary conditions verified
+
+**Coverage must be extended, not just maintained.** When touching existing code, look at the surrounding test suite and ask: what business rules in this area are untested? Add tests for them before moving on. A PR that adds a feature but leaves adjacent untested domain logic is incomplete.
+
+**Business logic coverage checklist** — for every feature or fix, verify tests exist for:
+- [ ] The happy path through each domain rule
+- [ ] State transitions and their guards (what's allowed, what's rejected)
+- [ ] Boundary values on any calculated or validated field
+- [ ] Authorization rules (who can do what, and what happens when they can't)
+- [ ] Any invariant the system must maintain (e.g. totals always reconcile, status can't go backwards)
 
 ### 3. Test Types
 
@@ -75,10 +87,12 @@ Before any tests:
 - [ ] Confirm with user what interface changes are needed
 - [ ] Confirm which behaviors to test — prioritise critical paths over edge cases
 - [ ] Write behaviors as user journeys: `As a [role], I want to [action], so that [benefit]`
+- [ ] **Identify the business rules in scope** — domain constraints, calculations, state machines, authorization checks. These must be tested even if they seem obvious.
+- [ ] **Scan existing tests for adjacent untested business logic** — any domain rules in the area being changed that currently have no test coverage should be added to the list
 - [ ] List behaviors to test (not implementation steps)
 - [ ] Get user sign-off on the list
 
-Ask: "What should the public interface look like? Which behaviors are most important to test?"
+Ask: "What should the public interface look like? Which behaviors are most important to test? Are there business rules in this area that aren't currently tested?"
 
 ### Step 1: Tracer Bullet
 
@@ -146,17 +160,15 @@ Refactor candidates:
 
 ```bash
 npm run test:coverage
-# Verify 80%+ coverage achieved
+# Verify 100%+ coverage achieved
 ```
 
 ## Good vs Bad Tests
 
-### Good Tests
-
 Test behavior through public interfaces. Survive internal refactors.
 
 ```typescript
-// GOOD: Tests observable behavior
+// GOOD: Tests observable behavior through the public API
 test("user can checkout with valid cart", async () => {
   const cart = createCart();
   cart.add(product);
@@ -164,83 +176,17 @@ test("user can checkout with valid cart", async () => {
   expect(result.status).toBe("confirmed");
 });
 
-// GOOD: Verifies through interface, not internal state
-test("createUser makes user retrievable", async () => {
-  const user = await createUser({ name: "Alice" });
-  const retrieved = await getUser(user.id);
-  expect(retrieved.name).toBe("Alice");
-});
-```
-
-### Bad Tests
-
-Coupled to implementation — they break on refactor without any behavior change.
-
-```typescript
-// BAD: Tests that an internal collaborator was called
+// BAD: Tests that an internal collaborator was called (breaks on refactor, not behavior change)
 test("checkout calls paymentService.process", async () => {
   const mockPayment = jest.mock(paymentService);
   await checkout(cart, payment);
   expect(mockPayment.process).toHaveBeenCalledWith(cart.total);
 });
-
-// BAD: Bypasses interface to query database directly
-test("createUser saves to database", async () => {
-  await createUser({ name: "Alice" });
-  const row = await db.query("SELECT * FROM users WHERE name = ?", ["Alice"]);
-  expect(row).toBeDefined();
-});
 ```
 
-**Red flags:**
-- Mocking internal collaborators (your own classes/modules)
-- Testing private methods
-- Asserting on call counts or call order
-- Test breaks when you refactor without changing behavior
-- Test name describes HOW not WHAT
-- Verifying through external means (direct DB query) instead of the interface
+**Red flags:** mocking internal collaborators, testing private methods, asserting call counts, test name describes HOW not WHAT, direct DB queries instead of using the interface.
 
-### Common Mistakes
-
-#### ❌ WRONG: Testing Implementation Details
-```typescript
-expect(component.state.count).toBe(5)
-```
-
-#### ✅ CORRECT: Test User-Visible Behavior
-```typescript
-expect(screen.getByText('Count: 5')).toBeInTheDocument()
-```
-
-#### ❌ WRONG: Brittle Selectors
-```typescript
-await page.click('.css-class-xyz')
-```
-
-#### ✅ CORRECT: Semantic Selectors
-```typescript
-await page.click('button:has-text("Submit")')
-await page.click('[data-testid="submit-button"]')
-```
-
-#### ❌ WRONG: No Test Isolation
-```typescript
-test('creates user', () => { /* ... */ })
-test('updates same user', () => { /* depends on previous test */ })
-```
-
-#### ✅ CORRECT: Independent Tests
-```typescript
-test('creates user', () => {
-  const user = createTestUser()
-  // Test logic
-})
-
-test('updates user', () => {
-  const user = createTestUser()
-  // Update logic
-})
-```
+See `references/examples.md` for additional good/bad pairs (selectors, isolation, state vs behavior).
 
 ## Testing Patterns
 
@@ -284,10 +230,10 @@ npm run test:coverage
   "jest": {
     "coverageThresholds": {
       "global": {
-        "branches": 80,
-        "functions": 80,
-        "lines": 80,
-        "statements": 80
+        "branches": 100,
+        "functions": 100,
+        "lines": 100,
+        "statements": 100
       }
     }
   }
@@ -296,38 +242,16 @@ npm run test:coverage
 
 ## Python TDD (pytest)
 
-For Python projects, follow the same Red → Green → Refactor cycle using pytest. See `/python-patterns` for full project structure and async fixture patterns.
-
-```python
-# tests/unit/test_search.py
-import pytest
-from app.search import search_items
-
-def test_returns_results_for_valid_query():
-    results = search_items("widget")
-    assert len(results) > 0
-    assert all("widget" in r["name"].lower() for r in results)
-
-def test_returns_empty_list_for_no_matches():
-    results = search_items("xyzzy_nonexistent")
-    assert results == []
-
-def test_raises_on_invalid_input():
-    with pytest.raises(ValueError):
-        search_items(None)
-```
+For Python projects, follow the same Red → Green → Refactor cycle using pytest. See `/python-patterns` for full project structure, async fixture patterns, and `conftest.py` setup.
 
 ```bash
-pytest --cov=app --cov-report=term-missing --cov-fail-under=80
+pytest --cov=app --cov-report=term-missing --cov-fail-under=100
 ```
 
 ```ini
 # pyproject.toml
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-
 [tool.coverage.report]
-fail_under = 80
+fail_under = 100
 ```
 
 ## Continuous Testing
@@ -347,9 +271,11 @@ npm test && npm run lint   # pre-commit
 
 ## Success Metrics
 
-- 80%+ code coverage achieved
+- 100%+ code coverage achieved — and extended, not just maintained
 - All tests passing (green)
 - No skipped or disabled tests
 - Fast test execution (< 30s for unit tests)
 - E2E tests cover critical user flows
+- **Business logic is explicitly covered** — domain rules, state transitions, authorization checks, and invariants each have at least one test
+- **Adjacent untested logic addressed** — any business logic near changed code that lacked tests has been covered before the PR closes
 - Tests catch bugs before production

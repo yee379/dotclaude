@@ -212,40 +212,7 @@ async def send_email_task(ctx, order_id: str) -> None:
 
 ## Project Structure
 
-```
-src/
-└── myservice/
-    ├── __init__.py
-    ├── main.py              # FastAPI app + lifespan
-    ├── config.py            # Settings via pydantic-settings
-    ├── dependencies.py      # FastAPI Depends() factories
-    ├── api/
-    │   ├── __init__.py
-    │   ├── users.py         # router per resource
-    │   ├── orders.py
-    │   └── health.py
-    ├── domain/
-    │   ├── __init__.py
-    │   ├── models.py        # domain entities (dataclasses)
-    │   └── exceptions.py
-    ├── services/
-    │   ├── __init__.py
-    │   ├── user_service.py
-    │   └── order_service.py
-    ├── repositories/
-    │   ├── __init__.py
-    │   ├── user_repo.py
-    │   └── order_repo.py
-    └── infra/
-        ├── __init__.py
-        ├── database.py
-        └── cache.py
-tests/
-├── conftest.py
-├── unit/
-└── integration/
-pyproject.toml
-```
+Load `references/project-structure.md` for the standard directory layout. Key convention: `src/myservice/` split into `api/`, `domain/`, `services/`, `repositories/`, `infra/`.
 
 ### Configuration with pydantic-settings
 
@@ -276,45 +243,7 @@ settings = Settings()
 
 ## Testing with pytest
 
-### conftest.py patterns
-
-```python
-# tests/conftest.py
-import pytest
-import pytest_asyncio
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-
-@pytest.fixture(scope="session")
-def anyio_backend():
-    return "asyncio"
-
-@pytest_asyncio.fixture(scope="function")
-async def db_session():
-    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    async with AsyncSession(engine) as session:
-        yield session
-    await engine.dispose()
-
-@pytest_asyncio.fixture
-async def client(db_session):
-    app.dependency_overrides[get_db] = lambda: db_session
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        yield ac
-    app.dependency_overrides.clear()
-
-@pytest.fixture
-def user_factory(db_session):
-    async def _create(**kwargs):
-        defaults = {"name": "Test User", "email": "test@example.com", "role": Role.MEMBER}
-        user = User(**{**defaults, **kwargs})
-        db_session.add(user)
-        await db_session.commit()
-        return user
-    return _create
-```
+Load `references/conftest-template.py` for the standard `conftest.py` with async fixtures (db_session, client, user_factory) using httpx + ASGITransport + in-memory SQLite.
 
 ---
 

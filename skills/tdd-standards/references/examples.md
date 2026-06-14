@@ -1,3 +1,52 @@
+## Good vs Bad Tests — Additional Examples
+
+These illustrate the same behavior-over-implementation principle as the two canonical pairs in SKILL.md.
+
+```typescript
+// BAD: Brittle selectors
+await page.click('.css-class-xyz')
+
+// GOOD: Semantic selectors
+await page.click('button:has-text("Submit")')
+await page.click('[data-testid="submit-button"]')
+
+// BAD: No test isolation (test 2 depends on test 1's side effects)
+test('creates user', () => { /* ... */ })
+test('updates same user', () => { /* depends on previous test */ })
+
+// GOOD: Independent tests
+test('creates user', () => {
+  const user = createTestUser()
+  // Test logic
+})
+test('updates user', () => {
+  const user = createTestUser()
+  // Update logic
+})
+
+// BAD: Tests implementation detail (internal state)
+expect(component.state.count).toBe(5)
+
+// GOOD: Test user-visible behavior
+expect(screen.getByText('Count: 5')).toBeInTheDocument()
+
+// BAD: Bypasses interface to query database directly
+test("createUser saves to database", async () => {
+  await createUser({ name: "Alice" });
+  const row = await db.query("SELECT * FROM users WHERE name = ?", ["Alice"]);
+  expect(row).toBeDefined();
+});
+
+// GOOD: Verify through the interface
+test("createUser makes user retrievable", async () => {
+  const user = await createUser({ name: "Alice" });
+  const retrieved = await getUser(user.id);
+  expect(retrieved.name).toBe("Alice");
+});
+```
+
+---
+
 ## Testing Patterns
 
 ### Unit Test Pattern (Jest/Vitest)

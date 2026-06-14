@@ -13,7 +13,7 @@ description: Platform-level security review for Kubernetes infrastructure change
       ▼
 /board-review ──── runs these reviewers in parallel ────┐
       │                                                     │
-      │   /platform-arch-review                             │
+      │   /codebase-arch-review (platform mode)              │
       │   /platform-capacity-review                         │
       │   /platform-security-review  ← YOU ARE HERE         │
       │   /platform-ops-review                              │
@@ -242,7 +242,7 @@ spec:
 
 ```yaml
 # Pin to digest
-image: registry.slac.stanford.edu/auth-api@sha256:abc123...
+image: <your-registry>/auth-api@sha256:abc123...
 ```
 
 **Checklist:**

@@ -146,6 +146,10 @@ Evaluate:
 Evaluate:
 * Code organization and module structure.
 * DRY violations—be aggressive here.
+* **Module split anti-patterns** (trigger when the PR description mentions "split", "extract", "modularise", or moves >3 function definitions to new files):
+  - **Shadow re-export bug**: If the old file adds `from new_module import Foo` AND still defines `class Foo` / `def foo()` below it, the old definition silently overwrites the import. Two incompatible versions of the same symbol exist in the same namespace — worst case: `except SlurmCommandError` in the orchestrator won't catch `SlurmCommandError` raised by the new module because they're different objects. Flag any file that both imports AND re-defines the same name. The fix is to delete the old definition, not just add the import above it.
+  - **conftest.py breakage**: When module-level globals (e.g. `VERBOSITY`, `_nodelist_cache`) move to a new module, any test fixture that resets them via the old module reference silently stops resetting the canonical copy. Flag any `autouse` fixture that references module globals and verify it points to the new home after the split.
+  - **Delivery sequence**: A module split should land in two commits, not one — (1) add new modules + re-exports, tests green; (2) delete old definitions, tests still green. Shipping both steps in one commit makes the shadow bug invisible because tests pass either way.
 * Error handling patterns and missing edge cases (call these out explicitly).
 * Technical debt hotspots.
 * Areas that are over-engineered or under-engineered relative to my preferences.

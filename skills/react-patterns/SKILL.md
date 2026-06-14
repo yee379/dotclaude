@@ -102,8 +102,10 @@ function SearchBar({ onSearch }: { onSearch: (q: string) => void }) {
 
 ### Custom hooks — extract logic from components
 
+The pattern: encapsulate state + effects behind a named hook; use the cancellation flag to prevent state updates on unmounted components.
+
 ```tsx
-// Data fetching hook
+// Canonical shape — data fetching hook with cancellation
 function useUser(id: string) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -121,31 +123,9 @@ function useUser(id: string) {
 
   return { user, loading, error };
 }
-
-// Form hook
-function useForm<T extends Record<string, unknown>>(initialValues: T) {
-  const [values, setValues] = useState(initialValues);
-  const [errors, setErrors] = useState<Partial<Record<keyof T, string>>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const setValue = useCallback((field: keyof T, value: unknown) => {
-    setValues((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => ({ ...prev, [field]: undefined }));
-  }, []);
-
-  return { values, errors, isSubmitting, setValue, setErrors, setIsSubmitting };
-}
-
-// Debounce hook
-function useDebounce<T>(value: T, delay: number): T {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-  return debounced;
-}
 ```
+
+The same shape applies to form state (`useForm`) and debounced values (`useDebounce`) — same encapsulation principle, different internal logic.
 
 ### useReducer for complex state
 

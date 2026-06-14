@@ -200,7 +200,7 @@ radius — how many existing `concepts/` and `reports/` files reference or depen
 reference count must be accurate. Include the affected filenames in `notes`:
 
 ```bash
-python3 .claude/skills/research-workflow/tools/blast-radius.py <keyword> [keyword2 ...]
+python3 .claude/skills/research-workflow/scripts/blast-radius.py <keyword> [keyword2 ...]
 ```
 
 **When a new output file is written** (Step 5), run `priority-audit.py` to detect
@@ -208,7 +208,7 @@ any existing TOPICS.md items whose blast radius has grown due to the new file, a
 update their reference count, affected files list, and priority as needed:
 
 ```bash
-python3 .claude/skills/research-workflow/tools/priority-audit.py --recount
+python3 .claude/skills/research-workflow/scripts/priority-audit.py --recount
 ```
 
 When a task reveals a dependency or gap not yet in the file, add it immediately — don't wait
@@ -216,38 +216,38 @@ until the end of the session.
 
 ### Blast-radius scan procedure
 
-**Always use `.claude/skills/research-workflow/tools/blast-radius.py`** to compute blast radius — never estimate by
+**Always use `.claude/skills/research-workflow/scripts/blast-radius.py`** to compute blast radius — never estimate by
 memory. Run this whenever assigning or updating a priority: when adding a new topic,
 after writing a new output file, or when reviewing whether stored priorities are current.
 
 ```bash
 # Assign priority to a new topic — provide its most specific keywords
-python3 .claude/skills/research-workflow/tools/blast-radius.py Keycloak realm "LDAP sync"
+python3 .claude/skills/research-workflow/scripts/blast-radius.py Keycloak realm "LDAP sync"
 
 # Single RFC topic
-python3 .claude/skills/research-workflow/tools/blast-radius.py "RFC 8693" "token exchange"
+python3 .claude/skills/research-workflow/scripts/blast-radius.py "RFC 8693" "token exchange"
 
 # snake_case identifier
-python3 .claude/skills/research-workflow/tools/blast-radius.py amsc_project_context "project context"
+python3 .claude/skills/research-workflow/scripts/blast-radius.py amsc_project_context "project context"
 ```
 
 Output includes: match count, priority tier, full affected file list, and a ready-to-paste
 `notes` column snippet.
 
-**Periodically audit all priorities** with `.claude/skills/research-workflow/tools/priority-audit.py`. Run after any session
+**Periodically audit all priorities** with `.claude/skills/research-workflow/scripts/priority-audit.py`. Run after any session
 where multiple new output files were written — new files change the blast radius of existing
 topics without those topics' notes being updated.
 
 ```bash
 # Fast check: counts backtick file references stored in notes column
-python3 .claude/skills/research-workflow/tools/priority-audit.py
+python3 .claude/skills/research-workflow/scripts/priority-audit.py
 
 # Authoritative check: re-greps live files against stored notes file stems
-python3 .claude/skills/research-workflow/tools/priority-audit.py --recount
+python3 .claude/skills/research-workflow/scripts/priority-audit.py --recount
 
 # Fix mismatches automatically (writes .bak before touching TOPICS.md)
-python3 .claude/skills/research-workflow/tools/priority-audit.py --fix
-python3 .claude/skills/research-workflow/tools/priority-audit.py --recount --fix
+python3 .claude/skills/research-workflow/scripts/priority-audit.py --fix
+python3 .claude/skills/research-workflow/scripts/priority-audit.py --recount --fix
 ```
 
 When the audit flags mismatches:
@@ -682,9 +682,9 @@ Keep the checklist to 3 items maximum — prioritise the highest-signal suggesti
 - **Run `priority-audit.py --recount` after writing any new output file** — it detects TOPICS.md items whose blast radius has grown, so their priority and notes can be updated in one pass:
 
 ```bash
-python3 .claude/skills/research-workflow/tools/priority-audit.py --recount
+python3 .claude/skills/research-workflow/scripts/priority-audit.py --recount
 # apply fixes automatically:
-python3 .claude/skills/research-workflow/tools/priority-audit.py --recount --fix
+python3 .claude/skills/research-workflow/scripts/priority-audit.py --recount --fix
 ```
 
 ---
@@ -714,94 +714,4 @@ See [`SUBAGENT-GUIDE.md`](./SUBAGENT-GUIDE.md) for: Step 0 scratch file protocol
 
 ## Programmatic Tool Calling
 
-This skill uses the three Anthropic PTC techniques from
-[Advanced Tool Use](https://www.anthropic.com/engineering/advanced-tool-use) to reduce
-token consumption and improve accuracy on multi-step research operations.
-
-### Technique 1 — Tool Search (load index first, schemas on demand)
-
-Before calling any research tool, load the lightweight index (~500 tokens):
-
-```
-Read: research/tools/index.json
-```
-
-Pick only the tool names you need, then load their full schemas:
-
-```
-Read: research/tools/schemas/<tool_name>.json
-```
-
-Never load all schemas upfront. A typical research session needs 2–3 tools — loading only
-those saves 85% of the schema-token cost.
-
-### Technique 2 — Programmatic Tool Calling (write Python, keep results off-context)
-
-When a task requires multiple tool calls — searching, checking for duplicates, reading
-two concepts, inspecting the topic queue — write a Python code block instead of calling
-tools one-by-one in prose. Intermediate results stay in the execution environment and
-never enter the context window.
-
-```python
-import sys, os
-sys.path.insert(0, "research/tools")
-from research_tools import search_concepts, search_reports, get_concept, list_topics, blast_radius
-
-# Check what's already covered before starting work
-existing_concepts = search_concepts("SkillNet skill registry")
-existing_reports  = search_reports("SkillNet integration AKH")
-todo_items        = list_topics(status="todo")
-
-# Only read full files if a match is found
-if existing_concepts["total"] > 0:
-    full = get_concept(existing_concepts["matches"][0]["file"])
-
-# Check priority before adding a new topic
-priority = blast_radius(["npm", "PyPI", "registry"])
-```
-
-**When to use PTC vs direct tools:**
-
-| Situation | Approach |
-|-----------|----------|
-| Single file read (known path) | Use Read tool directly |
-| Single Bash command (known invocation) | Use Bash tool directly |
-| 2+ tool calls with no dependency between them | Write Python; batch all calls |
-| Need to filter/transform before reading files | Write Python |
-| Checking for duplicates before creating | Write Python (search first, get if found) |
-| Session start orientation (topics + index scan) | Write Python |
-
-### Technique 3 — Tool Use Examples (read examples before calling)
-
-Every schema in `research/tools/schemas/` includes an `examples` array showing exact
-input/output pairs. Before calling any tool, read the `examples` field — it shows
-parameter conventions, optional field defaults, and edge cases that the JSON Schema
-alone cannot express.
-
-```python
-import json
-schema = json.loads(open("research/tools/schemas/catalogue_concept.json").read())
-for ex in schema["examples"]:
-    print(ex["description"])   # explains WHEN to use this pattern
-    print(ex["input"])          # shows exact field values
-    print(ex["output"])         # shows what the tool returns
-```
-
-### Available tools
-
-| Tool | Side effects | When to use |
-|------|-------------|-------------|
-| `search_concepts` | No | Before creating a concept, to check for duplicates |
-| `search_reports` | No | Before creating a report, to check for duplicates |
-| `get_concept` | No | Read a concept file without knowing its path |
-| `get_report` | No | Read a report file without knowing its path |
-| `list_topics` | No | Session start orientation; check blocked/todo items |
-| `blast_radius` | No | Before adding any TOPICS.md row (required by priority rules) |
-| `catalogue_concept` | **Yes** | Schema only — actual write uses Write tool after human review |
-| `write_report` | **Yes** | Schema only — actual write uses Write tool after human review |
-| `answer_charge` | **Yes** | Schema only — actual write uses Write tool after human review |
-
-**Note on write tools:** `catalogue_concept`, `write_report`, and `answer_charge` schemas
-define the structured input for human review. Use them to validate your intent before
-writing — call the schema, confirm the fields look correct, then use the Write tool to
-actually create the file per the existing workflow steps.
+Load `references/ptc-patterns.md` for the full three-technique PTC reference (tool search, batched Python queries, examples array usage). Technique 2 is the most important: write Python to batch multiple tool calls and keep intermediate results off-context.

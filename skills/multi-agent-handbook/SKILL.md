@@ -179,109 +179,9 @@ Don't rely on agents to self-differentiate. The orchestrator **assigns** each ag
 
 **A production-grade shell script** that runs Claude Code in a continuous loop, creating PRs, waiting for CI, and merging automatically. Created by AnandChowdhary (credit: @AnandChowdhary).
 
-### Core Loop
+Key features: `SHARED_TASK_NOTES.md` bridges context across iterations; automatic CI failure recovery via `gh run view`; completion signal stops the loop; `--worktree` enables parallel execution.
 
-```
-┌─────────────────────────────────────────────────────┐
-│  CONTINUOUS CLAUDE ITERATION                        │
-│                                                     │
-│  1. Create branch (continuous-claude/iteration-N)   │
-│  2. Run claude -p with enhanced prompt              │
-│  3. (Optional) Reviewer pass — separate claude -p   │
-│  4. Commit changes (claude generates message)       │
-│  5. Push + create PR (gh pr create)                 │
-│  6. Wait for CI checks (poll gh pr checks)          │
-│  7. CI failure? → Auto-fix pass (claude -p)         │
-│  8. Merge PR (squash/merge/rebase)                  │
-│  9. Return to main → repeat                         │
-│                                                     │
-│  Limit by: --max-runs N | --max-cost $X             │
-│            --max-duration 2h | completion signal     │
-└─────────────────────────────────────────────────────┘
-```
-
-### Installation
-
-> **Note:** Verify the repo is still active before installing — external GitHub projects can become unmaintained. Check [AnandChowdhary/continuous-claude](https://github.com/AnandChowdhary/continuous-claude) for recent activity.
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/AnandChowdhary/continuous-claude/HEAD/install.sh | bash
-```
-
-### Usage
-
-```bash
-# Basic: 10 iterations
-continuous-claude --prompt "Add unit tests for all untested functions" --max-runs 10
-
-# Cost-limited
-continuous-claude --prompt "Fix all linter errors" --max-cost 5.00
-
-# Time-boxed
-continuous-claude --prompt "Improve test coverage" --max-duration 8h
-
-# With code review pass
-continuous-claude \
-  --prompt "Add authentication feature" \
-  --max-runs 10 \
-  --review-prompt "Run npm test && npm run lint, fix any failures"
-
-# Parallel via worktrees
-continuous-claude --prompt "Add tests" --max-runs 5 --worktree tests-worker &
-continuous-claude --prompt "Refactor code" --max-runs 5 --worktree refactor-worker &
-wait
-```
-
-### Cross-Iteration Context: SHARED_TASK_NOTES.md
-
-The critical innovation: a `SHARED_TASK_NOTES.md` file persists across iterations:
-
-```markdown
-## Progress
-- [x] Added tests for auth module (iteration 1)
-- [x] Fixed edge case in token refresh (iteration 2)
-- [ ] Still need: rate limiting tests, error boundary tests
-
-## Next Steps
-- Focus on rate limiting module next
-- The mock setup in tests/helpers.ts can be reused
-```
-
-Claude reads this file at iteration start and updates it at iteration end. This bridges the context gap between independent `claude -p` invocations.
-
-### CI Failure Recovery
-
-When PR checks fail, Continuous Claude automatically:
-1. Fetches the failed run ID via `gh run list`
-2. Spawns a new `claude -p` with CI fix context
-3. Claude inspects logs via `gh run view`, fixes code, commits, pushes
-4. Re-waits for checks (up to `--ci-retry-max` attempts)
-
-### Completion Signal
-
-Claude can signal "I'm done" by outputting a magic phrase:
-
-```bash
-continuous-claude \
-  --prompt "Fix all bugs in the issue tracker" \
-  --completion-signal "CONTINUOUS_CLAUDE_PROJECT_COMPLETE" \
-  --completion-threshold 3  # Stops after 3 consecutive signals
-```
-
-Three consecutive iterations signaling completion stops the loop, preventing wasted runs on finished work.
-
-### Key Configuration
-
-| Flag | Purpose |
-|------|---------|
-| `--max-runs N` | Stop after N successful iterations |
-| `--max-cost $X` | Stop after spending $X |
-| `--max-duration 2h` | Stop after time elapsed |
-| `--merge-strategy squash` | squash, merge, or rebase |
-| `--worktree <name>` | Parallel execution via git worktrees |
-| `--disable-commits` | Dry-run mode (no git operations) |
-| `--review-prompt "..."` | Add reviewer pass per iteration |
-| `--ci-retry-max N` | Auto-fix CI failures (default: 1) |
+Load `references/continuous-claude.md` for the full installation, usage examples, and configuration flags.
 
 ---
 
@@ -349,84 +249,11 @@ done
 
 ## 6. Ralphinho / RFC-Driven DAG Orchestration
 
-**The most sophisticated pattern.** An RFC-driven, multi-agent pipeline that decomposes a spec into a dependency DAG, runs each unit through a tiered quality pipeline, and lands them via an agent-driven merge queue. Created by enitrat (credit: @enitrat).
+**The most sophisticated pattern.** An RFC-driven, multi-agent pipeline that decomposes a spec into a dependency DAG, runs each unit through a tiered quality pipeline (trivial/small/medium/large), and lands them via an agent-driven merge queue with eviction + retry. Created by enitrat (credit: @enitrat).
 
-### Architecture Overview
+Each stage runs in its own context window — the reviewer never wrote the code it reviews, eliminating author bias. Full state persisted to SQLite; resumable from any point.
 
-```
-RFC/PRD Document
-       │
-       ▼
-  DECOMPOSITION (AI)
-  Break RFC into work units with dependency DAG
-       │
-       ▼
-┌──────────────────────────────────────────────────────┐
-│  RALPH LOOP (up to 3 passes)                         │
-│                                                      │
-│  For each DAG layer (sequential, by dependency):     │
-│                                                      │
-│  ┌── Quality Pipelines (parallel per unit) ───────┐  │
-│  │  Each unit in its own worktree:                │  │
-│  │  Research → Plan → Implement → Test → Review   │  │
-│  │  (depth varies by complexity tier)             │  │
-│  └────────────────────────────────────────────────┘  │
-│                                                      │
-│  ┌── Merge Queue ─────────────────────────────────┐  │
-│  │  Rebase onto main → Run tests → Land or evict │  │
-│  │  Evicted units re-enter with conflict context  │  │
-│  └────────────────────────────────────────────────┘  │
-│                                                      │
-└──────────────────────────────────────────────────────┘
-```
-
-### RFC Decomposition
-
-AI reads the RFC and produces work units with: `id`, `name`, `rfcSections`, `description`, `deps` (other unit IDs), `acceptance` criteria, and `tier`.
-
-**Decomposition rules:**
-- Prefer fewer, cohesive units (minimize merge risk)
-- Minimize cross-unit file overlap (avoid conflicts)
-- Keep tests WITH implementation (never separate "implement X" + "test X")
-- Dependencies only where real code dependency exists
-
-DAG determines execution order — units with no deps run in parallel (Layer 0), dependent units run after their deps land.
-
-### Complexity Tiers
-
-| Tier | Pipeline Stages |
-|------|----------------|
-| **trivial** | implement → test |
-| **small** | implement → test → code-review |
-| **medium** | research → plan → implement → test → PRD-review + code-review → review-fix |
-| **large** | research → plan → implement → test → PRD-review + code-review → review-fix → final-review |
-
-Each stage runs in its own context window — the reviewer never wrote the code it reviews, eliminating author bias.
-
-### Merge Queue with Eviction
-
-Units rebase onto main → run tests → land (fast-forward) or get evicted. On eviction, full conflict context (diffs, test output) is fed back to the implementer on the next Ralph pass. Non-overlapping units land in parallel; overlapping units land one-by-one.
-
-### Key Design Principles
-
-1. **Deterministic execution** — Upfront decomposition locks in parallelism and ordering
-2. **Human review at leverage points** — The work plan is the single highest-leverage intervention point
-3. **Separate concerns** — Each stage in a separate context window with a separate agent
-4. **Conflict recovery with context** — Full eviction context enables intelligent re-runs, not blind retries
-5. **Tier-driven depth** — Trivial changes skip research/review; large changes get maximum scrutiny
-6. **Resumable workflows** — Full state persisted to SQLite; resume from any point
-
-### When to Use Ralphinho vs Simpler Patterns
-
-| Signal | Use Ralphinho | Use Simpler Pattern |
-|--------|--------------|-------------------|
-| Multiple interdependent work units | Yes | No |
-| Need parallel implementation | Yes | No |
-| Merge conflicts likely | Yes | No (sequential is fine) |
-| Single-file change | No | Yes (sequential pipeline) |
-| Multi-day project | Yes | Maybe (continuous-claude) |
-| Spec/RFC already written | Yes | Maybe |
-| Quick iteration on one thing | No | Yes (NanoClaw or pipeline) |
+Load `references/ralphinho.md` for the full architecture, decomposition rules, complexity tiers, and when-to-use decision table.
 
 ---
 

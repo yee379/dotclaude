@@ -118,19 +118,7 @@ Output format:
 - Hardcoded `localhost` for a backing service
 - Logic that behaves differently based on whether a service is "local" or "remote"
 
-```python
-# BAD — code knows about environment topology
-if os.getenv("ENV") == "local":
-    db = sqlite3.connect("dev.db")
-else:
-    db = psycopg2.connect(os.getenv("DATABASE_URL"))
-
-# GOOD — always the same code path, config drives the target
-db = psycopg2.connect(settings.database_url)
-# In dev: DATABASE_URL=postgresql://localhost/myapp
-# In prod: DATABASE_URL=postgresql://rds.amazonaws.com/myapp
-```
-
+> For implementation examples, see `references/twelve-factor-examples.md` (Factor IV).
 
 ---
 
@@ -174,18 +162,7 @@ db = psycopg2.connect(settings.database_url)
 - Port hardcoded to `80` or `443` (requires root; not configurable)
 - App only works inside a specific orchestrator's injection mechanism
 
-```python
-# GOOD — self-contained, port from config
-import uvicorn
-from fastapi import FastAPI
-
-app = FastAPI()
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8080)))
-```
-
-K8s: container declares `containerPort`; `Service` routes to it. TLS terminated at ingress (cert-manager), not in the app process.
+> For implementation examples, see `references/twelve-factor-examples.md` (Factor VII). K8s: container declares `containerPort`; `Service` routes to it; TLS terminated at ingress.
 
 ---
 
@@ -198,11 +175,7 @@ K8s: container declares `containerPort`; `Service` routes to it. TLS terminated 
 - Cron jobs tied to a specific server that must always be running
 - Only vertical scaling (bigger VM) considered
 
-```yaml
-# GOOD — separate Deployments per process type, each scales independently
-# web: scales on HTTP load (HPA on CPU/RPS)
-# worker: scales on queue depth (HPA or KEDA)
-```
+> For implementation examples, see `references/twelve-factor-examples.md` (Factor VIII).
 
 ---
 
@@ -229,25 +202,7 @@ K8s: container declares `containerPort`; `Service` routes to it. TLS terminated 
 - Developers have no visibility into production behaviour
 - Different OS, library versions, or backing service versions across environments
 
-```yaml
-# docker-compose.yml — dev uses same images as prod
-services:
-  api:
-    build: .
-    environment:
-      DATABASE_URL: postgresql://postgres:dev@db:5432/myapp
-      REDIS_URL: redis://redis:6379
-
-  db:
-    image: postgres:16-alpine    # same major version as production RDS
-    environment:
-      POSTGRES_PASSWORD: dev
-      POSTGRES_DB: myapp
-
-  redis:
-    image: redis:7-alpine        # same version as production ElastiCache
-```
-
+> For implementation examples, see `references/twelve-factor-examples.md` (Factor X).
 
 ---
 
@@ -309,24 +264,10 @@ Kevin Hoffman's *Beyond the Twelve-Factor App* (O'Reilly, 2016) adds three facto
 | Metrics | Prometheus client → Grafana | "How is the system performing?" |
 | Traces | OpenTelemetry → Tempo / Jaeger | "Why is this request slow?" |
 
-**Minimum implementation:**
-```python
-# Health endpoints — required by Kubernetes probes and monitoring
-@app.get("/healthz")    # liveness: "am I alive?"
-async def healthz():
-    return {"status": "ok"}
+**Minimum implementation:** `/healthz` (liveness — no deps), `/readyz` (readiness — checks backing services), `/metrics` (Prometheus). See `references/twelve-factor-examples.md` (Factor XIV) or `/python-patterns` for the FastAPI lifespan pattern.
 
-@app.get("/readyz")     # readiness: "am I ready for traffic?"
-async def readyz():
-    await db.ping()     # verify backing services
-    return {"status": "ok"}
-
-# Prometheus metrics endpoint
-from prometheus_client import make_asgi_app, Counter, Histogram
-
-REQUEST_COUNT = Counter("http_requests_total", "Total requests", ["method", "endpoint", "status"])
-REQUEST_LATENCY = Histogram("http_request_duration_seconds", "Request latency", ["endpoint"])
-```
+**Compliance checklist:**
+- [ ] XIV: `/healthz`, `/readyz`, `/metrics` endpoints present
 
 ---
 

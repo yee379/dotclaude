@@ -71,7 +71,7 @@ Understanding what persists helps you compact with confidence:
 |----------|------|
 | CLAUDE.md instructions | Intermediate reasoning and analysis |
 | TodoWrite task list | File contents you previously read |
-| Memory files (`~/.claude/memory/`) | Multi-step conversation context |
+| CLAUDE.md + MemPalace drawers | Multi-step conversation context |
 | Git state (commits, branches) | Tool call history and counts |
 | Files on disk | Nuanced user preferences stated verbally |
 

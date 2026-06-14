@@ -13,7 +13,7 @@ description: Engineering review of platform implementation plans — Helm chart 
       ▼
 /board-review ──── runs these reviewers in parallel ────┐
       │                                                     │
-      │   /platform-arch-review                             │
+      │   /codebase-arch-review (platform mode)              │
       │   /platform-capacity-review                         │
       │   /platform-security-review                         │
       │   /platform-ops-review                              │

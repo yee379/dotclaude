@@ -182,46 +182,16 @@ Structure:
 
 ## Operating Principles
 
-### Think like an outsider, write like an insider
-
-The scout's value is in asking the questions a project-immersed researcher has stopped asking. But the output should be crisp and project-literate — it reads the source documents and existing reports to understand context before provoking.
-
-### Provocation over completeness
-
-The scout is not trying to be thorough. It is trying to be *surprising*. One question that genuinely reframes the problem is worth more than ten questions that refine it.
-
-### No corroboration required — but no invention either
-
-Scout outputs are explicitly speculative. They are questions and hypotheses, not claims. They do not need citations. But they must be grounded in the actual project context — invented from imagination, not fabricated from thin air. Read the project files before generating questions.
-
-### The user decides what becomes a topic
-
-The scout's recommendations are **proposals only**. They appear in a checklist format precisely so the user can review each one and promote to `TOPICS.md` only what resonates. The scout does not write to `TOPICS.md` directly.
-
-If the user approves one or more candidates, the scout provides the properly-formatted `TOPICS.md` row(s) ready to paste — including a preliminary priority estimate (noting that `blast-radius.py` should be run to confirm).
+- **Think like an outsider, write like an insider** — ask the questions a project-immersed researcher has stopped asking, but stay project-literate; read source files before generating questions.
+- **Provocation over completeness** — one question that genuinely reframes the problem is worth more than ten that refine it.
+- **No corroboration required, no invention either** — outputs are speculative questions and hypotheses, not factual claims; they must be grounded in actual project context.
+- **The user decides** — recommendations appear in checklist format; the scout never writes to `TOPICS.md` directly. On approval, provide properly-formatted rows ready to paste (noting that `blast-radius.py` should confirm priority).
 
 ---
 
 ## Integration with research-workflow
 
-The scout is designed to be run **before** a `research-workflow` session picks up a new topic. The typical sequence:
-
-```
-1. /research-scout framing <next topic>      ← today's skill
-2. User reviews scout output, promotes 0–N new topics to TOPICS.md
-3. /research-workflow <topic>                ← normal research begins
-```
-
-Or as a periodic audit:
-
-```
-1. /research-scout audit                     ← after a cluster of reports is done
-2. User reviews agenda gaps identified
-3. Promotes any accepted candidates to TOPICS.md
-4. Resumes normal research-workflow cycle
-```
-
-The scout never blocks the research-workflow — if the user wants to skip scouting and go straight to research, that is always valid. The scout is a complement, not a gate.
+Run before `/research-workflow` picks up a new topic, or periodically via `/research-scout audit` to sweep the full backlog. See the Pre-Research: Scout section in `research-workflow` for the integration sequence.
 
 ---
 

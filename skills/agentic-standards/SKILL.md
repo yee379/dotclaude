@@ -31,9 +31,10 @@ Apply the 15-minute unit rule:
 
 ## Model Routing
 
+See `/multi-agent-handbook` Section 1 for the full model routing matrix. Summary:
 - haiku: classification, boilerplate transforms, narrow edits, git operations
-- opus: architecture, root-cause analysis, troubleshoot, multi-file invariants, research, investigations, reviews, planning
 - sonnet: implementation and refactors, default model, everything else
+- opus: architecture, root-cause analysis, troubleshoot, multi-file invariants, research, reviews, planning
 
 ## Session Strategy
 
@@ -72,10 +73,3 @@ Prefer architectures that are agent-friendly:
 
 Avoid implicit behavior spread across hidden conventions.
 
-## Hiring and Evaluation Signals
-
-Strong AI-first engineers:
-- decompose ambiguous work cleanly
-- define measurable acceptance criteria
-- produce high-signal prompts and evals
-- enforce risk controls under delivery pressure
