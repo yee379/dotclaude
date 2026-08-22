@@ -1,12 +1,22 @@
-# Claude Code runtime state — not version controlled
+# Credentials — never commit. These hold ANTHROPIC_AUTH_TOKEN / apiKeyHelper.
+# `.token` alone does not cover `*-token` siblings, so match the suffix too.
 .token
+*-token
+.credentials.json
+settings.json
+settings.json.*
+settings.local.json
+
+# Claude Code runtime state — not version controlled
 __pycache__/
 .claude/
 backups/
 cache/
 debug/
+file-history/
 history.jsonl
 observations.jsonl
+paste-cache/
 plans/
 plugins/
 projects/
@@ -14,6 +24,7 @@ session-env/
 sessions/
 shell-snapshots/
 telemetry/
+.last-cleanup
 
 # skill-stocktake results cache (regenerated on each run)
 skills/skill-stocktake/results.json
