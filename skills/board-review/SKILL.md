@@ -23,6 +23,11 @@ Runs a board of parallel reviewers. If any reviewer amends the plan, the whole b
 
 **At Step 0, read `references/[mode]-board.md`** (absolute path: `~/.claude/skills/board-review/references/[mode]-board.md`). All mode-specific configuration lives there: reviewer list, model routing, triage table, plan excerpt routing, priority hierarchy, round dashboard rows, final summary metrics, verdict labels, no-plan message, after-review next steps, and commit messages. Every step below that refers to "the loaded config" means that file.
 
+`references/subagent-protocol.md` holds the write-as-you-go output contract that every reviewer
+subagent follows (skeleton file, per-checkpoint appends, suppressed AskUserQuestion, summary
+last). The reviewer skills load it themselves — cite it in the dispatch prompt if a reviewer
+appears to be buffering its findings to the end instead of streaming them.
+
 ---
 
 ## The board model
@@ -103,7 +108,7 @@ IMPORTANT: Do not wrap this in ``` backticks. Emit it as raw text in your reply.
 
 ## Step 2: Board rounds
 
-Each board member runs as a **parallel subagent** — all launched in a single message with `run_in_background: true`.
+Each board member runs as a **parallel subagent** — all launched in a single message with `run_in_background: true`. Launching this way is what makes them harness-tracked, which is what lets Step 5 wait on completion notifications instead of polling.
 
 Run up to **3 rounds**. In each round:
 
@@ -222,7 +227,20 @@ Severity:
 - `defaulted` — obvious/safe default; flagging for transparency only.
 ```
 
-5. **Poll all background agents** until every one completes:
+5. **Wait for the harness to tell you they finished. Do not poll on a timer.**
+
+   Background subagents are harness-tracked: when one exits, you are re-invoked with a
+   task notification naming that agent. That notification *is* the process ending — a
+   strictly stronger signal than inspecting a file the agent is still writing to.
+
+   - Do **not** `sleep`, do **not** schedule a wakeup, do **not** re-run a status check on a
+     fixed interval. A timed loop tells you nothing the notification won't, and every wake
+     re-reads the session context.
+   - **Count notifications.** The round is complete when you have one per launched reviewer.
+   - Between notifications, do nothing. Do not start Step 6 early on a partial set.
+
+   `poll-round.sh` is a **renderer and a fallback**, not the completion signal. Run it once per
+   notification to draw the dashboard for the user:
 
    ```bash
    bash ~/.claude/skills/board-review/poll-round.sh <review_dir> <round> <active_reviewer_codes...>
@@ -230,12 +248,15 @@ Severity:
    bash ~/.claude/skills/board-review/poll-round.sh todo/review/027-my-feature 1 dr ar er dc sr
    ```
 
-   The script prints one status line per reviewer and exits `0` when all are done, `1` if any are still running. Reviewer codes are defined in the loaded config.
+   It prints one line per reviewer and exits `0` only when every file carries a **terminal**
+   `## Status` (`PASS` / `PASS WITH WARNINGS` / `FAIL`). `IN PROGRESS` counts as running:
+   a reviewer's first action is writing the skeleton, so the file existing means *started*,
+   never *finished*. Reviewer codes are defined in the loaded config.
 
-   After each poll, emit the status table as plain prose — **NOT inside backticks**:
+   Emit its output as plain prose — **NOT inside backticks**:
 
    ```
-   ⏳ #NNN Round N — in progress  (elapsed: Xs)
+   ⏳ #NNN Round N — in progress  (N of M reviewers reported)
    ──────────────────────────────────────────────────────────────
    Reviewer             Status            Early signal
    ──────────────────────────────────────────────────────────────
@@ -243,12 +264,16 @@ Severity:
    ──────────────────────────────────────────────────────────────
    ```
 
-   Wait **3 minutes** between polls.
+   **Reconciliation — the two signals must agree before Step 6.** All reviewers notified AND
+   `poll-round.sh` exits `0`. If they disagree, the disagreement is the finding:
 
-   **Handling truncated agents:** if an agent's output file ends mid-section without a `## Status` line:
-   - Mark it `⚠️ truncated` in the table
-   - Read whatever partial output exists
-   - Do NOT re-run automatically — present partial findings and ask the user whether to re-run before proceeding
+   - **Notified but no terminal status** → the agent died or ran out of context mid-write.
+     Mark it `⚠️ truncated`, read the partial output, and do NOT re-run automatically —
+     present the partial findings and ask the user whether to re-run.
+   - **Terminal status but never notified** (e.g. the session was interrupted and resumed) →
+     trust the file; note that the agent was not observed exiting.
+   - **Neither, and nothing has arrived for a long time** → check the agent is still alive
+     before assuming it is working. Only here is an explicit status check worth running.
 
 6. Once all agents are complete, consolidate:
 

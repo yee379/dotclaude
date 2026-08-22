@@ -289,7 +289,7 @@ Fetch failures / gaps: [note any blocked or unavailable sources]
 
 If `WebFetch` returns an error or thin content:
 - Try reader-mode proxy: `https://r.jina.ai/<url>` (free, no auth)
-- Try a cached version: `https://webcache.googleusercontent.com/search?q=cache:<url>`
+- Try an archive snapshot: `https://web.archive.org/web/<url>` (Google's `webcache` endpoint was retired in 2024 — do not use it)
 - Search for the same information from an alternate source
 - Note the failed URL in Methodology and move on
 

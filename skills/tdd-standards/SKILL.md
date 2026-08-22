@@ -266,7 +266,7 @@ npm test && npm run lint   # pre-commit
 - name: Run Tests
   run: npm test -- --coverage
 - name: Upload Coverage
-  uses: codecov/codecov-action@v4
+  uses: codecov/codecov-action@v5
 ```
 
 ## Success Metrics

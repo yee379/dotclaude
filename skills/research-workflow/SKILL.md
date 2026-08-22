@@ -196,69 +196,27 @@ radius — how many existing `concepts/` and `reports/` files reference or depen
 | P2 | 🔸 | Referenced by 2–4 existing outputs, OR unblocks a known gap in an existing report |
 | P3 | 🔹 | Referenced by 0–1 existing outputs; low urgency |
 
-**When adding any new topic**, run `blast-radius.py` before writing the row — the
-reference count must be accurate. Include the affected filenames in `notes`:
+**Never estimate blast radius from memory.** Both scripts live in
+`.claude/skills/research-workflow/scripts/` and run under `python3`:
 
-```bash
-python3 .claude/skills/research-workflow/scripts/blast-radius.py <keyword> [keyword2 ...]
-```
+| When | Command |
+|---|---|
+| Adding a new topic — before writing the row | `blast-radius.py <most specific keywords>` |
+| After writing a new output file (Step 5) | `priority-audit.py --recount` |
+| Fast sanity check (counts refs stored in `notes`) | `priority-audit.py` |
+| Apply count-based corrections (writes `.bak` first) | `priority-audit.py --recount --fix` |
 
-**When a new output file is written** (Step 5), run `priority-audit.py` to detect
-any existing TOPICS.md items whose blast radius has grown due to the new file, and
-update their reference count, affected files list, and priority as needed:
+Quote multi-word keywords: `blast-radius.py Keycloak realm "LDAP sync"`. Output gives the match
+count, priority tier, affected file list, and a ready-to-paste `notes` snippet — always include
+the affected filenames in the `notes` column.
 
-```bash
-python3 .claude/skills/research-workflow/scripts/priority-audit.py --recount
-```
+When the audit flags a mismatch:
+
+- **Computed > Stored** — new output files raised the blast radius; raise the priority and add the new files to `notes`.
+- **Computed < Stored** — `notes` may be stale, *or* the topic is P1 on a non-count criterion (blocks a deployment path). Verify before downgrading; `--fix` only handles count-based corrections.
 
 When a task reveals a dependency or gap not yet in the file, add it immediately — don't wait
 until the end of the session.
-
-### Blast-radius scan procedure
-
-**Always use `.claude/skills/research-workflow/scripts/blast-radius.py`** to compute blast radius — never estimate by
-memory. Run this whenever assigning or updating a priority: when adding a new topic,
-after writing a new output file, or when reviewing whether stored priorities are current.
-
-```bash
-# Assign priority to a new topic — provide its most specific keywords
-python3 .claude/skills/research-workflow/scripts/blast-radius.py Keycloak realm "LDAP sync"
-
-# Single RFC topic
-python3 .claude/skills/research-workflow/scripts/blast-radius.py "RFC 8693" "token exchange"
-
-# snake_case identifier
-python3 .claude/skills/research-workflow/scripts/blast-radius.py amsc_project_context "project context"
-```
-
-Output includes: match count, priority tier, full affected file list, and a ready-to-paste
-`notes` column snippet.
-
-**Periodically audit all priorities** with `.claude/skills/research-workflow/scripts/priority-audit.py`. Run after any session
-where multiple new output files were written — new files change the blast radius of existing
-topics without those topics' notes being updated.
-
-```bash
-# Fast check: counts backtick file references stored in notes column
-python3 .claude/skills/research-workflow/scripts/priority-audit.py
-
-# Authoritative check: re-greps live files against stored notes file stems
-python3 .claude/skills/research-workflow/scripts/priority-audit.py --recount
-
-# Fix mismatches automatically (writes .bak before touching TOPICS.md)
-python3 .claude/skills/research-workflow/scripts/priority-audit.py --fix
-python3 .claude/skills/research-workflow/scripts/priority-audit.py --recount --fix
-```
-
-When the audit flags mismatches:
-- **Computed > Stored** — new output files have raised the blast radius; update the priority
-  and add the new files to the notes column
-- **Computed < Stored** — the notes may be stale, or the topic was assigned P1 due to
-  "blocking a deployment path" (a non-count criterion); verify before downgrading
-
-The `--fix` flag handles count-based corrections automatically. Manual review is still
-needed for topics whose priority was justified by deployment-path blocking rather than
-pure reference count.
 
 ---
 
@@ -278,11 +236,9 @@ pure reference count.
 
 ## Charges — Synthesis Layer
 
-`CHARGE.md` and `charges/` form a fourth tier above `reports/` and `concepts/`. They exist
-to answer the question: *given everything we now know, what is the answer to the original
-research question?*
-
-### The four-tier reading path
+`CHARGE.md` and `charges/` form a fourth tier above `reports/` and `concepts/`, answering:
+*given everything we now know, what is the answer to the original research question?* They are
+the entry point for decision-makers who will not read every report.
 
 ```
 CHARGE.md        ← the questions  (what are we trying to answer?)
@@ -291,109 +247,11 @@ reports/         ← detailed analysis  (why, with evidence and citations)
 concepts/        ← factual reference  (what is this thing?)
 ```
 
-Charge files are **the entry point for decision-makers** who do not want to read every report.
-A reader who only reads `charges/` should understand the state of the research, the
-recommendation, and the key residual open questions — with links into `reports/` for depth.
-
-### `CHARGE.md` — the research brief
-
-`CHARGE.md` is user-defined. It contains the broad questions the research is expected to
-answer, grouped by theme, each linking to its answer document in `charges/`. Questions are
-intentionally broad — each one may be answered by synthesising multiple reports and concepts.
-
-Claude maintains the links in `CHARGE.md` (adding `(charges/charge-NN.md)` when a new
-charge file is created) but **never rewrites or reorders the questions themselves** — that
-is the user's prerogative.
-
-### `charges/` — answer documents
-
-Each charge file answers one question from `CHARGE.md`. It is a **synthesis document**, not
-new research. It:
-
-1. **Reads across `concepts/` and `reports/`** to collate the relevant findings
-2. **States a direct answer** to the charge question — not "it depends" without follow-up
-3. **Cites evidence** with inline `[→ report-slug.md §section-name]` references
-4. **Identifies residual open questions** — what is still unknown or unresolved
-
-Charge files are the *most opinionated* output in the repository. Where reports hedge or
-present options, charge files commit to an answer based on the weight of evidence.
-
-### Charge file structure
-
-Load `references/templates/charge.md` as the file template.
-
-**Status values:**
-
-| Status | Meaning |
-|--------|---------|
-| `Answered` | A clear, defensible answer exists based on research to date |
-| `Partial` | An answer exists for the main thrust but one or more sub-questions remain open |
-| `Open` | Insufficient research to answer; records what is known and what is needed |
-
-### When to write or update a charge file
-
-Write or update a charge file when:
-
-- A new report is written that directly answers or changes the answer to a charge question
-- A charge is explicitly requested: *"answer charge 3"* or *"update charge 7 given the new report"*
-- A charge status needs to change (e.g. from `Partial` to `Answered` after a gap is resolved)
-
-Do **not** automatically update all charge files every time a new report is written — only
-update the charges materially affected by the new finding.
-
-### Charge mode — how to work a charge
-
-**Trigger:** User says *"answer charge N"*, *"update charge N"*, *"write up charge N"*, or
-*"what does the research say about [question]?"* where the question maps to a charge.
-
-**Workflow:**
-
-1. Read `CHARGE.md` — identify the charge question and its number
-2. Read the existing `charges/charge-NN.md` if it exists — understand current status and its `Generated` date
-3. **Freshness check** — for every report or concept cited as a primary source in the existing charge file:
-   - Check its `Generated` / `Amended` date against the charge's `Generated` date
-   - If any source was **amended after the charge was last written**, flag it:
-     > ⚠️ **Charge drift: `charge-NN.md`**
-     > *Source amended after charge was written:* `reports/<slug>.md` (amended YYYY-MM-DD, charge written YYYY-MM-DD)
-     > *Action:* re-read the amended section and determine whether the charge answer or confidence needs updating
-   - If no sources have been amended since the charge was written, note "Sources current — no drift detected"
-4. **Read all reports and concepts cited as primary sources** for this charge (in parallel)
-5. **Scan for newly relevant files** — `ls reports/` and `ls concepts/`, skim `README.md`
-   for any output written since the charge was last updated that bears on the question
-6. Write the answer: commit to a position, cite evidence with `§section` references,
-   list residual open questions
-7. Update `CHARGE.md` — add or refresh the link to the charge file
-
-**No external research in charge mode.** Charge files synthesise existing `concepts/` and
-`reports/` — they do not originate new research. If the charge cannot be answered from
-existing output, record it as `Open` and add the missing research as a `todo` in `TOPICS.md`.
-
-### Evidence citation format
-
-```
-[→ report-slug.md §Section Title]
-```
-
-Direct quotes use standard Markdown blockquotes:
-
-```markdown
-> "The connector doesn't support refresh tokens since the SAML 2.0 protocol doesn't provide
-> a way to requery a provider without interaction." [→ dex-integration.md §1.3]
-```
-
-### Charge files and README.md
-
-Charge files are **not listed in README.md's reports table**. `README.md` indexes `concepts/`
-and `reports/`. Charge files are navigated via `CHARGE.md`.
-
-The README should include a reading-path entry pointing at `CHARGE.md` as the
-management-level entry point:
-
-```markdown
-**"I need a management-level summary of what the research concluded"**
-→ `CHARGE.md` — browse the questions; each links to its synthesis answer
-→ follow `Primary sources` links in each charge for detailed evidence
-```
+**Load `references/charges.md`** whenever you touch this tier — writing or updating a charge
+answer, or running Charge mode. It carries the ownership rules for `CHARGE.md` (Claude maintains
+the links, never the questions), the `Answered` / `Partial` / `Open` status values, the 7-step
+charge-mode workflow including the source-drift freshness check, the `[→ report-slug.md §Section]`
+citation format, and why charge files stay out of `README.md`'s reports table.
 
 ---
 
@@ -430,6 +288,11 @@ and fit with the project. They are reference material, not opinions.
 **Required structure**:
 
 Load `references/templates/concept.md` as the file template.
+
+**AI agent frameworks** (LangChain, LangGraph, CrewAI, ADK, kagent, …) use the specialised
+`references/templates/agent-framework.md` instead — it adds the 14 sections that the
+AI Agent Framework rubric in the `research` skill requires (MCP integration, multi-agent
+patterns, streaming, session/state, budget controls, K8s deployment, multi-tenancy).
 
 **Survey documents** (multiple items side-by-side) may use a numbered section hierarchy
 (`## 1.`, `### 2.1`) and comparison tables instead of the single-entry template. Still
@@ -507,19 +370,15 @@ Include the method in parentheses, e.g. `High (RFCs + official docs)`, `Medium (
 
 ## Epistemic Standards — Tone, Accuracy, and Corroboration
 
-This skill deals in **facts, not stories**. Every output should read like a precise technical
-reference, not a narrative summary. The following standards are non-negotiable.
+Facts, not stories. Every output reads like a precise technical reference, not a narrative
+summary. These standards are non-negotiable.
 
 ### Tone
 
-- **Flat and precise.** No filler phrases ("it is worth noting", "importantly", "in conclusion").
-  State the fact, cite it, move on.
-- **No hedging without cause.** If a claim is well-sourced, assert it directly. Reserve
-  qualifiers ("appears to", "may", "reportedly") for genuinely uncertain claims — and pair
-  them with a confidence note explaining why.
-- **No editorialising.** Concept files are purely descriptive. Opinions and recommendations
-  belong only in reports, clearly labelled as such.
-- **Audience is a domain expert.** Do not over-explain fundamentals. Be terse.
+- **Flat and precise.** No filler ("it is worth noting", "importantly", "in conclusion"). State the fact, cite it, move on.
+- **No hedging without cause.** Assert well-sourced claims directly; reserve "appears to" / "may" / "reportedly" for genuine uncertainty, and pair each with a confidence note explaining why.
+- **No editorialising.** `concepts/` files are purely descriptive; opinions and recommendations belong in `reports/`, labelled as such.
+- **Audience is a domain expert.** Do not explain fundamentals. Be terse.
 
 ### Corroboration before assertion
 
@@ -531,14 +390,14 @@ A claim is not ready to write until it is corroborated:
 | Version / release fact | Official changelog, release notes, or project page |
 | Vendor capability claim | Vendor docs + at least one independent source (issue tracker, blog, test report) |
 | Security property or CVE | CVE record + advisory + vendor patch confirmation |
-| "Not supported" / "missing" claim | Verified by checking docs AND issue tracker — absence of docs alone is not proof |
+| "Not supported" / "missing" claim | Verified against docs AND issue tracker — absence of docs alone is not proof |
 
-If a second source cannot be found, **lower the confidence level** and say so explicitly.
-Do not assert as fact what is only claimed by one source.
+If a second source cannot be found, **lower the confidence level and say so explicitly.** Never
+assert as fact what only one source claims.
 
 ### Source hierarchy
 
-Prefer sources in this order — never cite a lower tier if a higher one is available:
+Never cite a lower tier when a higher one is available:
 
 1. **Primary spec** — RFC text, W3C spec, official schema, source code
 2. **Official docs** — vendor documentation, project README, release notes
@@ -547,31 +406,19 @@ Prefer sources in this order — never cite a lower tier if a higher one is avai
 
 ### Model selection
 
-> Configure your preferred model names in settings — these are environment-specific.
-
-Use a **high-capability model (e.g. opus tier)** for:
-- Any task requiring synthesis across many sources
-- Security analysis, CVE assessment, or compliance gap analysis
-- Reports where recommendations will inform architectural decisions
-- Any situation where a previous attempt produced a confidence level of Medium or below
-
-Use a **fast model (e.g. sonnet tier)** for:
-- Straightforward single-source concept entries (e.g. cataloguing a well-documented RFC)
-- Index and README updates
-- Scratch file checkpoints
-
-When launching subagents, **assign model explicitly** — research subagents doing multi-source
-synthesis should use a high-capability model (e.g. opus tier); subagents doing mechanical tasks (writing a file from notes already
-gathered) can use a fast model (e.g. sonnet tier).
+Model names are environment-specific — configure them in settings. **Rule:** multi-source
+synthesis, security/CVE/compliance analysis, reports informing architectural decisions, and any
+retry after a Medium-or-below confidence result get a **high-capability model (opus tier)**;
+single-source concept entries, index/README updates, and scratch checkpoints get a **fast model
+(sonnet tier)**. Assign the model explicitly when launching subagents — mechanical subagents
+(writing a file from notes already gathered) do not need the expensive tier.
 
 ### What to do when sources or information conflict
 
-If two sources of information contradict each other:
-1. Prefer the primary spec over any secondary source
-2. If both are secondary, note the conflict explicitly in the output:
+1. Primary spec wins over any secondary source.
+2. Both secondary — surface the conflict in the output, never resolve it silently:
    > ⚠️ **Conflicting sources:** [Source A] states X; [Source B] states Y. Unable to resolve
    > from available evidence — marked Low confidence pending primary source verification.
-3. Never silently pick one — always surface the conflict to the reader.
 
 ---
 
@@ -587,7 +434,8 @@ user says "report / should we / viability / compare / roadmap".
 
 **Charge mode** when the user says "answer charge N", "update charge N", "write charge N",
 or asks a question that maps directly to a numbered charge in `CHARGE.md`. Charge mode reads
-existing `concepts/` and `reports/` only — it does not fetch external sources.
+existing `concepts/` and `reports/` only — it does not fetch external sources. In Charge mode,
+load `references/charges.md` and follow its workflow instead of Steps 2–5 below.
 
 When in doubt, ask: *"Should I catalogue this as a reference entry, write a recommendation report, or synthesise an answer to a charge question?"*
 

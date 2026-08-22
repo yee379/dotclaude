@@ -69,41 +69,14 @@ Do NOT make code changes. Do NOT make cluster changes. Do NOT update docs now. Y
 
 ## Subagent mode
 
-When this skill runs inside `/board-review` or `/board-review` the orchestrator will provide:
-- `Plan file:` — path to read from disk
-- `Output file:` — path to write findings to (e.g. `todo/review/<slug>/round-N-dc.md`)
+When run inside `/board-review`, the orchestrator provides `Plan file:` and
+`Output file:` (e.g. `todo/review/<slug>/round-N-dc.md`). If an output file path was
+given, load `references/subagent-protocol.md` (in the `board-review` skill directory) and
+follow it exactly.
 
-**If an output file path was provided, follow this protocol exactly:**
+Checkpoints for this skill: Step 0, impact table, each review section.
 
-1. **Write the skeleton first** — before any analysis, create the output file:
-   ```
-   ## Summary
-   _(written last)_
-
-   ## Issues
-   _(in progress)_
-
-   ## Decisions Required
-   _(in progress)_
-
-   ## Amendments
-   _(in progress)_
-
-   ## Status
-   IN PROGRESS
-   ```
-
-2. **Write after every section** — after completing each section (Step 0, impact table, each review section):
-   - Append new gaps/issues to `## Issues`
-   - Append any Decisions Required entries
-   - Append any plan amendments made
-   - Do NOT wait until the end — write each section's findings immediately
-
-3. **Suppress AskUserQuestion** — do not call AskUserQuestion. For every decision point write a structured `### Decision:` entry in `## Decisions Required` and continue with the best safe default (bias toward adding the doc gap to the plan).
-
-4. **Write ## Summary and final ## Status last** — replace the _(written last)_ placeholder only after all sections are complete. Set ## Status to PASS | PASS WITH WARNINGS | FAIL.
-
-5. **Domain grilling is suppressed in subagent mode** — proceed directly to Step 0. Terminology issues found during review are surfaced as Issues, not interactive questions.
+Bias the safe default toward adding the doc gap to the plan. Domain grilling is suppressed — proceed directly to Step 0; terminology issues surface as Issues, not questions.
 
 ---
 

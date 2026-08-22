@@ -3,8 +3,8 @@
 blast-radius.py — compute the blast radius and priority tier for a research topic.
 
 Usage:
-    python .claude/skills/research-workflow/tools/blast-radius.py <keyword> [keyword2 ...]
-    python .claude/skills/research-workflow/tools/blast-radius.py --no-fuzzy <keyword> [keyword2 ...]
+    python .claude/skills/research-workflow/scripts/blast-radius.py <keyword> [keyword2 ...]
+    python .claude/skills/research-workflow/scripts/blast-radius.py --no-fuzzy <keyword> [keyword2 ...]
 
 Run from the project root directory. Searches concepts/ and reports/ for each keyword
 via three methods (most to least precise):
@@ -23,10 +23,10 @@ Priority tiers:
     P3  0–1 matching files
 
 Examples:
-    python tools/blast-radius.py Keycloak realm "LDAP sync"
-    python tools/blast-radius.py DPoP dpop
-    python tools/blast-radius.py "project context" amsc_project_context
-    python tools/blast-radius.py "token revocation"
+    python scripts/blast-radius.py Keycloak realm "LDAP sync"
+    python scripts/blast-radius.py DPoP dpop
+    python scripts/blast-radius.py "project context" amsc_project_context
+    python scripts/blast-radius.py "token revocation"
 """
 
 import sys

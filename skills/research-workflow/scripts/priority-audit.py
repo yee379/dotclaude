@@ -3,7 +3,7 @@
 priority-audit.py — audit all TOPICS.md entries and flag priority mismatches.
 
 Usage:
-    python tools/priority-audit.py [--fix] [--recount]
+    python scripts/priority-audit.py [--fix] [--recount]
 
 Two audit modes:
 

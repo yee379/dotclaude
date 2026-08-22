@@ -203,13 +203,10 @@ Surface ambiguities that will haunt implementation:
 Each decision = one AskUserQuestion with recommendation + WHY + alternatives. Edit the plan with each decision as it's made.
 
 ## CRITICAL RULE — How to ask questions
-Follow the AskUserQuestion format from the Preamble above. Additional rules for plan design reviews:
-* **One issue = one AskUserQuestion call.** Never combine multiple issues into one question.
-* Describe the design gap concretely — what's missing, what the user will experience if it's not specified.
-* Present 2-3 options. For each: effort to specify now, risk if deferred.
-* **Map to Design Principles above.** One sentence connecting your recommendation to a specific principle.
-* Label with issue NUMBER + option LETTER (e.g., "3A", "3B").
-* **Escape hatch:** If a section has no issues, say so and move on. If a gap has an obvious fix, state what you'll add and move on — don't waste a question on it. Only use AskUserQuestion when there is a genuine design choice with meaningful tradeoffs.
+Load `references/questioning-protocol.md` (in the `codebase-arch-review` skill directory) — it is the shared protocol for this skill, arch-review, and eng-review. Additional rules for plan design reviews:
+* Describe the design gap concretely — what's missing, **what the user will experience** if it's not specified.
+* For each option, give effort to specify now and risk if deferred (in place of the protocol's reversibility/operational-cost line).
+* **Map to Design Principles above** (§Design Principles). One sentence connecting your recommendation to a specific principle.
 
 ## Required Outputs
 

@@ -54,7 +54,10 @@ process_dir() {
   while IFS= read -r file; do
     local mtime dp is_new
     mtime=$(date -u -r "$file" +%Y-%m-%dT%H:%M:%SZ)
-    dp="${file/#$HOME/~}"
+    # Escape the ~ replacement: bash performs tilde expansion on an unquoted
+    # replacement string, which would substitute $HOME back in and defeat the
+    # normalization (making every file look new to results.json).
+    dp="${file/#"$HOME"/\~}"
 
     # Check if this file is known to results.json (exact whole-line match to
     # avoid substring false-positives, e.g. "python-patterns" matching "python-patterns-v2").

@@ -111,6 +111,9 @@ Additional questions:
 
 ## 5. Observability capacity
 
+**Sizing only.** Whether an alert or dashboard exists, routes to the right receiver, and carries
+a `runbook_url` is `/platform-ops-review`'s call — do not raise those findings here.
+
 - **Prometheus scrape targets:** How many new metrics endpoints? Is Prometheus sized for them?
 - **Log volume:** Expected log output — does Loki/Elasticsearch have capacity?
 - **Tracing:** Does this workload emit traces? Is the tracing backend sized?
@@ -120,6 +123,11 @@ Additional questions:
 ## 6. What else is needed beyond raw compute
 
 This is the most important section. Many platform failures happen not from resource exhaustion but from missing prerequisites.
+
+**Existence check, not a correctness review.** Confirm each prerequisite exists and is reachable; do
+not evaluate its content. The Vault role/policy, OIDC client, and service-mesh rows belong to
+`/platform-security-review`; the Grafana datasource and alertmanager routing rows belong to
+`/platform-ops-review`. Flag a missing one and defer the substance to that reviewer.
 
 | Prerequisite | Status | Action required |
 |---|---|---|

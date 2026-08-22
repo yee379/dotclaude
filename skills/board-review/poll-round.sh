@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# poll-round.sh — called by /board-review during the polling loop
+# poll-round.sh — renders the round dashboard for /board-review, and acts as the fallback
+# check when a subagent completion notification never arrives. It is NOT the completion
+# signal: the harness notification is. Do not call this on a timer.
+#
 # Usage: poll-round.sh <review_dir> <round> [reviewer1 reviewer2 ...]
 #
 # Prints a compact status block for each reviewer output file.
-# Exits 0 if all active reviewers are complete/truncated, 1 if any are still running.
+# Exits 0 only when EVERY active reviewer has a terminal ## Status (PASS / PASS WITH
+# WARNINGS / FAIL); 1 if any is missing, IN PROGRESS, or truncated without a status.
 #
 # Reviewer codes:
 #   Codebase: dr=research  ar=codebase-arch-review  er=codebase-eng-review
@@ -49,21 +53,23 @@ for code in "${REVIEWERS[@]}"; do
     continue
   fi
 
-  if grep -q "^## Status" "$file" 2>/dev/null; then
-    status_line=$(grep -A1 "^## Status" "$file" | tail -1 | tr -d '[:space:]')
-    case "$status_line" in
-      *PASS*WITH*WARNINGS*) icon="⚠️  warn    " ;;
-      *PASS*)               icon="✅ complete" ;;
-      *FAIL*)               icon="❌ fail    " ;;
-      *)                    icon="✅ complete" ;;
-    esac
-    signal=$(tail -5 "$file" | grep -v "^#" | grep -v "^$" | tail -1 | cut -c1-50)
-    echo "  $icon  $display  ${signal:----}"
-  else
-    signal=$(grep -v "^$" "$file" | tail -1 | cut -c1-50)
-    echo "  ⏳ running     $display  ${signal:----}"
-    all_done=false
-  fi
+  # Only a TERMINAL status counts as finished. A reviewer's first action is writing the
+  # skeleton, which contains "## Status / IN PROGRESS" — so the heading's presence means
+  # "started", never "finished". Treat anything non-terminal as still running.
+  status_line=$(sed -n '/^## Status/,$p' "$file" | tail -n +2 \
+                | grep -v '^[[:space:]]*$' | head -1 \
+                | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')
+
+  case "$status_line" in
+    *PASSWITHWARNINGS*) icon="⚠️  warn    " ;;
+    *PASS*)             icon="✅ complete" ;;
+    *FAIL*)             icon="❌ fail    " ;;
+    *INPROGRESS*|"")    icon="⏳ running "; all_done=false ;;
+    *)                  icon="❓ unknown "; all_done=false ;;
+  esac
+
+  signal=$(grep -v "^$" "$file" | grep -v "^#" | tail -1 | cut -c1-50)
+  echo "  $icon  $display  ${signal:----}"
 done
 
 $all_done && exit 0 || exit 1

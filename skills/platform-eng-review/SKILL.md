@@ -172,83 +172,20 @@ spec:
 
 ## 6. Test plan
 
-### 6a. Automated vs manual — the baseline rule
+Load `references/test-adequacy-rubric.md` — it carries the automated-vs-manual baseline, the
+per-change-type minimum coverage table, the six verification dimensions to assess, and the
+blocking/warning thresholds.
 
-**Automated tests are the bar. Manual verification is not a substitute.**
+Then judge the plan against it and record the verdict:
 
-| Test type | Must be automated? | Rationale |
-|---|---|---|
-| Regression tests | ✅ Yes — must run in CI on every future deploy | Manual regression erodes immediately |
-| Positive feature tests | ✅ Yes — must run in CI | Proves the feature works repeatably, not just on the day |
-| Negative / security tests | ✅ Yes — must run in CI | A security control with no automated test is untested in practice |
-| Smoke tests (post-deploy) | ✅ Yes — must be a script, not manual curl + eyeball | Must gate the rollout, not follow it |
-| Alert firing verification | ⚠️ One-time manual acceptable | Synthetic failure is hard to automate; document the result |
+1. Identify the change type(s) this plan represents.
+2. For each of the six dimensions (negative, positive, new feature, regression, smoke, timing),
+   state whether the plan's existing verification is adequate — quote the plan's own step where
+   it is, name what's absent where it isn't.
+3. Apply the blocking/warning thresholds. Do not soften a blocking finding into a warning.
+4. Write the test plan into the task file using `references/test-plan-template.md`.
 
-Flag as **blocking** if any test is manual-only with no automation path. "I will check it" is not a test plan.
-
----
-
-### 6b. Minimum coverage standard — per change type
-
-Every plan must meet the minimum bar for its change type. Use this table to assess coverage:
-
-| Change type | Required test coverage |
-|---|---|
-| New feature / new service | ✅ Positive test per new capability<br>✅ Negative test if any access control is involved<br>✅ Smoke test post-deploy<br>✅ Regression suite still passes |
-| Configuration change (routing, values, flags) | ✅ Positive test: intended behaviour still works<br>✅ Regression suite still passes |
-| Security control (NetworkPolicy, ipAllowList, RBAC, JWT gate) | ✅ Negative test: blocked traffic/request returns expected rejection<br>✅ Positive test: permitted traffic/request still works<br>✅ Both must be automated |
-| Infrastructure change (resource tuning, HPA, probes) | ✅ Smoke test: service responds after apply<br>✅ Regression suite still passes |
-| Rollback / restore | ✅ Rollback tested in staging: previous version restores cleanly |
-
-A plan that lists fewer tests than its change type requires is **incomplete** — flag as blocking.
-
----
-
-### 6c. Evaluate existing verification steps in the plan
-
-Before writing the test plan template, assess whether the plan already has adequate verification:
-
-**Negative-path tests** — does the plan verify that the security/access controls actually block what they should?
-- e.g. for an ipAllowList change: is there a test that an external request to a blocked path returns 403?
-- e.g. for a NetworkPolicy: is there a test that denied pod-to-pod traffic is actually blocked?
-
-**Positive-path tests** — does the plan verify that legitimate traffic still works after the change?
-- e.g. for a routing change: is there a test that a valid request reaches the backend?
-- e.g. for a JWT gate: is there a test that a valid token returns 200, not just that an invalid token returns 401?
-
-**New feature tests** — does the plan verify that new functionality actually works as expected?
-- Every new capability must have at least one automated positive test that proves it works.
-- "It deployed successfully" is not evidence the feature works.
-
-**Regression tests** — does the plan identify existing tests that must still pass?
-- What test suites already exist for the affected component?
-- Are they listed as a required gate in the DoD / Implementation Checklist?
-- Are they wired into CI so they run on every future deploy, not just this one?
-
-**Smoke tests** — are they scripted, not manual?
-- A smoke test must be a repeatable script (e.g. `./test/smoke-test.sh`) that asserts specific responses.
-- "I curled the endpoint and it looked fine" is not a smoke test.
-
-**Test execution timing** — are tests positioned at the right point in the implementation sequence?
-- Tests must run **immediately after apply**, not deferred to "later" or left as optional manual verification.
-- If a test requires a credential (e.g. `TEST_JWT`), the plan should specify how to obtain it and what to do if it's unavailable (skip gracefully, flag for manual follow-up).
-
-Flag as **blocking** if:
-- Any required test for the change type (see 6b) is missing
-- Any test is manual-only with no automation path
-- A security control has no automated test verifying it works (positive or negative path)
-- Existing test suites are not listed as a required gate
-- Tests are not wired into CI for future deploys
-
-Flag as **warning** if:
-- Test execution timing is ambiguous ("verify after apply" without specifying when, by whom, or with what script)
-- A smoke test exists but is described as a manual step rather than a scripted gate
-
----
-
-### 6d. Write the test plan into the task file
-
-See `references/test-plan-template.md` for the test plan fill-in template.
+**STOP.** AskUserQuestion once per missing test. Do NOT batch.
 
 ---
 

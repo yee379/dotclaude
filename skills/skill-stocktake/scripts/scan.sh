@@ -60,8 +60,10 @@ count_obs() {
     echo 0
     return
   fi
-  jq -r --arg p "$file" --arg c "$cutoff" \
-    'select(.tool=="Read" and .path==$p and .timestamp>=$c) | 1' \
+  # -R + fromjson? skips torn/truncated lines instead of aborting the whole
+  # stream on the first parse error (concurrent appends can produce them).
+  jq -R -r --arg p "$file" --arg c "$cutoff" \
+    'fromjson? // empty | select(.tool=="Read" and .path==$p and .timestamp>=$c) | 1' \
     "$OBSERVATIONS" 2>/dev/null | wc -l | tr -d ' '
 }
 
@@ -91,11 +93,13 @@ scan_dir_to_json() {
   obs_7d_counts=""
   obs_30d_counts=""
   if [[ -f "$OBSERVATIONS" ]]; then
-    obs_7d_counts=$(jq -r --arg c "$c7" \
-      'select(.tool=="Read" and .timestamp>=$c) | .path | gsub(".+\\.claude/skills/"; "")' \
+    # -R + fromjson? skips torn/truncated lines instead of aborting the whole
+    # stream on the first parse error, which would silently zero every count.
+    obs_7d_counts=$(jq -R -r --arg c "$c7" \
+      'fromjson? // empty | select(.tool=="Read" and .timestamp>=$c) | .path | gsub(".+\\.claude/skills/"; "")' \
       "$OBSERVATIONS" 2>/dev/null | sort | uniq -c)
-    obs_30d_counts=$(jq -r --arg c "$c30" \
-      'select(.tool=="Read" and .timestamp>=$c) | .path | gsub(".+\\.claude/skills/"; "")' \
+    obs_30d_counts=$(jq -R -r --arg c "$c30" \
+      'fromjson? // empty | select(.tool=="Read" and .timestamp>=$c) | .path | gsub(".+\\.claude/skills/"; "")' \
       "$OBSERVATIONS" 2>/dev/null | sort | uniq -c)
   fi
 
@@ -114,7 +118,9 @@ scan_dir_to_json() {
     u7="${u7:-0}"
     u30=$(echo "$obs_30d_counts" | awk -v f="$fkey" '$2 == f {print $1}' | head -1)
     u30="${u30:-0}"
-    dp="${file/#$HOME/~}"
+    # Escape the ~ replacement: bash tilde-expands an unquoted replacement
+    # string, which would put $HOME back and defeat the normalization.
+    dp="${file/#"$HOME"/\~}"
 
     jq -n \
       --arg path "$dp" \

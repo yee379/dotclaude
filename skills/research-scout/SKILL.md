@@ -185,7 +185,7 @@ Structure:
 - **Think like an outsider, write like an insider** — ask the questions a project-immersed researcher has stopped asking, but stay project-literate; read source files before generating questions.
 - **Provocation over completeness** — one question that genuinely reframes the problem is worth more than ten that refine it.
 - **No corroboration required, no invention either** — outputs are speculative questions and hypotheses, not factual claims; they must be grounded in actual project context.
-- **The user decides** — recommendations appear in checklist format; the scout never writes to `TOPICS.md` directly. On approval, provide properly-formatted rows ready to paste (noting that `blast-radius.py` should confirm priority).
+- **The user decides** — recommendations appear in checklist format; the scout never writes to `TOPICS.md` directly. On approval, provide properly-formatted rows ready to paste (noting that `.claude/skills/research-workflow/scripts/blast-radius.py` should confirm priority).
 
 ---
 
@@ -211,7 +211,7 @@ When writing `TOPICS.md` rows on user approval, follow the exact format from `re
 | 🔸 P2 | 🔲 todo | report | <topic> | — | <notes, dependencies, why this matters> |
 ```
 
-Priority emoji is a scout estimate — remind the user to run `blast-radius.py` to confirm.
+Priority emoji is a scout estimate — remind the user to run `python3 .claude/skills/research-workflow/scripts/blast-radius.py` to confirm.
 
 ---
 

@@ -71,7 +71,7 @@ Understanding what persists helps you compact with confidence:
 |----------|------|
 | CLAUDE.md instructions | Intermediate reasoning and analysis |
 | TodoWrite task list | File contents you previously read |
-| CLAUDE.md + MemPalace drawers | Multi-step conversation context |
+| MemPalace drawers (`mcp__mempalace__*`) | Multi-step conversation context |
 | Git state (commits, branches) | Tool call history and counts |
 | Files on disk | Nuanced user preferences stated verbally |
 
@@ -86,4 +86,5 @@ Understanding what persists helps you compact with confidence:
 
 ## Related
 
-- Memory persistence hooks — For state that survives compaction
+- `mcp__mempalace__mempalace_add_drawer` — file a decision or finding before compacting, so it survives as a retrievable drawer rather than living only in context
+- `mcp__mempalace__mempalace_search` — recover prior context after a compaction (keywords, not a sentence)

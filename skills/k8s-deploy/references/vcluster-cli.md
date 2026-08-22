@@ -13,12 +13,11 @@ brew install loft-sh/tap/vcluster
 # List all vclusters visible from the host cluster
 KUBECONFIG=~/.kube/config.sdf-k8s01 vcluster list
 
-# Export a vcluster's kubeconfig to a file (preferred pattern)
+# Export a vcluster's kubeconfig to a file (preferred pattern — leaves current context alone)
 KUBECONFIG=~/.kube/config.sdf-k8s01 \
   vcluster connect ai-playground \
     --namespace vclusters-ai-playground \
-    --update-current=false \
-    --kube-config ~/.kube/contexts/ai-playground/prod
+    --print > ~/.kube/contexts/ai-playground/prod
 
 # Connect interactively (temporarily switches current context)
 KUBECONFIG=~/.kube/config.sdf-k8s01 \

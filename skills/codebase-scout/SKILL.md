@@ -20,7 +20,7 @@ the backlog that `/prd-workflow` tracks.
 /codebase-scout            ← YOU ARE HERE: read codebase → surface candidates → populate backlog
       │
       ▼
-/codebase-workflow    ← user picks an item, task file already exists
+/prd-workflow         ← user picks an item, task file already exists
       │
       ▼
 /draft-prd          ← turns thin task file into a full design
@@ -290,7 +290,7 @@ Added to backlog:
   #008  Missing request timeouts on API        🟠 P1
   #009  User.find_all() loads all rows         🟠 P1
 
-TODO.md updated. Run /codebase-workflow to pick the next item.
+TODO.md updated. Run /prd-workflow to pick the next item.
 ```
 
 5. Commit:

@@ -242,152 +242,24 @@ For GraphQL integration patterns (queries, mutations, subscriptions, optimistic 
 
 ## Performance
 
-### Memoisation — only when profiling shows it's needed
-
-```tsx
-// useMemo for expensive pure computations
-const sortedUsers = useMemo(
-  () => [...users].sort((a, b) => a.name.localeCompare(b.name)),
-  [users]
-);
-
-// useCallback for stable function references passed to memoised children
-const handleDelete = useCallback((id: string) => {
-  deleteUser({ variables: { id } });
-}, [deleteUser]);
-
-// React.memo — prevent re-renders when props haven't changed
-const UserRow = React.memo(function UserRow({ user, onDelete }: UserRowProps) {
-  return <tr>...</tr>;
-});
-```
-
-### Code splitting
-
-```tsx
-// Route-level splitting
-const AdminPanel = lazy(() => import("./pages/AdminPanel"));
-
-function App() {
-  return (
-    <Suspense fallback={<PageSpinner />}>
-      <Routes>
-        <Route path="/admin" element={<AdminPanel />} />
-      </Routes>
-    </Suspense>
-  );
-}
-```
-
-### Virtual lists for long lists
-
-```tsx
-import { useVirtualizer } from "@tanstack/react-virtual";
-
-function VirtualUserList({ users }: { users: User[] }) {
-  const parentRef = useRef<HTMLDivElement>(null);
-  const rowVirtualizer = useVirtualizer({
-    count: users.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 64,
-  });
-
-  return (
-    <div ref={parentRef} style={{ height: "600px", overflow: "auto" }}>
-      <div style={{ height: rowVirtualizer.getTotalSize() }}>
-        {rowVirtualizer.getVirtualItems().map((vRow) => (
-          <div
-            key={vRow.index}
-            style={{ position: "absolute", top: vRow.start, height: vRow.size, width: "100%" }}
-          >
-            <UserRow user={users[vRow.index]} />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-```
+Memoisation, code splitting, and virtual lists — load `references/performance.md`. Apply only
+after profiling identifies a real re-render or bundle problem.
 
 ---
 
 ## Testing with React Testing Library
 
-```tsx
-// Principle: test behaviour, not implementation
-
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-
-describe("UserCard", () => {
-  it("renders user name and email", () => {
-    render(<UserCard user={{ id: "1", name: "Alice", email: "alice@example.com" }} />);
-    expect(screen.getByText("Alice")).toBeInTheDocument();
-    expect(screen.getByText("alice@example.com")).toBeInTheDocument();
-  });
-
-  it("calls onEdit when edit button clicked", async () => {
-    const onEdit = jest.fn();
-    const user = userEvent.setup();
-    render(<UserCard user={mockUser} onEdit={onEdit} />);
-    await user.click(screen.getByRole("button", { name: /edit/i }));
-    expect(onEdit).toHaveBeenCalledWith(mockUser.id);
-  });
-
-  it("does not render edit button when onEdit not provided", () => {
-    render(<UserCard user={mockUser} />);
-    expect(screen.queryByRole("button", { name: /edit/i })).not.toBeInTheDocument();
-  });
-});
-
-// Async + Apollo mock
-import { MockedProvider } from "@apollo/client/testing";
-
-const mocks = [{
-  request: { query: GET_USERS, variables: { first: 20 } },
-  result: { data: { users: mockUsersConnection } },
-}];
-
-it("loads and displays users", async () => {
-  render(
-    <MockedProvider mocks={mocks} addTypename={false}>
-      <UserList />
-    </MockedProvider>
-  );
-  expect(screen.getByRole("progressbar")).toBeInTheDocument();
-  await waitFor(() => expect(screen.getByText("Alice")).toBeInTheDocument());
-});
-```
+Load `references/testing.md` for component test shape, accessible queries, and the Apollo
+`MockedProvider` setup.
 
 ---
 
 ## Common Mistakes
 
-```tsx
-// BAD: missing key prop on lists
-users.map((u) => <UserCard user={u} />)
-
-// GOOD: stable key (never use index unless list is static)
-users.map((u) => <UserCard key={u.id} user={u} />)
-
-// BAD: useEffect with missing deps (stale closure)
-useEffect(() => { fetch(userId); }, []);
-
-// GOOD: explicit deps
-useEffect(() => { fetch(userId); }, [userId]);
-
-// BAD: derive state in useEffect
-const [fullName, setFullName] = useState("");
-useEffect(() => setFullName(`${first} ${last}`), [first, last]);
-
-// GOOD: compute inline
-const fullName = `${first} ${last}`;
-
-// BAD: calling hooks conditionally
-if (isAdmin) {
-  const data = useQuery(ADMIN_QUERY); // violates Rules of Hooks!
-}
-
-// GOOD: call hook unconditionally, branch on result
-const { data } = useQuery(ADMIN_QUERY, { skip: !isAdmin });
-```
+| Mistake | Fix |
+|---|---|
+| No `key` on a mapped list: `users.map(u => <UserCard user={u} />)` | Stable key from data: `key={u.id}` — never the index unless the list is static |
+| `useEffect(() => { fetch(userId); }, [])` — stale closure over `userId` | List every value the effect reads: `[userId]` |
+| Deriving state in an effect: `setFullName` inside `useEffect` on `[first, last]` | Compute inline during render — no state, no effect: ``const fullName = `${first} ${last}` `` |
+| Calling a hook conditionally: `if (isAdmin) { useQuery(ADMIN_QUERY) }` | Call unconditionally and branch on options: `useQuery(ADMIN_QUERY, { skip: !isAdmin })` |
+| Spreading unknown props into the DOM to "stay flexible" | Declare the props interface explicitly; pass `className`/`children` deliberately |

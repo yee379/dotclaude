@@ -91,7 +91,7 @@ Output format:
 - Relying on globally installed binaries (`curl`, `imagemagick`, `ffmpeg`) not in the image
 - Base image pinned to a mutable tag (`FROM python:3.12` — tag can change)
 
-> For implementation examples, see `/python-patterns` or `/k8s-deploy`.
+> For implementation examples, see `references/twelve-factor-examples.md` (Factor II), `/python-patterns`, or `/k8s-deploy`.
 
 ---
 
@@ -103,9 +103,8 @@ Output format:
 - Hardcoded database URLs or API keys in source code
 - `.env` files committed to git
 - Per-environment config files in the repo (`config/prod.yaml`)
-- Secrets stored as plain env vars in CI/CD YAML
 
-> For implementation examples, see `/python-patterns` or `/security-review`.
+> For implementation examples, see `references/twelve-factor-examples.md` (Factor III) or `/security-review`.
 
 ---
 
@@ -133,9 +132,8 @@ Output format:
 - `git pull && restart` deployments (collapses all three stages)
 - Rebuilding the image per environment (dev image ≠ prod image)
 - Baking secrets into the image at build time
-- Running `npm install` or `pip install` at container startup
 
-> For implementation examples, see `/k8s-deploy`.
+> For implementation examples, see `references/twelve-factor-examples.md` (Factor V) or `/k8s-deploy`.
 
 ---
 
@@ -147,9 +145,8 @@ Output format:
 - In-memory session store (`app.sessions = {}` — lost on restart)
 - Uploading files to local disk (`/tmp/uploads/` — not visible to other pods)
 - Sticky sessions required (load balancer must always route user to same pod)
-- "Snowflake" servers that have been manually configured and can't be replaced
 
-> For implementation examples, see `/python-patterns`.
+> For implementation examples, see `references/twelve-factor-examples.md` (Factor VI) or `/python-patterns`.
 
 ---
 
@@ -188,7 +185,7 @@ Output format:
 - No `SIGTERM` handler — Kubernetes kills the pod and in-flight requests are dropped
 - Non-idempotent job processing causes duplicate side-effects on restart
 
-> For implementation examples, see `/k8s-deploy`.
+> For implementation examples, see `references/twelve-factor-examples.md` (Factor IX) or `/k8s-deploy`.
 
 ---
 
@@ -200,7 +197,6 @@ Output format:
 - SQLite in dev, Postgres in prod — hides behaviour differences until production
 - Months between deploys (large time gap = large risk)
 - Developers have no visibility into production behaviour
-- Different OS, library versions, or backing service versions across environments
 
 > For implementation examples, see `references/twelve-factor-examples.md` (Factor X).
 
@@ -214,11 +210,10 @@ Output format:
 - Writing to `/var/log/app.log` inside the container
 - Managing log rotation (`logrotate`) inside the app
 - Unstructured plaintext logs with no correlation ID
-- Metrics not exposed; no tracing instrumentation
 
 Use OpenTelemetry for distributed tracing — instrument at the framework level (FastAPI middleware, SQLAlchemy events) so traces propagate automatically across services.
 
-> For implementation examples, see `/python-patterns` or `/k8s-deploy`.
+> For implementation examples, see `references/twelve-factor-examples.md` (Factor XI), `/python-patterns`, or `/k8s-deploy`.
 
 ---
 
@@ -230,9 +225,8 @@ Use OpenTelemetry for distributed tracing — instrument at the framework level 
 - DB migrations run inside `app.startup` (race condition across multiple replicas)
 - Admin scripts use different dependency versions than the app
 - Hotfixing prod data via SSH from a developer's laptop
-- Cron jobs not using the same container image as the app
 
-> For implementation examples, see `/k8s-deploy`.
+> For implementation examples, see `references/twelve-factor-examples.md` (Factor XII) or `/k8s-deploy`.
 
 ---
 
@@ -265,9 +259,6 @@ Kevin Hoffman's *Beyond the Twelve-Factor App* (O'Reilly, 2016) adds three facto
 | Traces | OpenTelemetry → Tempo / Jaeger | "Why is this request slow?" |
 
 **Minimum implementation:** `/healthz` (liveness — no deps), `/readyz` (readiness — checks backing services), `/metrics` (Prometheus). See `references/twelve-factor-examples.md` (Factor XIV) or `/python-patterns` for the FastAPI lifespan pattern.
-
-**Compliance checklist:**
-- [ ] XIV: `/healthz`, `/readyz`, `/metrics` endpoints present
 
 ---
 
@@ -311,21 +302,3 @@ Use this for a rapid pre-ship audit. Each item maps to a factor above.
 - [ ] XIII: API contract (OpenAPI/Protobuf) written before implementation
 - [ ] XIV: `/healthz`, `/readyz`, `/metrics` endpoints present
 - [ ] XV: Auth verified per-request in service layer, not only at gateway
-
----
-
-## Common Anti-Patterns at a Glance
-
-| Anti-pattern | Factor violated | Fix |
-|---|---|---|
-| `DATABASE_URL` hardcoded in source | III | Move to env var; validate with Pydantic Settings |
-| `.env` committed to git | III | Add to `.gitignore`; use ESO / Vault |
-| `if env == "local": sqlite` | IV | Same DB engine everywhere; Docker Compose for dev |
-| `npm install` in container `CMD` | V | Run at build time in `Dockerfile` |
-| In-memory session (`app.sessions = {}`) | VI | Use Redis |
-| File uploads to `/tmp` on pod | VI | Use S3 / GCS |
-| Migrations inside `app.startup()` | XII | Run as K8s Job before deployment |
-| Plaintext logs to `/var/log/app.log` | XI | stdout + structured JSON |
-| No SIGTERM handler | IX | Add graceful shutdown; tune `terminationGracePeriodSeconds` |
-| SQLite in dev / Postgres in prod | X | Postgres everywhere; Docker Compose for local |
-

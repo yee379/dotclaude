@@ -86,6 +86,9 @@ A runbook is mandatory for every production workload. Written before go-live —
 
 ## 2. Monitoring and alerting
 
+**Coverage and correctness only.** Whether Prometheus, Loki, or the tracing backend is *sized* for
+the new scrape targets and log volume is `/platform-capacity-review`'s call — do not raise it here.
+
 ### SLI/SLO definition
 
 | SLI | SLO target | Measurement window |
