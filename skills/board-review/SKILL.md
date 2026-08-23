@@ -140,12 +140,13 @@ wrong, and manufactured most of Round 2.
   measurement, and two of the three wrong values had passed a full round unchallenged.
 - Where a fact cannot be measured now, say so in the brief explicitly: "unverified — treat as an
   assumption, not a given."
-- **This is not a gag order on reviewers.** The `## Measured facts` block records where a number
-  came from so nobody re-derives it just to restate it — it does not put the number's validity
-  out of scope. A reviewer can and should still ask whether the right thing was measured, whether
-  it's representative (peak vs. average, one node vs. the fleet), or whether the command behind it
-  actually measures what its label claims. That's a design finding, not a precision one — tag it
-  `design:` and name the check that would settle it.
+
+**Note for reviewers, not the orchestrator — carry this into the Round 1 dispatch:** the
+`## Measured facts` block records where a number came from so nobody re-derives it just to restate
+it. It does **not** put the number's validity out of scope. A reviewer can and should still ask
+whether the right thing was measured, whether it's representative (peak vs. average, one node vs.
+the fleet), or whether the command behind it actually measures what its label claims. That's a
+design finding, not a precision one — tag it `design:` and name the check that would settle it.
 
 ### b. Run the plan's own precision sweep
 
@@ -175,7 +176,7 @@ they approved has changed. If it finds nothing, say that too.
 
 ## Step 2: Board rounds
 
-Each board member runs as a **parallel subagent** — all launched in a single message with `run_in_background: true`. Launching this way is what makes them harness-tracked, which is what lets Step 5 wait on completion notifications instead of polling.
+Each board member runs as a **parallel subagent** — all launched in a single message with `run_in_background: true`. Launching this way is what makes them harness-tracked, which is what lets item 5 below wait on completion notifications instead of polling.
 
 Run up to **3 rounds**. In each round:
 
@@ -320,21 +321,23 @@ Your job:
 IMPORTANT — you cannot interact with the user. Do NOT call AskUserQuestion. For any
 decision point, write a structured entry in ## Decisions Required and continue with
 the best-default option.
+```
 
-## Decisions Required format
+**`## Decisions Required` entry format** (each subagent uses this shape):
 
+```
 ### Decision: <short title>
 - **Severity:** blocking | judgement-call | defaulted
 - **Question:** The exact question the user needs to answer.
 - **Options:** A) ... B) ...
 - **Assumed:** Which option you proceeded with and why.
 - **Impact if wrong:** What changes if the user picks differently.
+```
 
 Severity:
 - `blocking` — cannot proceed safely; written FAIL and stopped. Main session must get human answer.
 - `judgement-call` — reasonable default taken; user should consciously accept it.
 - `defaulted` — obvious/safe default; flagging for transparency only.
-```
 
 5. **Wait for the harness to tell you they finished. Do not poll on a timer.**
 
@@ -346,7 +349,7 @@ Severity:
      fixed interval. A timed loop tells you nothing the notification won't, and every wake
      re-reads the session context.
    - **Count notifications.** The round is complete when you have one per launched reviewer.
-   - Between notifications, do nothing. Do not start Step 6 early on a partial set.
+   - Between notifications, do nothing. Do not start item 6 (consolidate) early on a partial set.
 
    `poll-round.sh` is a **renderer and a fallback**, not the completion signal. Run it once per
    notification to draw the dashboard for the user:
@@ -373,7 +376,7 @@ Severity:
    ──────────────────────────────────────────────────────────────
    ```
 
-   **Reconciliation — the two signals must agree before Step 6.** All reviewers notified AND
+   **Reconciliation — the two signals must agree before consolidating (item 6).** All reviewers notified AND
    `poll-round.sh` exits `0`. If they disagree, the disagreement is the finding:
 
    - **Notified but no terminal status** → the agent died or ran out of context mid-write.
@@ -390,7 +393,7 @@ Severity:
    bash ~/.claude/skills/board-review/consolidate-round.sh <review_dir> <round> <reviewer_codes...>
    ```
 
-   The script extracts STATUS, AMENDED, DECISIONS, BLOCKING, and a ≤10-line SUMMARY per reviewer. Only read a reviewer's full output file if the script's SUMMARY is insufficient (e.g. a blocking decision needs its full text). Never read full files speculatively.
+   The script extracts STATUS, AMENDED, DECISIONS, BLOCKING, OPPORTUNITIES, and a ≤10-line SUMMARY per reviewer. Only read a reviewer's full output file if the script's SUMMARY is insufficient (e.g. a blocking decision needs its full text). Never read full files speculatively.
 
 7. **Surface decisions before the round dashboard.** Group by severity:
 
@@ -438,7 +441,8 @@ Severity:
    Status symbols: `✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC`
 
 9. **Decide whether to iterate — automatically. Key on `design:` amendments, not raw count:**
-   - Any **`design:`** amendment → start next round; re-run only reviewers that amended or were truncated
+   - Any **`design:`** amendment → an open item exists; before starting a round on it, run the
+     cheap-check test below. Only launch a round if that test says a round is actually needed.
    - **`precision:` amendments only** → note them and continue to the *next* round only if one of them
      changed a normative statement. Pure text corrections do not require the board to re-look — the
      main session verifies the edits are correct and the board is complete.
@@ -454,11 +458,12 @@ Severity:
    buildable and the verdict must say so — otherwise the board blocks work it did not actually find
    fault with, and the amendment count becomes a self-fulfilling ceiling.
 
-   **A `design:` amendment does not automatically mean a full reviewer round.** Before starting one,
-   check each remaining open item (unresolved `judgement-call`/`defaulted` decision, or a `design:`
-   amendment nobody has re-reviewed) against this test: **can it be closed by a cheap, mechanical check
-   run once in the main session — grep, `git log`, reading a file, checking a manifest, asking the
-   user one question — rather than by re-running a reviewer's judgement?**
+   **Cheap-check test — run this before launching a round on any `design:` amendment or unresolved
+   decision.** A `design:` amendment does not automatically mean a full reviewer round. For each
+   remaining open item (unresolved `judgement-call`/`defaulted` decision, or a `design:` amendment
+   nobody has re-reviewed), ask: **can it be closed by a cheap, mechanical check run once in the main
+   session — grep, `git log`, reading a file, checking a manifest, asking the user one question —
+   rather than by re-running a reviewer's judgement?**
    - If yes for every open item, run those checks directly (no subagent), fold the answers into the
      plan, and mark the board complete on this round — a check that resolves a decision is not an
      amendment requiring re-review, it is closing a question a reviewer explicitly left open. Example:
@@ -467,7 +472,7 @@ Severity:
      nothing left for a second round of judgement to add.
    - If any open item genuinely requires re-applying a reviewer's expertise against the amended text
      (a `design:` change whose correctness a domain reviewer, not a grep, has to judge) — start the
-     next round, scoped to only those reviewers.
+     next round, re-running only reviewers that amended, were truncated, or must re-judge that item.
    - Don't manufacture a check to avoid a round that's actually needed, and don't manufacture a round
      for something a `grep` already answers. State which test each open item passed and why in the
      round dashboard, so the choice is auditable, not just asserted.
