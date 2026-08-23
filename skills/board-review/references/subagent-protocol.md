@@ -19,6 +19,9 @@ _(written last)_
 ## Issues
 _(in progress)_
 
+## Opportunities
+_(in progress)_
+
 ## Decisions Required
 _(in progress)_
 
@@ -34,6 +37,10 @@ IN PROGRESS
 Each skill names its own checkpoints (its review sections or scored dimensions). After each one:
 
 - Append new issues/findings to `## Issues`
+- Append non-defect ideas — feasibility doubts, simpler/cheaper alternatives, things worth doing
+  but not required to ship — to `## Opportunities`. These do not count toward the `design:`/
+  `precision:` ratio and do not drive round iteration; they are carried into the task file's
+  follow-ups by the orchestrator after the review completes.
 - Append any new `### Decision:` entries to `## Decisions Required`
 - Append any plan amendments made, each tagged per §2a
 - Do NOT wait until the end — write each checkpoint's findings immediately

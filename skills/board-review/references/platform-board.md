@@ -64,6 +64,7 @@ Runbook gaps:          {N}
 Capacity blockers:     {N}
 Accepted warnings:     {N}
 Blocking issues:       {N}
+Opportunities logged:  {N}  (non-blocking, in task file follow-ups)
 ```
 
 ## Round dashboard rows

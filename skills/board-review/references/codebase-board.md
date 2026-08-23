@@ -64,6 +64,7 @@ Test plan written:     {Y/N}  (in todo/ task file)
 Doc gaps added:        {N}
 Accepted warnings:     {N}
 Blocking issues:       {N}
+Opportunities logged:  {N}  (non-blocking, in task file follow-ups)
 ```
 
 ## Round dashboard rows
@@ -81,7 +82,12 @@ codebase-ux-review       ✅/⚠️/❌/—/✂️   amended: Y/N   decisions: N
 
 - **CLEAR TO BUILD** — all reviewers passed, no unresolved issues
 - **CLEAR WITH WARNINGS** — all passed, user accepted risk on some issues; list accepted warnings
-- **BLOCKED** — one or more reviewers failed; list blocking issues
+- **BLOCKED** — one or more reviewers failed; list blocking issues. A reviewer FAIL must name an
+  **unresolved** defect — one it could not fix by amendment, or one left open for a human. A reviewer
+  that found serious gaps and then amended them away has not failed; it has done its job, and the
+  amendment already triggers another round on its own. Do not let a rubric score, an amendment count,
+  or "re-score me next round" produce a FAIL: BLOCKED sends the task back to `⬜ Open`, which is a
+  claim about the plan's viability, not about how much work the review did.
 - **UNSTABLE** — **`design:` amendments** were still happening in round 3; list what was still
   changing. Round 3 producing only `precision:` amendments is CLEAR (or CLEAR WITH WARNINGS), not
   UNSTABLE — a plan being polished is not a plan that failed to stabilise. Always state the ratio

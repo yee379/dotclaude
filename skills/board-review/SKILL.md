@@ -140,6 +140,12 @@ wrong, and manufactured most of Round 2.
   measurement, and two of the three wrong values had passed a full round unchallenged.
 - Where a fact cannot be measured now, say so in the brief explicitly: "unverified — treat as an
   assumption, not a given."
+- **This is not a gag order on reviewers.** The `## Measured facts` block records where a number
+  came from so nobody re-derives it just to restate it — it does not put the number's validity
+  out of scope. A reviewer can and should still ask whether the right thing was measured, whether
+  it's representative (peak vs. average, one node vs. the fleet), or whether the command behind it
+  actually measures what its label claims. That's a design finding, not a precision one — tag it
+  `design:` and name the check that would settle it.
 
 ### b. Run the plan's own precision sweep
 
@@ -189,7 +195,7 @@ Run up to **3 rounds**. In each round:
 
    | Round | Bar to state verbatim in the prompt |
    |---|---|
-   | 1 | "Full review. Raise anything that would change the design or the delivery order." |
+   | 1 | "Full review. Raise anything that would change the design or the delivery order. Also include feasibility doubts and simpler/cheaper alternatives even where the plan as written would work — record these in `## Opportunities`, not as amendments; they cost nothing toward round iteration." |
    | 2 | "Reconciliation round. The plan was amended since you last saw it. Verify the amendments are correct and self-consistent. Do NOT re-raise matters settled in Round 1, and do NOT open new lines of enquiry unless an amendment created the problem." |
    | 3 | "Final round. Amend ONLY for a defect that would cause the implementation to be wrong, unsafe, or unbuildable. Wording, ordering, and stylistic improvements are explicitly out of scope — leave them. If you find nothing of that severity, return PASS with no amendments." |
 
@@ -224,6 +230,9 @@ Your FIRST action must be to create the output file with a skeleton:
     ## Issues
     _(in progress)_
 
+    ## Opportunities
+    _(in progress)_
+
     ## Decisions Required
     _(in progress)_
 
@@ -250,9 +259,11 @@ Your job:
 
    CHECKPOINT PATTERN after each section:
    a. Append the section's findings to ## Issues (one line per issue)
-   b. Append any decision entries to ## Decisions Required
-   c. Append any plan edits to ## Amendments
-   d. Update ## Status (IN PROGRESS / FAIL / PASS WITH WARNINGS)
+   b. Append any non-defect ideas — feasibility doubts, simpler/cheaper alternatives,
+      things worth doing but not required — to ## Opportunities (one line each)
+   c. Append any decision entries to ## Decisions Required
+   d. Append any plan edits to ## Amendments
+   e. Update ## Status (IN PROGRESS / FAIL / PASS WITH WARNINGS)
 
    Final structure:
 
@@ -262,6 +273,12 @@ Your job:
      ## Issues
      <SEVERITY | area | description>
      e.g. blocking | auth | JWT expiry not validated on refresh endpoint
+
+     ## Opportunities
+     <one line each — non-defect improvement ideas. These do NOT count toward the
+     design:/precision: amendment ratio and do NOT drive round iteration; they are
+     carried into the task file's follow-ups by the orchestrator.>
+     e.g. the retry loop could be replaced by the existing backoff helper in utils/retry.py
 
      ## Decisions Required
      <structured entries — see format below>
@@ -437,6 +454,24 @@ Severity:
    buildable and the verdict must say so — otherwise the board blocks work it did not actually find
    fault with, and the amendment count becomes a self-fulfilling ceiling.
 
+   **A `design:` amendment does not automatically mean a full reviewer round.** Before starting one,
+   check each remaining open item (unresolved `judgement-call`/`defaulted` decision, or a `design:`
+   amendment nobody has re-reviewed) against this test: **can it be closed by a cheap, mechanical check
+   run once in the main session — grep, `git log`, reading a file, checking a manifest, asking the
+   user one question — rather than by re-running a reviewer's judgement?**
+   - If yes for every open item, run those checks directly (no subagent), fold the answers into the
+     plan, and mark the board complete on this round — a check that resolves a decision is not an
+     amendment requiring re-review, it is closing a question a reviewer explicitly left open. Example:
+     a reviewer defaults to "assume consumer X is live, block on it" because it can't verify deployment
+     state from docs — `git log`/`kubectl get` on the actual manifest resolves that outright; there is
+     nothing left for a second round of judgement to add.
+   - If any open item genuinely requires re-applying a reviewer's expertise against the amended text
+     (a `design:` change whose correctness a domain reviewer, not a grep, has to judge) — start the
+     next round, scoped to only those reviewers.
+   - Don't manufacture a check to avoid a round that's actually needed, and don't manufacture a round
+     for something a `grep` already answers. State which test each open item passed and why in the
+     round dashboard, so the choice is auditable, not just asserted.
+
    **If a reconciliation pass rewrote the plan between rounds, review its diff — not the whole plan
    again.** A reconciler is unreviewed work by an author under time pressure, and it is a reliable
    source of new defects: in one review it introduced two HIGH-severity bugs, and the following
@@ -510,6 +545,12 @@ two reviewers state the plan is buildable as written" is the honest report, and 
    and anything living only there is gone: three doc issues were deferred by reference in one
    review and two of them were unrecoverable afterwards, including from the session transcript.
    A follow-up not written down in a surviving file was not deferred; it was lost.
+
+   **Roll every reviewer's `## Opportunities` into a `## Follow-ups (non-blocking)` list in the
+   task file, deduplicated.** These are constructive ideas — simplifications, alternatives,
+   feasibility doubts — that didn't rise to a `design:` or `precision:` amendment. They do not
+   affect the verdict or round count; they exist so a good idea a reviewer had isn't thrown away
+   just because it wasn't required to ship.
 
    **Part B — Full reviewer output** (one collapsible block per reviewer that ran):
    ```markdown

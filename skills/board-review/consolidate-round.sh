@@ -10,6 +10,7 @@
 #   AMENDED: YES | NO
 #   DECISIONS: <count of ## Decision: entries>
 #   BLOCKING: <count>
+#   OPPORTUNITIES: <count of ## Opportunities lines>
 #   SUMMARY:
 #   <up to 10 lines from ## Summary section>
 #   ---
@@ -86,6 +87,9 @@ for code in "${REVIEWERS[@]}"; do
 
   blocking_count=$(grep -c "Severity.*blocking" "$file" 2>/dev/null || echo 0)
   echo "BLOCKING: $blocking_count"
+
+  opportunity_count=$(awk '/^## Opportunities/{found=1; next} found && /^##/{exit} found && NF{c++} END{print c+0}' "$file" 2>/dev/null || echo 0)
+  echo "OPPORTUNITIES: $opportunity_count"
 
   echo "SUMMARY:"
   awk '/^## Summary/{found=1; next} found && /^##/{exit} found{print}' "$file" \
