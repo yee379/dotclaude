@@ -82,7 +82,10 @@ codebase-ux-review       ✅/⚠️/❌/—/✂️   amended: Y/N   decisions: N
 - **CLEAR TO BUILD** — all reviewers passed, no unresolved issues
 - **CLEAR WITH WARNINGS** — all passed, user accepted risk on some issues; list accepted warnings
 - **BLOCKED** — one or more reviewers failed; list blocking issues
-- **UNSTABLE** — plan did not stabilise in 3 rounds; list what was still changing
+- **UNSTABLE** — **`design:` amendments** were still happening in round 3; list what was still
+  changing. Round 3 producing only `precision:` amendments is CLEAR (or CLEAR WITH WARNINGS), not
+  UNSTABLE — a plan being polished is not a plan that failed to stabilise. Always state the ratio
+  `N design / M precision` alongside the verdict.
 
 ## No-plan stop message
 

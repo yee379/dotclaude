@@ -35,8 +35,29 @@ Each skill names its own checkpoints (its review sections or scored dimensions).
 
 - Append new issues/findings to `## Issues`
 - Append any new `### Decision:` entries to `## Decisions Required`
-- Append any plan amendments made
+- Append any plan amendments made, each tagged per §2a
 - Do NOT wait until the end — write each checkpoint's findings immediately
+
+## 2a. Tag every amendment `design:` or `precision:`
+
+Each line in `## Amendments` carries exactly one prefix:
+
+- `design:` — the plan as written would produce wrong, unsafe, or unbuildable behaviour. Fixing it
+  changes what gets built.
+- `precision:` — the plan disagrees with itself or with the repo: stale citation, duplicated value,
+  a rule restated inconsistently, an over-scoped claim, a row in the wrong delivery slice. Fixing it
+  changes only the text.
+
+End the section with `TOTAL: N design, M precision`.
+
+The orchestrator decides whether to spend another round based on the `design:` count alone, so the
+tag must be honest both ways: a design defect tagged `precision:` ships a real bug; a precision fix
+tagged `design:` forces a needless round.
+
+**Precision ceiling.** Past ~10 precision amendments, stop editing and collapse the remainder into a
+single `## Issues` line — "N further precision defects of the same class" — with the list beneath it.
+An undifferentiated wall of cosmetic edits is indistinguishable from instability, and it gets plans
+blocked that nobody found fault with.
 
 ## 3. Suppress AskUserQuestion
 

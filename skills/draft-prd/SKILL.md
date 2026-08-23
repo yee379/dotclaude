@@ -36,6 +36,32 @@ State the detected mode: `> Mode: Codebase` or `> Mode: Platform`.
 
 ---
 
+## Precision discipline — applies to every phase
+
+**Load `references/precision-rules.md` before Phase 1 and keep it in force throughout.** It is not a
+final polish step; the rules are cheap while writing and expensive to retrofit.
+
+The nine rules in one line each:
+
+1. **Never write a value you could derive** — state the command, endpoint, or accessor instead.
+2. **State each rule normatively in exactly one place** — name it, reference the name elsewhere.
+3. **Requirements say *where*, not just *what*** — insertion point, and every behaviour of anything
+   being replaced.
+4. **Slice placement follows a stated invariant** — not case-by-case judgement.
+5. **Test specs are checked against the fixtures they would run on** — by running them.
+6. **Claims are scoped to the strength that actually holds.**
+7. **Rejected alternatives carry the fact that kills them.**
+8. **Byte-level content is written as `\uXXXX` escapes**, never as glyphs.
+9. **Length is a defect generator** — more copies, more drift, more amendments.
+
+Why this is in the authoring skill rather than the review skill: a board review measures whether a
+plan agrees with itself and with the repo. In one three-round review, ~48 of 53 final-round
+amendments were the plan disagreeing with itself — self-inflicted, and each one displaced budget the
+reviewers could have spent on real design defects. **Fix these as you go. Do not leave them for the
+board.**
+
+---
+
 ## When to Trigger
 
 - `plan <number>` / `plan #<number>` / `platform <number>` — plan a specific task
@@ -223,22 +249,53 @@ Be **extremely extensive** — cover happy paths, error paths, edge cases, admin
 
 ### [Codebase] Requirements
 
-**Functional requirements** — what the system must do:
+**Functional requirements** — what the system must do, and **where**:
 ```
 FR-1: [requirement]
+      Where: [function/module, and position relative to existing gates —
+              "before the cold-store 503 check", not just "in _authorize"]
 ```
+
+A requirement that names *what* but not *where* gets implemented in the wrong place, or read three
+different ways by three reviewers. If the change **replaces** an existing function, enumerate every
+behaviour of the old one and state explicitly whether the new one keeps it — a dropped behaviour
+nobody listed is how a silent allow→deny regression ships (precision rule 3).
 
 **Non-functional requirements** — how well it must do it:
 ```
 NFR-1: [requirement]
 ```
 
+Any NFR that defines a **set** (error reasons, states, labels, metric values) gets a `Produced by`
+column naming the code path that emits each member. A set whose members come from different paths is
+two sets wearing one name, and its count will be wrong.
+
 **Acceptance criteria** — definition of done (testable):
 ```
 AC-1: Given [context], when [action], then [outcome]
+      Verified by: [test name + fixture, or the exact command that checks it]
 ```
 
+Every AC that names a test must name its **fixture** and the guards that fixture must pass. Then run
+the tests you claim will change and paste the real output — the list is an executable fact, not a
+prediction (precision rule 5).
+
 See `references/prd-examples.md` for FR/NFR/AC examples.
+
+**Measured facts block.** If the plan reasons over any measured quantity (a count, a size, a
+utilisation), put every one of them in a single dated block with the exact command that produced
+each, and state that no other section may re-quote them:
+
+```
+## Measured facts — measured YYYY-MM-DD, re-derive before implementing
+
+| Fact | Value | How it was measured |
+|---|---|---|
+| <name> | <value> | <exact command / endpoint> |
+
+Quantities that are easy to conflate get one row each, named distinctly.
+No other section restates these values; they reference this block by name.
+```
 
 ### [Platform] Feasibility & Capacity
 
@@ -261,6 +318,11 @@ Beyond raw compute — does the change also require: new StorageClasses, Vault r
 ## Phase 3 — Architecture Decision Records (ADRs)
 
 For each significant decision, write a short ADR using the format from `~/.claude/skills/codebase-arch-review/references/adr-template.md`.
+
+**Every ADR records the rejected alternatives and, for each, the specific fact that kills it** — the
+import cycle, the unreachable branch, the measurement. A decision recorded without its rejected
+alternatives gets re-litigated: reviewers independently propose the options you already closed, and
+you spend a round re-explaining rather than reviewing (precision rule 7).
 
 See `references/prd-examples.md` for ADR examples in both codebase and platform modes.
 
@@ -353,6 +415,21 @@ See `references/prd-examples.md` for trade-off format.
 
 Break into shippable slices — each must be independently deployable and useful on its own.
 
+**State the placement invariant before listing any slice**, then check every row against it:
+
+> **Placement invariant:** every artefact — requirement, acceptance criterion, doc edit, test —
+> lands in the slice where its statement first becomes true. Not the slice that motivated it, and
+> not the slice where it was noticed.
+
+Write the invariant into the plan itself, not just apply it silently. With the rule stated, a
+misplaced row is self-evident to any reader; without it, each misplacement has to be independently
+rediscovered — the same one gets caught by three different reviewers across two rounds, which reads
+as three findings and burns three reviewers' budget.
+
+**Then state build-order prerequisites explicitly.** "Everything else may ship in any order" is
+almost always false: anything consuming a new module depends on the slice that creates it. Name the
+edges, or say there are none and be right.
+
 See `references/prd-examples.md` for slice format examples (codebase and platform).
 
 ---
@@ -402,6 +479,39 @@ See `references/prd-examples.md` for risk register examples.
 
 ---
 
+## Phase 11 — Precision sweep [mandatory, both modes]
+
+**Run this before handing off to `/board-review`. It is not optional and it is not a formality.**
+
+Open `references/precision-rules.md`, work the self-check at the bottom, and **fix what it finds
+now**. This is the whole point: a defect fixed here costs one edit; the same defect fixed via the
+board costs a reviewer's budget, a round of amendments, a re-review of the amended text, and often a
+second defect introduced by the amendment.
+
+The sweep is mechanical — every line is checkable without judgement:
+
+- **Re-verify every `file:line` citation against the file as it is now**, and replace with a symbol
+  reference wherever the exact line does not matter. Citations written during Phase 0 have already
+  drifted by Phase 10.
+- **Grep for every number in the plan.** Each is either in the `## Measured facts` block with its
+  command, or derived at implementation time. Any number appearing in two places is a defect even if
+  both copies currently agree.
+- **Grep for each normative rule's keywords** to find restatements. Where prose and a table both
+  state a rule, delete one or mark which is normative.
+- **Run the tests the plan claims will change**, and correct the list from real output.
+- **Grep for universal quantifiers** — "always", "never", "every", "only", "any order", "strictly",
+  "monotonically" — and scope or delete each one.
+- **Check the line count.** Over ~400 lines, cut by referencing the repo instead of quoting it.
+
+Then report to the user in one line:
+
+> "Precision sweep: fixed N items (M stale citations, K duplicated values, J unscoped claims,
+> …). Plan is at L lines."
+
+If it fixed nothing, say that explicitly — it is a real signal, not an empty result.
+
+---
+
 ## Status update on completion
 
 When `/draft-prd` finishes writing the plan into the task file, **immediately**:
@@ -432,7 +542,15 @@ Then prompt:
 ## Delivery Slices
 ## Risk Register
 ## Definition of Done
+## Measured facts (dated, with the command for each)
 ```
 
 Keep it concise — the goal is alignment, not documentation theatre.
 A good plan is one page; a great plan is two pages with diagrams.
+
+**This is a constraint, not an aspiration.** Length is not rigour — it is drift surface. Every
+restated fact, duplicated rule, and quoted code block is a copy that can disagree with the original,
+and disagreeing-with-itself is exactly the property the board tests. A 2,850-line plan for a P2 fix
+generated 53 review amendments, of which roughly five were real design findings. At ~400 lines,
+stop and cut: reference the repo instead of quoting it, delete every restatement, and trust the
+reader to follow a symbol reference.
