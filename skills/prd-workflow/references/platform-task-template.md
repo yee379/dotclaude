@@ -7,6 +7,26 @@
 > **Created:** YYYY-MM-DD
 > **Applied:** — (fill in date when live in cluster)
 
+<!-- On reaching a terminal status, write the release into the Status line itself:
+     `> **Status:** 🚀 Applied \`0.14.0\` — live in prod as of YYYY-MM-DD`
+     or `(no release)` if the deliverable was cluster config or manifests only, which is
+     the common case for platform tasks. -->
+
+---
+
+## Provenance
+
+**Raised by:** <the review, closeout, rollout, incident, or board round that produced this task,
+with a date where one applies — e.g. `#047(d) NetworkPolicy gap`, `post-incident 2026-08-21`,
+`original backlog`>
+
+**References:**
+- [#NNN](NNN-slug.md) — <one line on *why*: dependency, blocked-by, or measurably affected. A bare
+  list of numbers is not provenance.>
+
+<!-- This section is what makes the task file readable on its own. TODO.md's Provenance and
+     Reference columns are pointers to it, never the copy — when they disagree, this file wins. -->
+
 ---
 
 ## Problem Statement

@@ -44,18 +44,49 @@ todo/
 ```markdown
 # Project Tasks
 
-| #   | Title                         | Priority   | Status          | Branch                 | PR   |
-|-----|-------------------------------|------------|-----------------|------------------------|------|
-| [001](todo/001-user-authentication.md) | User authentication | 🔴 P0 | ✅ Done | feat/user-auth | #42  |
-| [002](todo/002-photo-upload.md) | Photo upload        | 🟠 P1 | 🔄 In Progress | feat/photo-upload | #51 |
-| [003](todo/003-namespace-strategy.md) | Namespace strategy | 🟡 P2 | ⬜ Open | — | — |
+| # | Title | Priority | Status | Provenance | Reference | Branch | PR |
+|---|-------|----------|--------|------------|-----------|--------|----|
+| [001](todo/001-user-authentication.md) | User authentication | 🔴 P0 | ✅ Done `1.2.0` | original backlog | — | feat/user-auth | #42 |
+| [002](todo/002-photo-upload.md) | Photo upload | 🟠 P1 | 🔄 In Progress | Security review 2026-08-21 | [#001](todo/001-user-authentication.md) | feat/photo-upload | #51 |
+| [003](todo/003-namespace-strategy.md) | Namespace strategy | 🟡 P2 | ✅ Done (no release) | #002 closeout | — | — | — |
 
-**Summary:** 1 done · 1 in progress · 1 open
+**Summary:** 2 done · 1 in progress · 0 open
 ```
 
 The `#` column must always be a markdown link to the task file — never a bare number.
 
 > Priority and status emoji keys: `references/priority-status-key.md`
+
+#### Column rules
+
+**Title is one line.** A short summary — no history, no rationale, no findings. If you are
+appending "— shipped in X, but note that Y" to a Title, that belongs in the task file. The
+index is for scanning; the task file is authoritative (see *TODO.md Maintenance*).
+
+**Status carries the release the task shipped under**, in backticks, for every terminal
+status (`✅ Merged` / `✅ Done` / `🚀 Deployed` / `🚀 Applied` / `✅ Shipped`):
+`🚀 Deployed \`0.14.0\``. A terminal status with no release — cluster config, manifests, or
+docs only — is marked `(no release)` rather than left blank, so a missing version is
+distinguishable from a forgotten one. Non-terminal statuses carry no version.
+
+> **Derive the version, never guess it.** `git log -p -- <path/to/VERSION>` maps every
+> version to the commit that set it, and `git log --grep="#<number>"` maps a task to its
+> commits; `git show <sha>:<path/to/VERSION>` then gives the version in force at that
+> commit. Attribute the release the task's *own* work shipped in, not a later one that
+> merely touched the same area.
+
+**Provenance is what raised the task** — the review, closeout, rollout, incident, or board
+round that produced it, with a date where one applies (`Security review 2026-08-21`,
+`#042 slice 0`, `original backlog`). This replaces grouping rows under `###` sub-headings:
+sub-headings fragment the table into several that cannot be sorted or scanned as one, and a
+row silently loses its provenance if it is ever moved. One table, provenance per row.
+
+**Reference is the tasks this one depends on, blocks, or measurably affects** — as links,
+not prose. Keep it to genuine relationships; every task in a repo is loosely related to
+every other, and a Reference cell listing eight tasks tells a reader nothing.
+
+Both columns are pointers. The *explanation* of a dependency lives in the task file's own
+Dependencies section — see **Each task file is self-contained** below.
 
 ### Task Files
 
@@ -64,6 +95,36 @@ The `#` column must always be a markdown link to the task file — never a bare 
 **Platform tasks:** Load `references/platform-task-template.md` when creating a new task file.
 
 Numbering is sequential and never reused. Slug is kebab-case, max 5 words.
+
+#### Each task file is self-contained
+
+A task file should be readable on its own, by someone who has not seen `TODO.md` and is not
+going to open seven sibling files to reconstruct the story. That means the task file — not
+the index — carries:
+
+- **A `## Provenance` section**, immediately after the header block: what raised this task,
+  and the tasks it references, each with a one-line statement of *why* it is referenced.
+  A bare list of numbers is not provenance.
+- **The history**: what shipped when, in which release, what was found later, what was
+  corrected. `TODO.md`'s Status and Provenance cells are the pointers to it, never the copy.
+
+```markdown
+## Provenance
+
+**Raised by:** security review 2026-08-21 ([report](todo/research/.../report.md))
+
+**References:**
+- [#020](020-deny-list-token-revocation.md) — dependency: this task shrinks the population
+  of leaked tokens, #020 is what makes an already-leaked one killable.
+- [#045](045-issuer-hardening.md) — not a dependency: multiplicative, and this task landing
+  does not reduce #045's necessity.
+```
+
+Duplication between the index and the task file is a drift liability, and the direction it
+drifts is always the same: the index is edited during a rollout when the task file is not
+open, and the two disagree with no way to tell which is current. Resolve it by having only
+one copy — in the task file. The rule that the task file wins when they disagree is in
+*TODO.md Maintenance*; this is what makes that rule actionable rather than aspirational.
 
 ---
 
@@ -251,7 +312,7 @@ Always stage files **by name** — never `git add -A` or `git add .`.
 
 | Trigger | What to update |
 |---------|---------------|
-| New task created | Add row: priority, status `📋 Preparing`, branch `—`, PR `—` |
+| New task created | Add row: priority, status `📋 Preparing`, branch `—`, PR `—`, **Provenance filled in** (what raised it), Reference `—` |
 | draft-prd completes | Status → `⬜ Open`; prompt to run `/board-review` |
 | board-review starts | Status → `🔎 In Review` |
 | board-review CLEAR | Status → `🔍 Reviewed`; merge board review into task file; delete `todo/review/<slug>/` |
@@ -259,10 +320,14 @@ Always stage files **by name** — never `git add -A` or `git add .`.
 | Branch created | Status → `🔄 In Progress`; Branch column filled |
 | All checklist items ticked | Status → `🏁 Implementation Done` |
 | PR opened | Status → `👀 PR Open`; PR column filled |
-| PR merged | Status → `✅ Merged` |
-| `/codebase-closeout` completes | Status → `✅ Complete`; docs/CHANGELOG/README updated |
-| Production deployed / cluster applied | Status → `🚀 Deployed` (codebase) or `🚀 Applied` (platform) |
+| PR merged | Status → `✅ Merged` **+ the release it merged under** (or `(no release)`) |
+| `/codebase-closeout` completes | Status → `✅ Complete`; docs/CHANGELOG/README updated; version in Status matches `VERSION` |
+| Production deployed / cluster applied | Status → `🚀 Deployed` (codebase) or `🚀 Applied` (platform), **+ the release**, in both `TODO.md` and the task file's `> **Status:**` line |
 | Cancelled | Status → `❌ Won't Do`; reason in task file |
+
+Capture the version **at the moment of the transition**, when you still have the tag or `VERSION`
+in hand. Recovering it later means deriving it from git history, which works but is slow and
+mis-attributes to a neighbouring release if done carelessly — see `references/priority-status-key.md`.
 
 ---
 

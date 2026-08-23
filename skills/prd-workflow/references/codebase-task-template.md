@@ -7,6 +7,25 @@
 > **Created:** YYYY-MM-DD
 > **Shipped:** — (filled when merged)
 
+<!-- On reaching a terminal status, write the release into the Status line itself:
+     `> **Status:** 🚀 Deployed \`0.14.0\` — live in dev and prod as of YYYY-MM-DD`
+     or `(no release)` if the deliverable was config or docs only. -->
+
+---
+
+## Provenance
+
+**Raised by:** <the review, closeout, rollout, incident, or board round that produced this task,
+with a date where one applies — e.g. `security review 2026-08-21`, `#042 slice 0 closeout`,
+`original backlog`>
+
+**References:**
+- [#NNN](NNN-slug.md) — <one line on *why*: dependency, blocked-by, or measurably affected. A bare
+  list of numbers is not provenance.>
+
+<!-- This section is what makes the task file readable on its own. TODO.md's Provenance and
+     Reference columns are pointers to it, never the copy — when they disagree, this file wins. -->
+
 ---
 
 ## Problem Statement

@@ -44,7 +44,21 @@ follow it exactly.
 
 Checkpoints for this skill: each of the 6 UX dimensions (Discoverability, First-Use Clarity, Documentation Quality, Error UX, Workflow Fit, Trust & Reliability).
 
-Per-dimension issue format: `warning | <dimension> | score N/10 — <gap description>`. Status thresholds override the protocol default: 8.0–10 avg → PASS, 6.0–7.9 → PASS WITH WARNINGS, below 6.0 → FAIL. Include the UX Readiness Score table in `## Summary`.
+Per-dimension issue format: `warning | <dimension> | score N/10 — <gap description>`.
+
+**Score the plan as amended, not as received.** You edit the plan during your own review, so an
+as-received score describes a state that no longer exists by the time anyone reads your verdict.
+Report both — `as received → after amendments` — and compute the status from the second.
+
+Status thresholds override the protocol default: 8.0–10 avg → PASS, below 8.0 → PASS WITH WARNINGS.
+**A score alone never produces FAIL.** Reserve FAIL for an *unresolved* blocking issue: a UX defect
+you could not fix by amendment, or one that needs a human decision you had to leave open. If every
+gap you found was amended in-round, the status is PASS WITH WARNINGS however low the as-received
+score was — `/board-review` already starts another round for any amendment, so using FAIL to mean
+"re-score me next round" double-counts. It also costs more than it looks: `references/codebase-board.md`
+maps any reviewer FAIL to a whole-board **BLOCKED** verdict, which sends the task back to `⬜ Open`.
+
+Include the UX Readiness Score table, with both scores, in `## Summary`.
 
 ---
 
@@ -201,14 +215,23 @@ For each dimension scoring below 7:
 
 ### Phase 4 — Verdict
 
-Compute the **UX Readiness Score**: average of all 6 dimensions.
+Compute the **UX Readiness Score**: average of all 6 dimensions. Score it **twice** — the plan as
+you received it, and the plan as you leave it — and report both. The delta is what this review
+added; the second number is what the verdict is computed from.
 
-| Score | Verdict |
-|-------|---------|
-| 8.0–10 | ✅ **UX READY** — Ship it. Users will be able to self-serve. |
-| 6.0–7.9 | ⚠️ **UX WARNINGS** — Addressable gaps. Fix open questions before shipping. |
-| 4.0–5.9 | 🔶 **UX GAPS** — Significant work needed. Do not ship without resolving. |
-| 0–3.9 | ❌ **UX BLOCKED** — User-facing surface is not ready. Revisit design. |
+| Score (as amended) | Verdict | Subagent status |
+|-------|---------|---|
+| 8.0–10 | ✅ **UX READY** — Ship it. Users will be able to self-serve. | PASS |
+| 6.0–7.9 | ⚠️ **UX WARNINGS** — Addressable gaps. Fix open questions before shipping. | PASS WITH WARNINGS |
+| 4.0–5.9 | 🔶 **UX GAPS** — Significant work needed. Do not ship without resolving. | PASS WITH WARNINGS |
+| 0–3.9 | ❌ **UX BLOCKED** — User-facing surface is not ready. Revisit design. | PASS WITH WARNINGS |
+
+The two columns answer different questions. The **verdict** describes the plan's UX quality and is
+the thing worth arguing about. The **status** answers only "can the board proceed?", so the score
+never sets FAIL on its own — FAIL means one thing: a blocking UX defect you could not resolve by
+amendment, or one left open for a human. A plan you scored 4.8 and then fixed is a plan that needed
+this review, not a plan that failed it; say exactly that in the verdict line, and keep the low
+as-received score visible, because it is the evidence the review was worth running.
 
 State the verdict clearly, followed by:
 - The **top 3 risks** if shipped as-is (what will users actually struggle with?)
@@ -223,17 +246,17 @@ State the verdict clearly, followed by:
 
 ### Persona: S3DF Scientist
 
-| Dimension | Score | Key Gap |
-|-----------|-------|---------|
-| Discoverability | N/10 | ... |
-| First-Use Clarity | N/10 | ... |
-| Documentation Quality | N/10 | ... |
-| Error UX | N/10 | ... |
-| Workflow Fit | N/10 | ... |
-| Trust & Reliability | N/10 | ... |
-| **UX Readiness Score** | **N.N/10** | |
+| Dimension | As received | After amendments | Key Gap |
+|-----------|-------|-------|---------|
+| Discoverability | N/10 | N/10 | ... |
+| First-Use Clarity | N/10 | N/10 | ... |
+| Documentation Quality | N/10 | N/10 | ... |
+| Error UX | N/10 | N/10 | ... |
+| Workflow Fit | N/10 | N/10 | ... |
+| Trust & Reliability | N/10 | N/10 | ... |
+| **UX Readiness Score** | **N.N/10** | **N.N/10** | |
 
-**Verdict:** UX READY / UX WARNINGS / UX GAPS / UX BLOCKED
+**Verdict:** UX READY / UX WARNINGS / UX GAPS / UX BLOCKED — computed from the **after** column
 
 ### Top 3 User Risks (if shipped as-is)
 1. ...

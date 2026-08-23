@@ -107,12 +107,16 @@ in a payload corpus — a test that passes while testing nothing.
 
 ## 9. Length is a defect generator
 
-A plan that reaches several thousand lines has more restatements, more citations, and more drift
-surface than one a third the size — and every extra copy is an amendment waiting to happen.
+A plan padded with restatements, duplicate citations, and quoted-instead-of-referenced code has more
+drift surface than one that says each thing once — and every extra copy is an amendment waiting to
+happen. This is a duplication problem, not a length problem: a long plan that says everything exactly
+once is fine; a short plan that restates a value in three places is not. Do not cut content to hit a
+line-count target — cut restatements, stale quotes, and things better expressed as a repo reference.
 
-- If the plan exceeds ~400 lines, the fix is usually **reference the repo instead of quoting it**.
+- If a value, rule, or code block appears more than once, that is the defect — collapse it to one
+  source of truth, however long or short the result is.
 - Long plans are not more rigorous. They are harder to keep self-consistent, which is the property
-  reviewers actually test.
+  reviewers actually test — and that risk comes from duplication, not from page count.
 
 ---
 
@@ -138,7 +142,7 @@ Run this and fix what it finds. Each line maps to a rule above.
       survives unscoped.
 - [ ] **Alternatives:** each contested decision records what was rejected and the fact that kills it.
 - [ ] **Escapes:** `grep -P` for the relevant codepoints returns nothing.
-- [ ] **Length:** under ~400 lines, or the excess is justified.
+- [ ] **Duplication:** no value, rule, or code block is stated more than once anywhere in the plan.
 
 Report the result to the user as a one-line count of what the sweep fixed. If it fixed nothing, say
 so — that is a meaningful signal about the plan, not an absence of output.

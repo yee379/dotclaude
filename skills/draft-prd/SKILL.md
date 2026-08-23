@@ -501,7 +501,9 @@ The sweep is mechanical — every line is checkable without judgement:
 - **Run the tests the plan claims will change**, and correct the list from real output.
 - **Grep for universal quantifiers** — "always", "never", "every", "only", "any order", "strictly",
   "monotonically" — and scope or delete each one.
-- **Check the line count.** Over ~400 lines, cut by referencing the repo instead of quoting it.
+- **Grep for duplication.** Any value, normative rule, or code block appearing more than once is the
+  defect — not the plan's overall length. Collapse to one source of truth; reference the repo
+  instead of re-quoting it where a citation suffices.
 
 Then report to the user in one line:
 
@@ -546,11 +548,11 @@ Then prompt:
 ```
 
 Keep it concise — the goal is alignment, not documentation theatre.
-A good plan is one page; a great plan is two pages with diagrams.
+A good plan says everything it needs to say exactly once; a great plan also has diagrams.
 
-**This is a constraint, not an aspiration.** Length is not rigour — it is drift surface. Every
-restated fact, duplicated rule, and quoted code block is a copy that can disagree with the original,
-and disagreeing-with-itself is exactly the property the board tests. A 2,850-line plan for a P2 fix
-generated 53 review amendments, of which roughly five were real design findings. At ~400 lines,
-stop and cut: reference the repo instead of quoting it, delete every restatement, and trust the
-reader to follow a symbol reference.
+**No line-count target.** Length on its own is not a defect and is not scored. What generates review
+amendments is duplication — a value, rule, or code block stated more than once, able to drift out of
+sync with itself. A long plan that says everything once is fine. A short plan that restates a value
+in three places is not. If a plan feels long, look for restatement to cut, not content to trim —
+reference the repo instead of quoting it where a citation suffices, and trust the reader to follow a
+symbol reference; do not cut requirements, ADRs, or risk entries just to hit a page count.
