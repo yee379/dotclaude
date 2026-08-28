@@ -1,6 +1,6 @@
 ---
-name: codebase-closeout
-description: Feature close-out and documentation update. Runs after a feature lands — diffs what shipped, updates README/ARCHITECTURE/CONTRIBUTING/CLAUDE.md, polishes CHANGELOG voice, closes out todo/ task files, syncs TODO.md, and optionally bumps VERSION. Use when asked to "update the docs", "close out this feature", "sync documentation", or "post-ship docs".
+name: closeout-prd
+description: Feature close-out and documentation update. Runs after a feature lands — diffs what shipped, updates README/ARCHITECTURE/CONTRIBUTING/CLAUDE.md, polishes CHANGELOG voice, closes out todo/ task files, syncs TODO.md, optionally bumps VERSION, and tags the git tree when a bump lands. Use when asked to "update the docs", "close out this feature", "sync documentation", or "post-ship docs".
 license: MIT
 compatibility: opencode
 ---
@@ -13,9 +13,9 @@ compatibility: opencode
 /draft-prd → /board-review → implementation
       │
       ▼
-/codebase-closeout         ← YOU ARE HERE: feature has landed — close out the task
+/closeout-prd         ← YOU ARE HERE: feature has landed — close out the task
       │                  file, sync TODO.md, apply all doc updates, polish
-      │                  CHANGELOG voice, bump VERSION
+      │                  CHANGELOG voice, bump VERSION, tag the tree on a bump
       ▼
 /prod-release
 ```
@@ -24,7 +24,7 @@ compatibility: opencode
 
 ---
 
-You are running the `/codebase-closeout` workflow. This runs **after the feature has landed** (code
+You are running the `/closeout-prd` workflow. This runs **after the feature has landed** (code
 merged or about to merge). Your job: close out the feature cleanly — mark the task done, ensure
 every documentation file in the project is accurate and up to date, and leave the project in a
 state where the next contributor can orient themselves without asking questions.
@@ -36,7 +36,7 @@ subjective decisions.
 
 **Only stop for:**
 - Risky/questionable doc changes (narrative, philosophy, security, removals, large rewrites)
-- VERSION bump decision (if not already bumped)
+- VERSION bump decision — every time, even if already bumped on the branch (see Step 8)
 - New TODOS items to add
 - Cross-doc contradictions that are narrative (not factual)
 
@@ -235,7 +235,9 @@ index plus individual task files in `todo/<n>-<slug>.md`. If neither exists, ski
 
 ## Step 8: VERSION Bump Question
 
-**CRITICAL — NEVER BUMP VERSION WITHOUT ASKING.**
+**CRITICAL — NEVER BUMP VERSION WITHOUT ASKING.** This applies every time, including when a
+bump has already happened on the branch — re-confirm rather than defaulting to "no change
+needed" or silently picking a bump size on the user's behalf.
 
 1. **If VERSION does not exist:** Skip silently.
 
@@ -245,30 +247,114 @@ index plus individual task files in `todo/<n>-<slug>.md`. If neither exists, ski
 git diff <base>...HEAD -- VERSION
 ```
 
-3. **If VERSION was NOT bumped:** Use AskUserQuestion:
-   - RECOMMENDATION: Choose C (Skip) because docs-only changes rarely warrant a version bump
-   - A) Bump PATCH (X.Y.Z+1) — if doc changes ship alongside code changes
-   - B) Bump MINOR (X.Y+1.0) — if this is a significant standalone release
+3. **Classify the change size before asking**, regardless of whether VERSION was already
+   bumped. Read `git diff <base>...HEAD --stat` and `git diff <base>...HEAD --name-only`
+   and judge:
+
+   - **Small (→ PATCH, X.Y.Z+1):** bug fixes, a single new endpoint/field/flag, validation
+     tightening, log/metric additions, doc-only changes shipped alongside code, dependency
+     bumps, anything that doesn't change how the service is used or add a new capability.
+   - **Big (→ MINOR, X.Y+1.0):** a new feature, a new user-facing capability, a behavior
+     change significant enough to need its own CHANGELOG story, multiple related small
+     changes that together add up to a meaningful release, or anything the user would want
+     called out on its own in a release announcement.
+
+   This is a judgment call, not a mechanical line count — a one-line change that flips a
+   security-relevant default is "big"; a 200-line refactor with no behavior change is
+   "small". State the classification and the reasoning in the question itself so the user is
+   confirming a stated judgment, not guessing what you were thinking.
+
+4. **If VERSION was NOT bumped:** Use AskUserQuestion, with the classification from step 3
+   driving the recommendation:
+   - RECOMMENDATION: **A** if step 3 classified the change as small, **B** if big
+   - A) Bump PATCH (X.Y.Z+1) — small change: `<one-line reason from step 3>`
+   - B) Bump MINOR (X.Y+1.0) — big change: `<one-line reason from step 3>`
    - C) Skip — no version bump needed
 
-4. **If VERSION was already bumped:** Do NOT skip silently. Instead, check whether the bump
+5. **If VERSION was already bumped:** Do NOT skip silently. Check whether the existing bump
    still covers the full scope of changes on this branch:
 
    a. Read the CHANGELOG entry for the current VERSION. What features does it describe?
-   b. Read the full diff (`git diff <base>...HEAD --stat` and `git diff <base>...HEAD --name-only`).
-      Are there significant changes (new features, new skills, new commands, major refactors)
-      that are NOT mentioned in the CHANGELOG entry for the current version?
+   b. Compare against the full diff from step 3. Are there significant changes (new
+      features, new skills, new commands, major refactors) NOT mentioned in the CHANGELOG
+      entry for the current version?
    c. **If the CHANGELOG entry covers everything:** Skip — output "VERSION: Already bumped to
       vX.Y.Z, covers all changes."
-   d. **If there are significant uncovered changes:** Use AskUserQuestion explaining what the
-      current version covers vs what's new, and ask:
-      - RECOMMENDATION: Choose A because the new changes warrant their own version
-      - A) Bump to next patch (X.Y.Z+1) — give the new changes their own version
-      - B) Keep current version — add new changes to the existing CHANGELOG entry
-      - C) Skip — leave version as-is, handle later
+   d. **If there are significant uncovered changes:** classify *those specific uncovered
+      changes* by the same small/big rule from step 3, then use AskUserQuestion explaining
+      what the current version covers vs what's new:
+      - RECOMMENDATION: **A** if the uncovered changes are small, **B** if big
+      - A) Bump to next patch (X.Y.Z+1) — small: `<reason>`
+      - B) Bump to next minor (X.Y+1.0) — big: `<reason>`
+      - C) Keep current version — add new changes to the existing CHANGELOG entry
+      - D) Skip — leave version as-is, handle later
 
    The key insight: a VERSION bump set for "feature A" should not silently absorb "feature B"
-   if feature B is substantial enough to deserve its own version entry.
+   if feature B is substantial enough to deserve its own version entry — and the size of
+   that entry (patch vs minor) is itself a judgment call to surface, not assume.
+
+---
+
+## Step 8b: Tag the Git Tree on a VERSION Bump
+
+**Only runs if Step 8 resulted in an actual VERSION bump on this branch** (a fresh bump in
+this session, or a prior bump on the branch confirmed in Step 8.4 to still be current). Skip
+silently if Step 8 was skipped or if VERSION does not exist.
+
+**Known gap — this rule is scoped to the `/closeout-prd` flow only.** A VERSION bump made
+outside this skill (e.g. a hotfix landed via `/troubleshoot` or any other ad hoc change) will
+not get tagged automatically — there is no repo-wide hook enforcing "every VERSION-touching
+commit gets a tag." If you bump VERSION outside `/closeout-prd`, apply this same procedure
+(tag name derivation, collision check, annotated tag, no auto-push) by hand.
+
+1. **Determine the tag name.** If the VERSION file lives at the repo root, the tag is
+   `v<VERSION>` (e.g. `v0.18.0`). If the VERSION file lives inside a subdirectory (a
+   monorepo with multiple independently-versioned services/packages), prefix the tag with
+   that directory's basename so tags from different components never collide:
+   `<dirname>-v<VERSION>` (e.g. `s3df-authnz-service-v0.18.0`). Detect the case by checking
+   whether the VERSION file's parent directory is the git root:
+
+   ```bash
+   VERSION_DIR="$(dirname "$(git ls-files --full-name '**/VERSION' | head -1)")"
+   if [ "$VERSION_DIR" = "." ]; then
+     TAG="v$(cat VERSION)"
+   else
+     TAG="$(basename "$VERSION_DIR")-v$(cat "$VERSION_DIR/VERSION")"
+   fi
+   ```
+
+2. **Check for a collision** before tagging — a version bump that reuses an already-tagged
+   number is itself a bug worth surfacing, not silently overwriting:
+
+   ```bash
+   git rev-parse -q --verify "refs/tags/$TAG" >/dev/null && echo "COLLISION"
+   ```
+
+   If a collision is found, do not tag. Warn: "Tag `$TAG` already exists (pointing at
+   `<sha>`) — VERSION was bumped to a number already tagged. Confirm the VERSION bump is
+   correct before retagging manually." and continue with the rest of Step 9 without tagging.
+
+3. **Create an annotated tag** (not lightweight) once the version-bump commit from Step 9
+   exists, so the tag points at the commit that actually contains the VERSION file change,
+   not a prior commit:
+
+   ```bash
+   git tag -a "$TAG" -m "$TAG
+
+   <one-line summary of what this version bump covers, drawn from the CHANGELOG
+   entry or commit message Step 9 just wrote>"
+   ```
+
+4. **Do not push the tag automatically.** Pushing a tag is a release action with its own
+   blast radius (can trigger CI/CD, container builds, deploy pipelines) and belongs to
+   `/prod-release`, not this skill. Report the tag was created locally and how to push it:
+
+   ```
+   Tagged $TAG locally. Push when ready to release: git push origin $TAG
+   ```
+
+5. **If `git tag` fails for any reason** (dirty tree, detached HEAD, no commits yet): warn
+   and continue — a failed tag must never block the rest of the closeout.
 
 ---
 
@@ -336,6 +422,7 @@ Documentation health:
   CHANGELOG.md    [status] ([details])
   TODO.md         [status] ([details])
   VERSION         [status] ([details])
+  Git tag         [status] ([details])
 ```
 
 Where status is one of:
@@ -346,13 +433,17 @@ Where status is one of:
 - Already bumped — version was set by /ship
 - Skipped — file does not exist
 
+`Git tag` status is one of: `Created <tag> (not pushed)`, `Skipped — no VERSION bump`,
+`Collision — <tag> already exists`, or `Failed — <reason>`.
+
 ---
 
 ## Important Rules
 
 - **Read before editing.** Always read the full content of a file before modifying it.
 - **Never clobber CHANGELOG.** Polish wording only. Never delete, replace, or regenerate entries.
-- **Never bump VERSION silently.** Always ask. Even if already bumped, check whether it covers the full scope of changes.
+- **Never bump VERSION silently.** Always ask, every time — even if already bumped, check whether it covers the full scope of changes. Never pick patch-vs-minor on the user's behalf; classify the change size, state your reasoning, and let the recommendation in AskUserQuestion reflect it, but the user makes the final call.
+- **Tag locally, never push automatically.** A VERSION bump gets an annotated git tag as part of this skill's normal flow — but pushing that tag (which can trigger CI/CD, image builds, or deploys) is `/prod-release`'s call, not this skill's.
 - **Be explicit about what changed.** Every edit gets a one-line summary.
 - **Generic heuristics, not project-specific.** The audit checks work on any repo.
 - **Discoverability matters.** Every doc file should be reachable from README or CLAUDE.md.

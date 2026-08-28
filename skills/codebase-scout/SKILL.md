@@ -26,7 +26,7 @@ the backlog that `/prd-workflow` tracks.
 /draft-prd          ← turns thin task file into a full design
       │
       ▼
-/board-review → implementation → /codebase-closeout → /prod-release
+/board-review → implementation → /closeout-prd → /prod-release
 ```
 
 ---

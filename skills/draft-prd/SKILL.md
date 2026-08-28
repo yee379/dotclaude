@@ -82,7 +82,7 @@ When a task number is given, glob `todo/<number>-*.md` to find the task file bef
 /draft-prd  ← YOU ARE HERE
       │
       ▼
-/board-review → implementation → /codebase-closeout → /prod-release
+/board-review → implementation → /closeout-prd → /prod-release
 ```
 
 **Platform:**

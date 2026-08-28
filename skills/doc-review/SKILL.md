@@ -1,6 +1,6 @@
 ---
 name: doc-review
-description: Pre-implementation documentation coverage review. Checks that every doc needing an update is explicitly called out in the plan — README, ARCHITECTURE, API docs, runbooks, CHANGELOG, ADRs, capacity baselines — before any code or cluster change is made. Works in codebase mode (application features) and platform mode (Kubernetes/infrastructure). Pairs with /codebase-closeout which executes updates post-ship. Use when asked to "check the docs plan", "documentation review", or as part of /board-review.
+description: Pre-implementation documentation coverage review. Checks that every doc needing an update is explicitly called out in the plan — README, ARCHITECTURE, API docs, runbooks, CHANGELOG, ADRs, capacity baselines — before any code or cluster change is made. Works in codebase mode (application features) and platform mode (Kubernetes/infrastructure). Pairs with /closeout-prd which executes updates post-ship. Use when asked to "check the docs plan", "documentation review", or as part of /board-review.
 ---
 
 # Documentation Review
@@ -26,7 +26,7 @@ State the detected mode: `> Mode: Platform` or `> Mode: Codebase`.
 /doc-review ← YOU ARE HERE: documentation planning gate
       │
       ▼
-implementation → /codebase-closeout → /prod-release
+implementation → /closeout-prd → /prod-release
 ```
 
 **Platform mode:**
@@ -46,8 +46,8 @@ implementation → /codebase-closeout → /prod-release
 ```
 
 **The handoff (codebase mode):** this skill plans what documentation needs to change;
-`/codebase-closeout` executes those changes after the code ships. Skip this review and
-`codebase-closeout` has to reverse-engineer intent from a diff, losing the "why".
+`/closeout-prd` executes those changes after the code ships. Skip this review and
+`closeout-prd` has to reverse-engineer intent from a diff, losing the "why".
 
 To run all gates automatically, use `/board-review`.
 
@@ -57,7 +57,7 @@ To run all gates automatically, use `/board-review`.
 
 Documentation debt is created at implementation time, not at ship time. When a plan doesn't name
 the docs that need updating, one of three things happens: engineers forget them entirely;
-`codebase-closeout` reverse-engineers partial updates from the diff and loses intent; or docs are
+`closeout-prd` reverse-engineers partial updates from the diff and loses intent; or docs are
 updated inconsistently so README and ARCHITECTURE disagree.
 
 This skill runs against the **plan** — before any code or cluster change — and asks one question:
@@ -207,7 +207,7 @@ detect it, how to migrate, and the rollback path**, and is it flagged in CHANGEL
 
 - **One gap = one `AskUserQuestion` call.** Never batch.
 - Describe it concretely: which doc, what is missing, what a user or engineer would be without it.
-- Options: **A)** add to plan now **B)** defer to `codebase-closeout` / post-apply close-out
+- Options: **A)** add to plan now **B)** defer to `closeout-prd` / post-apply close-out
   **C)** not needed — with the reason.
 - State your recommendation. **Bias toward A:** deferred documentation often never happens.
 - Platform runbook gaps are **always** option A.
@@ -221,7 +221,7 @@ detect it, how to migrate, and the rollback path**, and is it flagged in CHANGEL
 |---|---|
 | Documentation impact table | Mandatory. Every affected doc has a concrete "what changes" entry. |
 | Plan amendments | Per accepted gap, exactly what to add and where, in imperative task form: "Update ARCHITECTURE.md: add the ingestion service to the component diagram and describe its data ownership." |
-| Deferred to close-out | Items deferred rather than added, so `codebase-closeout` knows to look for them. |
+| Deferred to close-out | Items deferred rather than added, so `closeout-prd` knows to look for them. |
 | NOT in scope | Documentation considered and explicitly ruled out, one line of rationale each. |
 
 ---

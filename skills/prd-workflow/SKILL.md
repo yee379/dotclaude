@@ -213,7 +213,7 @@ See [todo/002-photo-upload.md](todo/002-photo-upload.md) for full design, decisi
 2. Change `**Status:**` to `✅ Merged`, set `**Shipped:**` to today's date
 3. Update `TODO.md` — flip status to `✅ Merged`
 4. Commit: `git commit -m "feat: <title> (TODO #<n>)"`
-5. **Invoke `/codebase-closeout`** — pass the task number and branch/PR as context. It will update README/CHANGELOG/docs and set the final status to `✅ Complete` in both the task file and `TODO.md`.
+5. **Invoke `/closeout-prd`** — pass the task number and branch/PR as context. It will update README/CHANGELOG/docs and set the final status to `✅ Complete` in both the task file and `TODO.md`.
 
 When production deployment completes (after `/prod-release`):
 
@@ -225,7 +225,7 @@ When production deployment completes (after `/prod-release`):
 2. Set `**Status:**` to `🚀 Applied`, set `**Applied:**` to today's date
 3. Update `TODO.md` — flip to `🚀 Applied`, update Summary line
 4. Commit: `git commit -m "deploy(platform): #<n> <title> applied"`
-5. **Invoke `/codebase-closeout`** — pass the task number. It will sync `TODO.md` and update any relevant docs.
+5. **Invoke `/closeout-prd`** — pass the task number. It will sync `TODO.md` and update any relevant docs.
 
 Task files are **never deleted** — they become permanent records.
 
@@ -321,7 +321,7 @@ Always stage files **by name** — never `git add -A` or `git add .`.
 | All checklist items ticked | Status → `🏁 Implementation Done` |
 | PR opened | Status → `👀 PR Open`; PR column filled |
 | PR merged | Status → `✅ Merged` **+ the release it merged under** (or `(no release)`) |
-| `/codebase-closeout` completes | Status → `✅ Complete`; docs/CHANGELOG/README updated; version in Status matches `VERSION` |
+| `/closeout-prd` completes | Status → `✅ Complete`; docs/CHANGELOG/README updated; version in Status matches `VERSION` |
 | Production deployed / cluster applied | Status → `🚀 Deployed` (codebase) or `🚀 Applied` (platform), **+ the release**, in both `TODO.md` and the task file's `> **Status:**` line |
 | Cancelled | Status → `❌ Won't Do`; reason in task file |
 
@@ -373,5 +373,5 @@ If you find yourself wanting to apply a standard during implementation, the plan
 | `/k8s-deploy` | Write deployment outcome back to Deployment Log after every apply |
 | `/troubleshoot` | Record findings as `### Problem:` in Problems & Solutions |
 | `/code-review` | Review findings → new checklist items or backlog items |
-| `/codebase-closeout` | After shipping: close out task file, sync TODO.md, update docs |
+| `/closeout-prd` | After shipping: close out task file, sync TODO.md, update docs |
 | `/prod-release` | Terminal status: `🚀 Deployed` (codebase) or `🚀 Applied` (platform) |

@@ -10,7 +10,7 @@ compatibility: opencode
 ## Workflow position
 
 ```
-/draft-prd → /board-review → implementation → /codebase-closeout
+/draft-prd → /board-review → implementation → /closeout-prd
       │
       ▼
 /prod-release          ← YOU ARE HERE: environment promotion, smoke tests, feature flag

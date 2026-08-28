@@ -264,7 +264,19 @@ Your job:
       things worth doing but not required — to ## Opportunities (one line each)
    c. Append any decision entries to ## Decisions Required
    d. Append any plan edits to ## Amendments
-   e. Update ## Status (IN PROGRESS / FAIL / PASS WITH WARNINGS)
+   e. Leave ## Status as `IN PROGRESS` — do NOT touch it until the very end (step 4 below)
+
+   **Never append a second `## Status` heading.** There must be exactly one `## Status`
+   section in the file, ever — the one written by the skeleton, edited in place once at
+   the very end. A reviewer that appends checkpoint updates by writing a fresh
+   `## Status` block each time leaves the original `IN PROGRESS` line still in the file
+   after the real terminal status, and `poll-round.sh`'s "early signal" preview (the
+   file's last non-blank line) will then show that stale `IN PROGRESS` text next to a
+   status the icon already correctly identified as terminal — reading as a disagreement
+   between the icon and the text when there is none. If you need to touch the file after
+   an early section, edit `## Issues`/`## Opportunities`/`## Decisions Required`/
+   `## Amendments` in place; leave the single `## Status` heading and its `IN PROGRESS`
+   value untouched until step 4.
 
    Final structure:
 
@@ -290,7 +302,9 @@ Your job:
      ## Status
      PASS | PASS WITH WARNINGS | FAIL
 
-   Write ## Summary LAST only after all other sections are complete.
+   Write ## Summary LAST only after all other sections are complete. Exactly one
+   `## Status` heading must exist in the finished file — set once, at the very end,
+   overwriting `IN PROGRESS` in place rather than appending a new heading.
 
    ## Amendment classification — tag every amendment
 
@@ -365,6 +379,16 @@ Severity:
    a reviewer's first action is writing the skeleton, so the file existing means *started*,
    never *finished*. Reviewer codes are defined in the loaded config.
 
+   **The exit code and the leading icon are the verdict; the trailing text on each line is
+   not.** That trailing text is the file's last non-blank line, shown only as a preview —
+   it can legitimately read `IN PROGRESS` even when the icon says `⚠️ warn`/`✅ complete`,
+   if a reviewer left a stray duplicate `## Status` heading in the file (a known reviewer
+   mistake — see the subagent instructions above). Do not treat that as a disagreement
+   between the script and the reviewer, and do not conclude a reviewer is still running
+   from the trailing text alone. If a line's icon and trailing text seem to conflict,
+   read the actual file's `## Status` sections directly (`grep -n '^## Status' -A1 <file>`)
+   before deciding anything — the exit code already told you the truth.
+
    Emit its output as plain prose — **NOT inside backticks**:
 
    ```
@@ -394,6 +418,28 @@ Severity:
    ```
 
    The script extracts STATUS, AMENDED, DECISIONS, BLOCKING, OPPORTUNITIES, and a ≤10-line SUMMARY per reviewer. Only read a reviewer's full output file if the script's SUMMARY is insufficient (e.g. a blocking decision needs its full text). Never read full files speculatively.
+
+6.5. **Cross-check newly introduced claims for a doc-answerable verification gap.** A reviewer can
+   introduce a new claim or ADR in the same round another reviewer runs in parallel — nobody sees it
+   in time to fact-check it that round, and unless something asks again, nobody ever does. Scan this
+   round's `## Amendments`, `## Decisions Required`, and any ADR text written this round for language
+   flagging an *unverified mechanism claim that a primary source (not the live cluster/system) could
+   settle* — "verify in dev/live before believing," "assumption, not confirmed," "cannot be inferred,"
+   "should be confirmed positively," or an ADR's own "Context"/"Consequences" resting on how a
+   tool/library/platform *behaves* rather than on this repo's own state.
+
+   For each such item, ask: **is this a claim about how someone else's documented system works**
+   (a cloud provider's API, a CNI's policy semantics, a library's behavior, a spec) **rather than
+   about this repo's own live state** (which only `kubectl`/`git`/a real request can settle)? If yes,
+   it is a research-verification candidate, not a cluster-verification-only item — route it to a
+   `research` subagent in Verification mode (up to 4 claims per dispatch, per that skill's cap) before
+   falling through to the cheap-check test in item 9. Fold a confirmed/contradicted answer into the
+   plan and the relevant reviewer's decision entry (mark it resolved, note the source); an unverified
+   result stays open and still needs the live check the original reviewer asked for — this pass
+   narrows what needs a cluster round-trip, it does not replace it.
+
+   Skip this cross-check entirely if no amendment/decision/ADR from this round contains that kind of
+   language — most rounds won't.
 
 7. **Surface decisions before the round dashboard.** Group by severity:
 

@@ -34,7 +34,7 @@ State the detected mode at the top of your review: `> Mode: Platform` or `> Mode
       └───────────────────────────────────────────────┘
       │  all reviewers pass
       ▼
-implementation → /codebase-closeout → /prod-release
+implementation → /closeout-prd → /prod-release
 ```
 
 In **Platform mode** the board swaps the codebase reviewers for `/platform-capacity-review`,

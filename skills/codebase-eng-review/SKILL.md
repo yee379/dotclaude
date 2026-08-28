@@ -16,7 +16,7 @@ compatibility: opencode
 /codebase-eng-review       ← YOU ARE HERE: implementation gate: code quality, test coverage,
       │                  performance, edge cases → test plan artifact
       ▼
-/doc-review → /security-review → implementation → /codebase-closeout → /prod-release
+/doc-review → /security-review → implementation → /closeout-prd → /prod-release
 ```
 
 Run after `/codebase-arch-review` has validated the structural decisions and before writing code. This skill reviews **execution** — whether the implementation plan is correct, testable, and complete. `codebase-arch-review` reviews **structure** — the decisions that are expensive to reverse.

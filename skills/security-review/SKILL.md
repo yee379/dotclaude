@@ -16,7 +16,7 @@ compatibility: opencode
 /security-review       ← YOU ARE HERE: security gate: attack surface, auth, injection,
       │                  secrets, supply chain, Kubernetes workload security
       ▼
-implementation → /codebase-closeout → /prod-release
+implementation → /closeout-prd → /prod-release
 ```
 
 Run after `/codebase-eng-review` and before promoting to production. Any finding here should block

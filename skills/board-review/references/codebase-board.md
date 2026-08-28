@@ -110,7 +110,7 @@ If verdict is CLEAR TO BUILD or CLEAR WITH WARNINGS:
      ↓
 /tdd-standards       ← tests first, then implementation
      ↓
-/codebase-closeout #NNN   ← close out task, apply doc updates, sync TODO.md
+/closeout-prd #NNN   ← close out task, apply doc updates, sync TODO.md
      ↓
 /prod-release        ← promote through environments
 ```

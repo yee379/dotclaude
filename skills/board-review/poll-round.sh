@@ -68,8 +68,20 @@ for code in "${REVIEWERS[@]}"; do
     *)                  icon="❓ unknown "; all_done=false ;;
   esac
 
-  signal=$(grep -v "^$" "$file" | grep -v "^#" | tail -1 | cut -c1-50)
-  echo "  $icon  $display  ${signal:----}"
+  # A reviewer that appends a second "## Status" heading instead of editing the first
+  # in place leaves a stale IN PROGRESS trailing the real terminal status. The icon
+  # above already used the FIRST occurrence (correct); flag the duplicate here so it
+  # gets fixed rather than silently tolerated round after round.
+  status_heading_count=$(grep -c '^## Status' "$file")
+  dupe_note=""
+  if [[ "$status_heading_count" -gt 1 ]]; then
+    dupe_note=" ⚠️duplicate-status-heading(x${status_heading_count})"
+  fi
+
+  signal=$(grep -v "^$" "$file" | grep -v "^#" \
+             | grep -vE '^(IN ?PROGRESS|PASS( WITH WARNINGS)?|FAIL)$' \
+             | tail -1 | cut -c1-50)
+  echo "  $icon  $display  ${signal:----}${dupe_note}"
 done
 
 $all_done && exit 0 || exit 1

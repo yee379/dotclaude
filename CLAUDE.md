@@ -14,6 +14,14 @@
 - NEVER change the working directory — do not use `cd` in any Bash command, not even as part of a chained command (e.g. `cd foo && make`). The working directory is the directory Claude was started in and must remain constant for the entire session.
 - When a command must run in a subdirectory, pass the path inline instead (e.g. `make -C src/`, `npm --prefix src/ install`, or `(cd src/ && make)` only as a last resort when the tool provides no alternative).
 
+## Working Discipline
+
+- Don't assume or guess silently: stop and ask clarifying questions if anything is ambiguous instead of running with wrong assumptions.
+- Don't overcomplicate: write the absolute minimum amount of code needed; avoid speculative features, config systems, or single-use abstractions.
+- Don't touch adjacent code: never "improve" neighboring formatting, comments, or clean up adjacent code that wasn't part of the direct request.
+- Don't refactor unbroken things: leave working code alone unless it is directly tied to the assigned task.
+- Don't delete pre-existing dead code: if you spot unrelated dead code, mention it to the user, but do not delete it on your own.
+
 ## Skill Routing
 
 When the user's intent matches a pattern below, invoke the listed skill via the Skill tool **before** responding. Apply judgment — these are intent patterns, not rigid keyword triggers. For platform/infra intents (k8s, cluster, Helm, namespace, workload), prefer the platform-* variant; for software/feature intents, prefer the codebase-* variant.
@@ -34,7 +42,7 @@ When the user's intent matches a pattern below, invoke the listed skill via the 
 | Security concerns, "is this safe", audit for vulnerabilities | `security-review` |
 | Deploy to Kubernetes, apply Helm charts, `make apply` | `k8s-deploy` |
 | Ship a release, promote to production, tag a version | `prod-release` |
-| Close out a task, update docs/CHANGELOG after merging | `codebase-closeout` |
+| Close out a task, update docs/CHANGELOG after merging | `closeout-prd` |
 | Audit or improve skills, "skill stocktake" | `skill-stocktake` |
 | "what did we decide", "last time", "do you remember", prior decisions or context, session start on a known project | `mcp__mempalace__mempalace_search` (keywords only, not a sentence) |
 | Save an insight, decision, or key finding to memory | `mcp__mempalace__mempalace_add_drawer` |

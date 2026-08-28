@@ -91,6 +91,13 @@ Before any tests:
 - [ ] **Scan existing tests for adjacent untested business logic** — any domain rules in the area being changed that currently have no test coverage should be added to the list
 - [ ] List behaviors to test (not implementation steps)
 - [ ] Get user sign-off on the list
+- [ ] **If the plan calls for a version bump** (a behavior/surface change, a removed
+      endpoint, anything the project's own version-history convention would log) —
+      confirm the exact version string with the user before writing any code. Never bump
+      a version file without asking, even mid-implementation when it's easy to forget in
+      the flow of writing tests. See `closeout-prd`'s "NEVER BUMP VERSION WITHOUT
+      ASKING" for the full rule — this checkpoint exists so the confirmation happens at
+      the start of implementation, not only at closeout when it's more expensive to fix.
 
 Ask: "What should the public interface look like? Which behaviors are most important to test? Are there business rules in this area that aren't currently tested?"
 

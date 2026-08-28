@@ -64,7 +64,7 @@ Plan, review, and close out a feature — in order.
 | `doc-review` | Pre-implementation docs planning — identifies every doc needing update |
 | `codebase-design-review` | Design critique on a plan — rates each dimension 0–10 and fixes to get there |
 | `codebase-ux-review` | UX plan review from a scientist/end-user perspective; triage-gated |
-| `codebase-closeout` | Post-ship doc sync — README, ARCHITECTURE, CHANGELOG, todo/ close-out |
+| `closeout-prd` | Post-ship doc sync — README, ARCHITECTURE, CHANGELOG, todo/ close-out |
 
 ### Codebase ops
 Day-to-day backlog and discovery.
@@ -79,7 +79,7 @@ Plan, review, and apply a Kubernetes/infrastructure change — in order.
 
 | Skill | Purpose |
 |---|---|
-| `platform-draft-prd` | Platform change planning — feasibility, capacity, infra design, operational readiness, ADRs |
+| `draft-prd` | Platform change planning — feasibility, capacity, infra design, operational readiness, ADRs |
 | `platform-board-review` | Orchestrates all platform reviewers in parallel; iterates until all pass |
 | `codebase-arch-review` | Architecture review (platform mode) — cluster topology, namespaces, network, storage, multi-tenancy |
 | `platform-capacity-review` | Cluster capacity and feasibility — CPU, memory, storage, networking, control-plane headroom |
