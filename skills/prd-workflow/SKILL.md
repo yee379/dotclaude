@@ -96,6 +96,32 @@ every other, and a Reference cell listing eight tasks tells a reader nothing.
 Both columns are pointers. The *explanation* of a dependency lives in the task file's own
 Dependencies section — see **Each task file is self-contained** below.
 
+#### Deployment Bundles
+
+Below the table, a `## Deployment bundles` section — appended after it, never as a sub-heading
+inside it (see *Provenance* above for why the table itself stays flat). It groups tasks that
+are **reviewed and unapplied** and share enough deploy surface — the same file, overlay, or
+manifest — that applying them separately would be an accident rather than a decision.
+
+Two lists, not one:
+
+- **Ready to bundle** — every task in the row is `🔍 Reviewed` or later, and shares a concrete
+  file/overlay with another row in the same bundle. State the shared surface as a path, not a
+  theme. Flag any task whose verdict or scope differs from its bundle-mates (dev-only,
+  CLEAR WITH WARNINGS vs. CLEAR TO APPLY) so it doesn't silently ride into a wider apply.
+- **Plan/sequence together, not deploy-ready** — tasks that share a root cause, a split
+  lineage, or a file another task in the set will also touch, but aren't all reviewed yet.
+  This is a sequencing note, not a bundle — don't apply these together just because they're
+  listed together.
+
+A task sharing a *theme* with another (same subsystem, same reviewer, same provenance) does
+not belong here unless it also shares a *file* or *overlay*. Theme-sharing without a shared
+deploy surface is what the Reference column is for — it doesn't need a bundle entry.
+
+Update this section in the same action that changes a task's status — same discipline as the
+table. A task moving to `🔍 Reviewed` that shares a file with something already in the section
+is the trigger to promote a "plan together" row to "ready to bundle," or to add a new bundle.
+
 ### Task Files
 
 **Codebase tasks:** Load `references/codebase-task-template.md` when creating a new task file.
@@ -166,7 +192,8 @@ one copy — in the task file. The rule that the task file wins when they disagr
 
 ### Starting a New Task
 
-1. Check `TODO.md` — what's the next available number?
+1. Check `TODO.md` — what's the next available number? Run the duplicate/related check from
+   *Adding a New Backlog Item* step 1 before proceeding.
 2. Create `todo/<number>-<slug>.md` from the appropriate template
 3. Fill in at minimum: Problem Statement and Goals
 4. **Add a row to `TODO.md` immediately** — priority, status `📋 Preparing`, branch `—`, PR `—`
@@ -252,13 +279,30 @@ Task files are **never deleted** — they become permanent records.
 
 ### Adding a New Backlog Item
 
-1. Pick the next available number from `TODO.md`
-2. Create `todo/<n>-<slug>.md` from the appropriate template
-3. Fill in: Problem Statement and Goals
-4. Assign a priority tier (P0–P3)
-5. Add a row to `TODO.md` with priority and status `📋 Preparing`
-6. Commit: `git commit -m "docs(todo): add #<n> <title>"`
-7. **Do not create a branch or begin implementation yet.** Next step is the draft-prd skill.
+1. **Check for duplicates and related work before picking a number.** Read `TODO.md` in full and
+   grep task files for the same problem, file, or symptom — not just the same keyword. Three
+   outcomes:
+   - **Duplicate** — an existing task already covers this. Don't create a new number; fold the
+     new information into the existing task file (Problems & Solutions, or Provenance →
+     References) and stop here.
+   - **Related** — a different problem that shares a root cause, a file, or a dependency with
+     an existing task. Proceed to create the new task, but:
+     - Add the existing task to the new task file's `## Provenance` → References, with the
+       one-line *why* (dependency, shared root cause, shared file — name which).
+     - Add the new task's number to the existing task's References the same way, in the same
+       action (both files — see *Each task file is self-contained*).
+     - If the relationship is a shared deployable file/overlay rather than just a shared cause,
+       add or update the candidate in `TODO.md`'s `## Deployment bundles` now, even if neither
+       task is reviewed yet — cheaper to flag at creation than to rediscover it during
+       `/board-review` or at apply time.
+   - **Unrelated** — proceed with no cross-links.
+2. Pick the next available number from `TODO.md`
+3. Create `todo/<n>-<slug>.md` from the appropriate template
+4. Fill in: Problem Statement and Goals
+5. Assign a priority tier (P0–P3)
+6. Add a row to `TODO.md` with priority, status `📋 Preparing`, and any Reference links from step 1
+7. Commit: `git commit -m "docs(todo): add #<n> <title>"`
+8. **Do not create a branch or begin implementation yet.** Next step is the draft-prd skill.
 
 ---
 
@@ -269,8 +313,13 @@ When asked "what should we work on next?":
 1. Read `TODO.md` in full
 2. Group open items by: P0 blockers → P1 high-value → P2 polish → P3 nice-to-have
 3. Identify dependency chains
-4. Suggest a sequenced roadmap with effort estimates
-5. Flag any open questions in existing task files that are blocking progress
+4. **Check `## Deployment bundles` against current status.** Any task that moved to
+   `🔍 Reviewed` since the section was last touched is a candidate to join a "ready to bundle"
+   row; any "plan together" row where every task is now reviewed should be promoted to "ready
+   to bundle." Update the section in the same pass — don't leave it stale.
+5. Suggest a sequenced roadmap with effort estimates, calling out any bundle opportunities from
+   step 4 so reviewed-but-unapplied work ships together instead of trickling out one apply at a time.
+6. Flag any open questions in existing task files that are blocking progress
 
 **TODO.md health check:** If it appears stale (tasks in progress with no branch, shipped tasks still showing as in-review), run the sync check before reporting status.
 

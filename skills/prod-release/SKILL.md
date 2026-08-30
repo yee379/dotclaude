@@ -316,7 +316,25 @@ e.g.: upload-new-resize-2026-03-18
 
 ## Release Notes Template
 
-For each production release:
+**Find where this repo already records releases before deciding where to write this — do not
+default to creating a root `CHANGELOG.md` unasked.** Check, in order:
+
+1. A root `CHANGELOG.md` — if it exists, this is almost always the right target. Append, using
+   `Edit` with an exact `old_string` match — **never `Write`, never regenerate an existing entry**.
+   A rewritten history is a worse outcome than a missing one; if you're unsure whether content
+   already exists for this version, read the whole file first.
+2. A per-service equivalent — some repos keep release history somewhere else on purpose (a
+   `SKILL.md` "version history" table maintained alongside a debug/runbook skill, a `## Deployment
+   Log` section inside each task file, a `docs/RUNBOOK.md` changelog section). If one exists and is
+   already being kept up to date, that **is** this repo's changelog — use it, don't create a
+   competing one. A repo-specific test that asserts the version table has a row for the current
+   `VERSION` is a strong signal this is the enforced convention, not an informal habit.
+3. **Neither exists:** ask the user whether to create a root `CHANGELOG.md` now or skip it for this
+   release. Don't silently decide either way — a missing changelog is a real gap worth surfacing,
+   and creating one nobody asked for is scope creep on a release you were asked to ship.
+
+Whatever the target, the same content applies — adapt the shape to match what's already there
+(don't force this exact template onto a repo with a denser or terser existing convention):
 
 ```markdown
 ## Release v1.4.2 — 2026-03-18
@@ -341,6 +359,10 @@ For each production release:
 - If upload errors spike: check S3 bucket policy and CloudFront distribution
 ```
 
+Write this in the **same commit** as the version bump, not as a follow-up — a version bumped
+without its changelog entry is exactly the kind of drift a later `git log -p` archaeology session
+has to reconstruct by hand.
+
 ---
 
 ## After a successful production deployment
@@ -349,6 +371,11 @@ Once smoke tests pass and the rollout is complete, update the task tracking:
 
 1. In the task file (`todo/<number>-<slug>.md`): set `**Status:**` to `🚀 Deployed`
 2. In `TODO.md`: flip the status column to `🚀 Deployed`
+3. Confirm the changelog entry from "Release Notes Template" above actually landed — this is a
+   separate check from steps 1–2, not implied by them. A task file marked `🚀 Deployed` with no
+   corresponding changelog row is exactly the kind of thing a `TODO.md`-driven workflow can miss,
+   since task-tracking and release-history are two different documents answering two different
+   questions ("what's the status of #NNN" vs. "what shipped in v1.4.2").
 
 > **Note:** This skill uses `🚀 Deployed` as the terminal status for codebase tasks. The platform workflow (`/prd-workflow`) uses `🚀 Applied` for Kubernetes changes — the different labels reflect the different deployment verbs (code deployed vs manifests applied). Check which workflow you're in before updating status.
 
