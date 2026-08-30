@@ -315,6 +315,30 @@ Beyond raw compute — does the change also require: new StorageClasses, Vault r
 
 ---
 
+## Phase 2.5 — Feasibility checks [mandatory, both modes]
+
+**Run this before Phase 3. It is not optional and it is not a formality.**
+
+The board's budget is finite; a dependency that doesn't resolve, a symbol that doesn't exist, a
+cluster resource that isn't there, or a schema assumption that doesn't hold is a cheap check here and
+a reviewer's judgement spent discovering it in Round 1 otherwise.
+
+Open `references/feasibility-checks.md` and work through the checks for the detected mode. Fix what
+fails, or record it explicitly as an accepted unverified assumption — do not carry a silent ❌ into
+Phase 3.
+
+This is distinct from Phase 11's precision sweep: precision checks whether the plan agrees with
+itself; this checks whether the plan agrees with reality. Run both.
+
+Report to the user in one line:
+
+> "Feasibility checks: N of M passed live (K dependency, J resource, …). L unresolved, recorded as
+> assumptions."
+
+If everything passed, say that too — it's a real signal, not an empty result.
+
+---
+
 ## Phase 3 — Architecture Decision Records (ADRs)
 
 For each significant decision, write a short ADR using the format from `~/.claude/skills/codebase-arch-review/references/adr-template.md`.

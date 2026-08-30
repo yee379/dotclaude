@@ -134,7 +134,12 @@ which reviewers then treat as given — and every downstream finding built on it
 looks like a finding. This is not hypothetical: a count fed to Rounds 1 and 2 as ground truth was
 wrong, and manufactured most of Round 2.
 
-- Query the live system, run the command, read the config file. Not the plan's own claim about it.
+- **Check for a `## Feasibility checks` table first** (written by `/draft-prd` Phase 2.5). If present,
+  re-verify its entries directly — rerun the commands it names, confirm the outputs still hold — rather
+  than re-deriving those facts from scratch. Any row it left unresolved/assumption still needs a real
+  measurement here; a present-but-stale table is not a pass.
+- For anything not already covered by that table: query the live system, run the command, read the
+  config file. Not the plan's own claim about it.
 - **Never accept a contested fact on reviewer consensus.** Three reviewers agreeing is not evidence;
   one primary-source check is. Every count corrected in that review was corrected by a direct
   measurement, and two of the three wrong values had passed a full round unchallenged.
@@ -164,6 +169,7 @@ Report as plain prose, NOT backticks:
 Precision gate — #NNN
 ──────────────────────────────────────────────────────
 Ground truth measured:  <N facts, from <source>>  (<M corrections made>)
+                         (<K reused from draft-prd's Feasibility checks table, J re-measured fresh>)
 Precision sweep:        <N items fixed>  (<breakdown>)
 Plan length:            <L lines>
 ──────────────────────────────────────────────────────
@@ -618,16 +624,23 @@ two reviewers state the plan is buildable as written" is the honest report, and 
    For multi-round reviews, include only the final round's output per reviewer.
    If truncated: `⚠️ Truncated — output is partial; sections reached: <list>`
 
-2. **Delete the review artefact directory** — only after the task file is written:
+2. **Append one line to `todo/board-review-history.log`** (create it if absent) — this is the only
+   place the amendment ratio is tracked across reviews, so whether Phase 2.5/precision-sweep changes
+   are actually shrinking rounds over time is answerable later instead of guessed:
+   ```
+   YYYY-MM-DD #NNN <codebase|platform> rounds=N verdict=<verdict> amendments=<design>/<precision>
+   ```
+
+3. **Delete the review artefact directory** — only after the task file is written:
    ```bash
    rm -rf todo/review/<slug>/
    ```
 
-3. **Update the task file and `TODO.md`:**
+4. **Update the task file and `TODO.md`:**
    - CLEAR verdict: status → `🔍 Reviewed` in both files
    - BLOCKED or UNSTABLE: status → `⬜ Open`; add a note on what blocked the review
 
-4. **Commit** using the commit message format from the loaded config.
+5. **Commit** using the commit message format from the loaded config.
 
 5. Tell the user the verdict using the after-review next steps from the loaded config.
 
