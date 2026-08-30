@@ -81,6 +81,14 @@ round that produced it, with a date where one applies (`Security review 2026-08-
 sub-headings fragment the table into several that cannot be sorted or scanned as one, and a
 row silently loses its provenance if it is ever moved. One table, provenance per row.
 
+**Provenance is one short sentence — never a status log.** It names what raised the task, not
+what has happened since. A rollout timeline, a list of bugs found and fixed, or a slice-by-slice
+history belongs in the task file's own `> **Status:**` line, `## Provenance` → `### Status log`,
+or body sections — never copied into this cell. If you catch yourself writing "**2026-08-27:**"
+or a second clause describing an outcome rather than an origin, stop and move it to the task
+file instead. A Provenance cell that has grown past one line is a sign the task file's own
+history section is missing that detail, not that the cell needs to hold more.
+
 **Reference is the tasks this one depends on, blocks, or measurably affects** — as links,
 not prose. Keep it to genuine relationships; every task in a repo is loosely related to
 every other, and a Reference cell listing eight tasks tells a reader nothing.
