@@ -58,6 +58,9 @@ For `blocking` and `high`, add:
 5. **Proof sketch** — the shape of the request or payload that exercises it (method, path, the
    field that carries it, the value class). Enough that a reader can reproduce it; not a working
    weaponised exploit.
+6. **The regression test that must ship with the fix** — named, automated, asserting the denied
+   case is denied, and **failing against the current code**. Without it the fix regresses on the
+   next refactor of that handler and no one learns until the next review.
 
 If you cannot produce items 1–3, it is a lead. Say so and move on — do not pad `## Issues`.
 

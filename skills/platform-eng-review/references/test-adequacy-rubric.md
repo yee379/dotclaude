@@ -1,6 +1,6 @@
 # Test Adequacy Rubric — Platform Changes
 
-Load during Step 6 of `/platform-eng-review` to judge whether a plan's verification is
+Load during Step 8 of `/platform-eng-review` to judge whether a plan's verification is
 adequate, and to decide blocking vs warning. The fill-in template lives separately in
 `references/test-plan-template.md`.
 

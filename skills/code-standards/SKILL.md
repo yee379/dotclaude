@@ -6,117 +6,51 @@ origin: ECC
 
 # Coding Standards & Best Practices
 
-Universal coding standards applicable across all projects.
+Universal standards for starting a project or module, reviewing for maintainability, refactoring
+to convention, setting up lint/format/type-check rules, or onboarding contributors.
 
-## When to Activate
+## Principles
 
-- Starting a new project or module
-- Reviewing code for quality and maintainability
-- Refactoring existing code to follow conventions
-- Enforcing naming, formatting, or structural consistency
-- Setting up linting, formatting, or type-checking rules
-- Onboarding new contributors to coding conventions
+**Readability first** — code is read more than written. Clear names, self-documenting over
+commented, consistent formatting.
 
-## Code Quality Principles
+**KISS** — the simplest solution that works. No over-engineering, no premature optimisation.
+Understandable beats clever.
 
-### 1. Readability First
-- Code is read more than written
-- Clear variable and function names
-- Self-documenting code preferred over comments
-- Consistent formatting
+**DRY** — extract common logic, reuse components, share utilities. No copy-paste programming.
 
-### 2. KISS (Keep It Simple, Stupid)
-- Simplest solution that works
-- Avoid over-engineering
-- No premature optimization
-- Easy to understand > clever code
+**YAGNI** — don't build before it's needed. Avoid speculative generality; add complexity when
+required, refactor when it arrives.
 
-### 3. DRY (Don't Repeat Yourself)
-- Extract common logic into functions
-- Create reusable components
-- Share utilities across modules
-- Avoid copy-paste programming
+## Reference material
 
-### 4. YAGNI (You Aren't Gonna Need It)
-- Don't build features before they're needed
-- Avoid speculative generality
-- Add complexity only when required
-- Start simple, refactor when needed
+| Topic | File |
+|---|---|
+| Variable, function, and file naming | `references/naming-conventions.md` |
+| Immutability, error handling, async/await, type safety | `references/patterns.md` |
+| REST conventions, response format, Zod input validation | `references/api-design.md` |
+| Next.js App Router layout and file naming | `references/project-structure.md` |
+| When to comment, and JSDoc patterns | `references/comments-jsdoc.md` |
+| Before/after examples of each anti-pattern | `references/code-smells.md` |
 
-## TypeScript/JavaScript Standards
+## Code smells
 
-See `references/naming-conventions.md` for variable, function, and file naming examples.
+Watch for long functions (>50 lines), deep nesting (5+ levels), magic numbers, dead code, and
+inconsistent naming. Examples in `references/code-smells.md`.
 
-See `references/patterns.md` for immutability, error handling, async/await, and type safety examples.
+## Performance
 
-> See `/react-patterns` for comprehensive React component patterns, hooks, state management, Apollo/urql integration, and RTL testing.
-
-## API Design Standards
-
-See `references/api-design.md` for REST conventions, response format, and Zod input validation.
-
-## File Organization
-
-See `references/project-structure.md` for Next.js App Router layout and file naming conventions.
-
-## Comments & Documentation
-
-See `references/comments-jsdoc.md` for when-to-comment rules and JSDoc patterns.
-
-## Performance Best Practices
-
-### Memoization
+Select only the columns you need — `select('id, name, status')`, not `select('*')` — and bound
+every query with a `limit`.
 
 ```typescript
-import { useMemo, useCallback } from 'react'
-
-// ✅ GOOD: Memoize expensive computations
-const sortedMarkets = useMemo(() => {
-  return markets.sort((a, b) => b.volume - a.volume)
-}, [markets])
-
-// ✅ GOOD: Memoize callbacks
-const handleSearch = useCallback((query: string) => {
-  setSearchQuery(query)
-}, [])
+// ✅ GOOD                              // ❌ BAD
+await db.from('users')                  await db.from('users')
+  .select('id, name, status').limit(10)   .select('*')
 ```
 
-### Lazy Loading
+React memoisation (`useMemo`, `useCallback`) and lazy loading (`lazy` + `Suspense`) are in
+`/react-patterns`, along with component patterns, hooks, state management, Apollo/urql
+integration, and RTL testing.
 
-```typescript
-import { lazy, Suspense } from 'react'
-
-// ✅ GOOD: Lazy load heavy components
-const HeavyChart = lazy(() => import('./HeavyChart'))
-
-export function Dashboard() {
-  return (
-    <Suspense fallback={<Spinner />}>
-      <HeavyChart />
-    </Suspense>
-  )
-}
-```
-
-### Database Queries
-
-```typescript
-// ✅ GOOD: Select only needed columns
-const users = await db
-  .from('users')
-  .select('id, name, status')
-  .limit(10)
-
-// ❌ BAD: Select everything
-const users = await db
-  .from('users')
-  .select('*')
-```
-
-For testing standards, see /tdd-standards.
-
-## Code Smell Detection
-
-Watch for: long functions (>50 lines), deep nesting (5+ levels), magic numbers, dead code, inconsistent naming.
-
-See `references/code-smells.md` for before/after examples of each anti-pattern.
+Testing standards are `/tdd-standards`.

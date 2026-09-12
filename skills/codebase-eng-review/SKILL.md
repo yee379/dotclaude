@@ -1,6 +1,6 @@
 ---
 name: codebase-eng-review
-description: Eng manager-mode plan review. Lock in the execution plan — architecture, data flow, diagrams, edge cases, test coverage, performance. Walks through issues interactively with opinionated recommendations. Use when asked to "review the architecture", "engineering review", or "lock in the plan".
+description: Eng manager-mode plan review. Lock in the execution plan — architecture, data flow, diagrams, interface and error-contract design, edge cases, test coverage and test adequacy, performance and cost, idempotency and retry safety, observability, and migration mechanics. Walks through issues interactively with opinionated recommendations. Use when asked to "review the architecture", "engineering review", or "lock in the plan".
 license: MIT
 compatibility: opencode
 ---
@@ -34,12 +34,12 @@ When run inside `/board-review`, the orchestrator provides `Plan file:` and
 given, load `references/subagent-protocol.md` (in the `board-review` skill directory) and
 follow it exactly.
 
-Checkpoints for this skill: Step 0, architecture, code quality, tests, performance, upgrade/transition.
+Checkpoints for this skill: Step 0, architecture, code quality, interfaces, tests, test adequacy, performance, resilience, observability, correctness, upgrade/transition.
 
 ---
 
 ## Priority hierarchy
-If you are running low on context or the user asks you to compress: Step 0 > Test diagram > Upgrade & transition path > Opinionated recommendations > Everything else. Never skip Step 0 or the test diagram.
+If you are running low on context or the user asks you to compress: Step 0 > Test diagram > Resilience & idempotency > Upgrade & transition path > Observability > Opinionated recommendations > Everything else. Never skip Step 0 or the test diagram.
 
 ## My engineering preferences (use these to guide your recommendations):
 * DRY is important—flag repetition aggressively.
@@ -93,7 +93,7 @@ Before reviewing anything, answer these questions:
 
 If the complexity check triggers (8+ files or 2+ new classes/services), proactively recommend scope reduction via AskUserQuestion — explain what's overbuilt, propose a minimal version that achieves the core goal, and ask whether to reduce or proceed as-is. If the complexity check does not trigger, present your Step 0 findings and proceed directly to Section 1.
 
-Always work through the full interactive review: one section at a time (Architecture → Code Quality → Tests → Performance) with at most 8 top issues per section.
+Always work through the full interactive review: one section at a time (Architecture → Code Quality → Tests → Performance → Resilience → Observability → Correctness → Upgrade) with at most 8 top issues per section. Sections 5–7 are each trigger-gated — state plainly when a trigger does not apply and move on rather than padding.
 
 **Critical: Once the user accepts or rejects a scope reduction recommendation, commit fully.** Do not re-argue for smaller scope during later review sections. Do not silently reduce scope or skip planned components.
 
@@ -124,12 +124,25 @@ Evaluate:
 * Areas that are over-engineered or under-engineered relative to my preferences.
 * Existing ASCII diagrams in touched files — are they still accurate after this change?
 
+Then load `references/interface-design.md` and work it for every new or modified public
+interface: signature design (boolean traps, primitive obsession, union returns), the module's
+error contract, making illegal states unrepresentable, boundary normalisation, depth over
+breadth, and coupling hygiene (import cycles, layering violations, global mutable state,
+temporal coupling). This is the section with the longest half-life — a bad signature outlives
+every bug in the diff.
+
 **STOP.** For each issue found in this section, call AskUserQuestion individually. One issue per call. Present options, state your recommendation, explain WHY. Do NOT batch multiple issues into one AskUserQuestion. Only proceed to the next section after ALL issues in this section are resolved.
 
 ### 3. Test review
 Make a diagram of all new UX, new data flow, new codepaths, and new branching if statements or outcomes. For each, note what is new about the features discussed in this branch and plan. Then, for each new item in the diagram, identify what test will be needed (unit, integration, or E2E) and flag any that lack a clear testing strategy. This is a planning exercise — the tests do not exist yet. The output feeds the Test Plan Artifact below; actual test writing happens during implementation via `/tdd-standards`.
 
 For LLM/prompt changes: treat any edit to a prompt template, system prompt, tool/function definition, model ID or routing rule, retrieval or chunking config, or an LLM-judge rubric as eval-affecting (plus any additional patterns the project's own CLAUDE.md names). If this plan touches ANY of those, state which eval suites must be run, which cases should be added, and what baselines to compare against. Then use AskUserQuestion to confirm the eval scope with the user.
+
+Then load `references/test-adequacy-rubric.md` and judge the proposed tests against it — the
+per-change-type bar, the mutation question ("if the implementation were subtly wrong, which named
+test fails?"), over-mocking signals, the flakiness source table, and what is worth more than
+another unit test. Record the verdict table and apply the blocking/warning thresholds as written;
+do not soften a blocking finding into a warning.
 
 **STOP.** For each issue found in this section, call AskUserQuestion individually. One issue per call. Present options, state your recommendation, explain WHY. Do NOT batch multiple issues into one AskUserQuestion. Only proceed to the next section after ALL issues in this section are resolved.
 
@@ -163,7 +176,50 @@ complexity, memory, caching, concurrency, frontend/API efficiency, and a quick-w
 
 **STOP.** For each issue or optimisation opportunity found in this section, call AskUserQuestion individually. One issue per call. Present options (including "do nothing — not worth the complexity"), state your recommendation, explain WHY. Do NOT batch. Only proceed to the next section after ALL issues in this section are resolved.
 
-### 5. Upgrade & transition path
+### 5. Resilience and idempotency
+
+**Only run this section when the plan adds or modifies any of the following:** an outbound
+network call, a queue or stream consumer, a webhook handler, a scheduled job, a retry, a
+multi-step operation that is not a single transaction, or a mutation a client can submit twice.
+
+**If none apply — state "no new delivery or failure surface" and move on.**
+
+Otherwise load `references/resilience-review.md` and work it: idempotency ("is it safe to run
+twice?"), timeouts and deadline budgets, retry policy and amplification, degradation and
+bulkheads, partial-failure state, concurrency correctness, and rollout containment. Produce the
+required output table — one row per new mutating or outbound codepath.
+
+This section catches the largest class of production incidents the rest of the review cannot
+see: code that is correct once and wrong on the retry.
+
+**STOP.** For each gap, call AskUserQuestion individually. One issue per call. State the concrete
+failure, not the principle. Only proceed after all gaps are resolved.
+
+### 6. Observability
+
+Load `references/observability-review.md` — this section always runs, because every change adds
+a codepath that can fail. Work it: the signal-per-codepath table, error context, correlation
+across async boundaries, metric cardinality, the silent-failure hunt, and debuggability
+affordances.
+
+The bar is cognitive pattern #5 made concrete: a page fires at 03:00, the on-call has only logs,
+metrics, and traces — can they localise the fault in ten minutes?
+
+**STOP.** For each gap, call AskUserQuestion individually. For any silent failure with
+user-visible impact, recommend the specific signal — which metric, which label, which alert.
+
+### 7. Correctness classics
+
+Load `references/correctness-classics.md` and work only the sections the change triggers: time
+and clocks, numbers and money, ordering and pagination, text and encoding, collections and
+absence, configuration and startup, resource lifecycle. State which sections you skipped.
+
+These are cheap to check and are found in production rather than in review — a missing pagination
+tiebreaker or a naive datetime produces no error, just wrong answers.
+
+**STOP.** One AskUserQuestion per finding, with `file:line` and the concrete wrong behaviour.
+
+### 8. Upgrade & transition path
 
 **Only run this section when the plan includes any of the following:**
 - A schema or data model change affecting live data
@@ -175,7 +231,11 @@ complexity, memory, caching, concurrency, frontend/API efficiency, and a quick-w
 **If none apply — state "No migration required — additive change" and move on.**
 
 Otherwise load `references/migration-checklist.md` and work it: migration pattern, backward
-compatibility, version skew, rollback cost, deprecation, traffic migration.
+compatibility, version skew, rollback cost, deprecation, traffic migration — then its **migration
+mechanics** section, which covers the migration run itself: lock-taking vs online DDL, chunked
+and resumable backfills, runtime estimated against production row counts, deploy-vs-migrate
+ordering, and post-migration integrity verification. Strategy gaps cause arguments; mechanics
+gaps cause outages.
 
 **STOP.** For each gap found in this checklist, call AskUserQuestion individually. One issue per call. Only proceed after all gaps are resolved.
 
@@ -194,19 +254,8 @@ Every plan review MUST produce a "NOT in scope" section listing work that was co
 List existing code/flows that already partially solve sub-problems in this plan, and whether the plan reuses them or unnecessarily rebuilds them.
 
 ### TODOS.md updates
-After all review sections are complete, present each potential TODO as its own individual AskUserQuestion. Never batch TODOs — one per question. Never silently skip this step. Follow the format below.
-
-For each TODO, describe:
-* **What:** One-line description of the work.
-* **Why:** The concrete problem it solves or value it unlocks.
-* **Pros:** What you gain by doing this work.
-* **Cons:** Cost, complexity, or risks of doing it.
-* **Context:** Enough detail that someone picking this up in 3 months understands the motivation, the current state, and where to start.
-* **Depends on / blocked by:** Any prerequisites or ordering constraints.
-
-Then present options: **A)** Add to TODOS.md **B)** Skip — not valuable enough **C)** Build it now in this PR instead of deferring.
-
-Do NOT just append vague bullet points. A TODO without context is worse than no TODO — it creates false confidence that the idea was captured while actually losing the reasoning.
+Load `references/todo-capture.md` (in the `codebase-arch-review` skill directory) and follow it —
+one AskUserQuestion per TODO, never batched, never skipped.
 
 ### Diagrams
 The plan itself should use ASCII diagrams for any non-trivial data flow, state machine, or processing pipeline. Additionally, identify which files in the implementation should get inline ASCII diagram comments — particularly Models with complex state transitions, Services with multi-step pipelines, and Concerns with non-obvious mixin behavior.
@@ -224,9 +273,14 @@ At the end of the review, fill in and display this summary so the user can see a
 - Step 0: Scope Challenge — ___ (scope accepted as-is / scope reduced per recommendation)
 - Architecture Review: ___ issues found
 - Code Quality Review: ___ issues found
+- Interfaces & Coupling: ___ issues found
 - Test Review: diagram produced, ___ gaps identified
+- Test Adequacy: ___ blocking, ___ warnings
+- Performance Review: ___ issues found, ___ optimisation opportunities surfaced, cost delta ___
+- Resilience & Idempotency: ___ (skipped — no new delivery surface / N gaps found)
+- Observability: ___ gaps, ___ silent failures (___ alerted / ___ logged only / ___ no signal)
+- Correctness Classics: ___ sections applicable, ___ findings
 - Upgrade & Transition Path: ___ (skipped — additive change / N gaps found)
-- Performance Review: ___ issues found, ___ optimisation opportunities surfaced
 - NOT in scope: written
 - What already exists: written
 - TODOS.md updates: ___ items proposed to user

@@ -36,6 +36,24 @@ For each area below, flag issues **and proactively suggest concrete optimisation
 * Chatty APIs — multiple round-trips that could be collapsed into one request.
 * Missing HTTP caching headers on stable resources.
 
+**Cost**
+
+Performance and spend diverge under autoscaling: the slow version costs more, and the fast
+version can too. State the cost delta for any change that touches these, with an order of
+magnitude — not a precise figure.
+
+* Per-request cost of a new external or paid API call, multiplied by expected volume.
+* **LLM token cost** — tokens per call × calls per day. Flag a prompt that grows with input size
+  without a cap, a retry that re-sends the full context, and a model choice that is more capable
+  than the task needs. Cross-ref `/agentic-standards` for routing.
+* Storage growth rate for anything newly written or retained, and whether retention is bounded.
+* Egress — cross-zone, cross-region, and internet traffic, especially anything chatty added
+  between services that may not be co-located.
+* Autoscaling consequences: a change that raises CPU per request raises the replica count and
+  the bill, silently and in proportion.
+* Observability cost — new high-volume logs or high-cardinality metrics are frequently the
+  largest line item a feature adds (see `observability-review.md` §4).
+
 **Quick-win checklist** — flag any of these present in the plan:
 - [ ] Bulk-insert / upsert instead of per-row writes in a loop
 - [ ] Lazy evaluation where eager evaluation is used but the result is not always needed

@@ -7,17 +7,9 @@ compatibility: opencode
 
 # Python Patterns
 
-Idiomatic Python for backend services — type safety, async, clean project layout, and testing discipline.
-
-## When to Use
-
-- Writing new Python code or reviewing existing code
-- Setting up a new Python project or service
-- Adding type hints, async patterns, or error handling
-- Structuring packages, imports, or configuration
-- Writing or improving tests with pytest
-
----
+Idiomatic Python for backend services — type safety, async, clean project layout, and testing
+discipline. Use when writing or reviewing Python, setting up a new service, adding type hints or
+async patterns, structuring packages and configuration, or writing pytest tests.
 
 ## Core Idioms
 

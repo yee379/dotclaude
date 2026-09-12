@@ -6,27 +6,15 @@ origin: ECC
 
 # Strategic Compact Skill
 
-Suggests manual `/compact` at strategic points in your workflow rather than relying on arbitrary auto-compaction.
+Suggests manual `/compact` at strategic points rather than relying on arbitrary auto-compaction.
+Relevant in long sessions approaching context limits, multi-phase tasks (research → plan →
+implement → test), when switching between unrelated tasks, and when responses start to degrade
+under context pressure.
 
-## When to Activate
+## How it works
 
-- Running long sessions that approach context limits (850K+ tokens)
-- Working on multi-phase tasks (research → plan → implement → test)
-- Switching between unrelated tasks within the same session
-- After completing a major milestone and starting new work
-- When responses slow down or become less coherent (context pressure)
-
-## How It Works
-
-The `suggest-compact.js` script runs on PreToolUse (Edit/Write) and:
-
-1. **Tracks tool calls** — Counts tool invocations in session
-2. **Threshold detection** — Suggests at configurable threshold (default: 50 calls)
-3. **Periodic reminders** — Reminds every 25 calls after threshold
-
-## Hook Setup
-
-Add to your `~/.claude/settings.json`:
+`suggest-compact.js` runs on PreToolUse (Edit/Write): it counts tool invocations, suggests at a
+threshold (`COMPACT_THRESHOLD`, default 50), then reminds every 25 calls after that.
 
 ```json
 {
@@ -45,27 +33,18 @@ Add to your `~/.claude/settings.json`:
 }
 ```
 
-## Configuration
+## When to compact
 
-Environment variables:
-- `COMPACT_THRESHOLD` — Tool calls before first suggestion (default: 50)
-
-## Compaction Decision Guide
-
-Use this table to decide when to compact:
-
-| Phase Transition | Compact? | Why |
+| Phase transition | Compact? | Why |
 |-----------------|----------|-----|
-| Research → Planning | Yes | Research context is bulky; plan is the distilled output |
-| Planning → Implementation | Yes | Plan is in TodoWrite or a file; free up context for code |
+| Research → Planning | Yes | Research context is bulky; the plan is the distilled output |
+| Planning → Implementation | Yes | Plan lives in TodoWrite or a file; free context for code |
 | Implementation → Testing | Maybe | Keep if tests reference recent code; compact if switching focus |
 | Debugging → Next feature | Yes | Debug traces pollute context for unrelated work |
+| After a failed approach | Yes | Clear the dead-end reasoning before trying something new |
 | Mid-implementation | No | Losing variable names, file paths, and partial state is costly |
-| After a failed approach | Yes | Clear the dead-end reasoning before trying a new approach |
 
-## What Survives Compaction
-
-Understanding what persists helps you compact with confidence:
+## What survives
 
 | Persists | Lost |
 |----------|------|
@@ -75,16 +54,11 @@ Understanding what persists helps you compact with confidence:
 | Git state (commits, branches) | Tool call history and counts |
 | Files on disk | Nuanced user preferences stated verbally |
 
-## Best Practices
+## Practices
 
-1. **Compact after planning** — Once plan is finalized in TodoWrite, compact to start fresh
-2. **Compact after debugging** — Clear error-resolution context before continuing
-3. **Don't compact mid-implementation** — Preserve context for related changes
-4. **Read the suggestion** — The hook tells you *when*, you decide *if*
-5. **Write before compacting** — Save important context to files or memory before compacting
-6. **Use `/compact` with a summary** — Add a custom message: `/compact Focus on implementing auth middleware next`
-
-## Related
-
-- `mcp__mempalace__mempalace_add_drawer` — file a decision or finding before compacting, so it survives as a retrievable drawer rather than living only in context
-- `mcp__mempalace__mempalace_search` — recover prior context after a compaction (keywords, not a sentence)
+1. **The hook tells you *when*; you decide *if*.**
+2. **Write before compacting** — save important context to a file or a MemPalace drawer
+   (`mcp__mempalace__mempalace_add_drawer`) so it survives as something retrievable rather than
+   living only in context. Recover it afterwards with `mcp__mempalace__mempalace_search`
+   (keywords, not a sentence).
+3. **Compact with a summary** — `/compact Focus on implementing auth middleware next`

@@ -6,115 +6,93 @@ origin: ECC
 
 # Test-Driven Development Workflow
 
-## When to Activate
-
-- Writing new features or functionality
-- Fixing bugs or issues
-- Refactoring existing code
-- Adding API endpoints
-- Creating new components
+For new features, bug fixes, refactors, new API endpoints, and new components.
 
 ## Philosophy
 
-**Core principle**: Tests should verify behavior through public interfaces, not implementation details. Code can change entirely; tests shouldn't.
+**Tests verify behaviour through public interfaces, not implementation details.** Code can change
+entirely; tests shouldn't. Good tests are integration-style — they exercise real code paths
+through public APIs and describe *what* the system does, not *how*. "User can checkout with valid
+cart" names a capability and survives any internal refactor.
 
-Good tests are integration-style: they exercise real code paths through public APIs. They describe *what* the system does, not *how* it does it. "User can checkout with valid cart" tells you exactly what capability exists and survives any internal refactor.
+**Warning sign:** if renaming an internal function breaks tests without any change in observable
+behaviour, those tests were testing implementation.
 
-**Business logic is the highest-priority test target.** Before thinking about coverage numbers, ask: have the domain rules been tested? Pricing calculations, eligibility checks, state transitions, authorization rules, workflow invariants — these are the tests that catch regressions that matter. A codebase with 95% coverage but no business logic tests is more fragile than one at 75% that covers every domain rule.
+**Business logic is the highest-priority target.** Before coverage numbers, ask: have the domain
+rules been tested? Pricing calculations, eligibility checks, state transitions, authorisation
+rules, workflow invariants — these catch the regressions that matter. 95% coverage with no
+business logic tests is more fragile than 75% that covers every domain rule.
 
-**Warning sign**: If you rename an internal function and tests fail without any change in observable behavior, those tests were testing implementation, not behavior.
+## Core principles
 
-## Core Principles
+### 1. Vertical slices, not horizontal
 
-### 1. Vertical Slices, Not Horizontal
-
-**DO NOT write all tests first, then all implementation.** This is horizontal slicing — it produces tests that test imagined behavior, not actual behavior, and become insensitive to real changes.
+**Do not write all tests first, then all implementation.** Horizontal slicing produces tests for
+imagined behaviour that are insensitive to real changes.
 
 ```
-WRONG (horizontal):
-  RED:   test1, test2, test3, test4, test5
-  GREEN: impl1, impl2, impl3, impl4, impl5
-
-RIGHT (vertical):
-  RED→GREEN: test1→impl1
-  RED→GREEN: test2→impl2
-  RED→GREEN: test3→impl3
+WRONG (horizontal):          RIGHT (vertical):
+  RED:   test1..test5          RED→GREEN: test1→impl1
+  GREEN: impl1..impl5          RED→GREEN: test2→impl2
+                               RED→GREEN: test3→impl3
 ```
 
-### 2. Coverage Requirements
+### 2. Coverage
 
-- **100% coverage target** (unit + integration + E2E)
-- Pragmatic exceptions are allowed — generated code, third-party adapters, and trivial boilerplate may be excluded via coverage config — but every exclusion must be explicit and justified, never silent
-- Focus on critical paths, complex logic, and business rules first; fill remaining gaps to reach 100%
-- Error scenarios tested
-- Boundary conditions verified
+**100% target** across unit + integration + E2E, and **extended, not just maintained** — when
+touching existing code, ask what business rules in the area are untested and add them before
+moving on. A PR that adds a feature but leaves adjacent untested domain logic is incomplete.
 
-**Coverage must be extended, not just maintained.** When touching existing code, look at the surrounding test suite and ask: what business rules in this area are untested? Add tests for them before moving on. A PR that adds a feature but leaves adjacent untested domain logic is incomplete.
+Pragmatic exceptions are allowed — generated code, third-party adapters, trivial boilerplate — but
+every exclusion is explicit and justified in coverage config, never silent.
 
-**Business logic coverage checklist** — for every feature or fix, verify tests exist for:
+Business logic checklist, per feature or fix:
+
 - [ ] The happy path through each domain rule
-- [ ] State transitions and their guards (what's allowed, what's rejected)
+- [ ] State transitions and their guards — what's allowed, what's rejected
 - [ ] Boundary values on any calculated or validated field
-- [ ] Authorization rules (who can do what, and what happens when they can't)
-- [ ] Any invariant the system must maintain (e.g. totals always reconcile, status can't go backwards)
+- [ ] Authorisation rules: who can do what, and what happens when they can't
+- [ ] Any invariant the system must maintain (totals reconcile, status can't go backwards)
 
-### 3. Test Types
+### 3. Test types
 
-#### Unit Tests
-- Individual functions and utilities
-- Component logic
-- Pure functions
-- Helpers and utilities
+**Unit** — individual functions, component logic, pure functions, helpers.
+**Integration** — API endpoints, database operations, service interactions, external API calls.
+**E2E (Playwright)** — critical user flows, complete workflows, browser and UI interactions.
 
-#### Integration Tests
-- API endpoints
-- Database operations
-- Service interactions
-- External API calls
+---
 
-#### E2E Tests (Playwright)
-- Critical user flows
-- Complete workflows
-- Browser automation
-- UI interactions
+## Workflow
 
-## TDD Workflow
+### Step 0: Plan before writing
 
-### Step 0: Plan Before Writing
-
-Before any tests:
-
-- [ ] Confirm with user what interface changes are needed
-- [ ] Confirm which behaviors to test — prioritise critical paths over edge cases
-- [ ] Write behaviors as user journeys: `As a [role], I want to [action], so that [benefit]`
-- [ ] **Identify the business rules in scope** — domain constraints, calculations, state machines, authorization checks. These must be tested even if they seem obvious.
-- [ ] **Scan existing tests for adjacent untested business logic** — any domain rules in the area being changed that currently have no test coverage should be added to the list
-- [ ] List behaviors to test (not implementation steps)
+- [ ] Confirm with the user what interface changes are needed
+- [ ] Confirm which behaviours to test — critical paths before edge cases
+- [ ] Write behaviours as user journeys: `As a [role], I want to [action], so that [benefit]`
+- [ ] **Identify the business rules in scope** — domain constraints, calculations, state machines,
+      authorisation checks. Test these even when they seem obvious
+- [ ] **Scan existing tests for adjacent untested business logic** and add it to the list
 - [ ] Get user sign-off on the list
-- [ ] **If the plan calls for a version bump** (a behavior/surface change, a removed
-      endpoint, anything the project's own version-history convention would log) —
-      confirm the exact version string with the user before writing any code. Never bump
-      a version file without asking, even mid-implementation when it's easy to forget in
-      the flow of writing tests. See `closeout-prd`'s "NEVER BUMP VERSION WITHOUT
-      ASKING" for the full rule — this checkpoint exists so the confirmation happens at
-      the start of implementation, not only at closeout when it's more expensive to fix.
+- [ ] **If the plan calls for a version bump** — a behaviour or surface change, a removed
+      endpoint, anything the project's version-history convention would log — confirm the exact
+      version string with the user *now*, before writing code. **If they already named a version
+      this session, that is the decision** — record it and move on. This checkpoint exists so the
+      confirmation happens at the start of implementation rather than at closeout, where it is
+      more expensive to fix. Full rule: `closeout-prd` Step 8.
 
-Ask: "What should the public interface look like? Which behaviors are most important to test? Are there business rules in this area that aren't currently tested?"
+Ask: "What should the public interface look like? Which behaviours matter most to test? Are there
+business rules in this area that aren't currently tested?"
 
-### Step 1: Tracer Bullet
+### Step 1: Tracer bullet
 
-Write ONE test that proves the end-to-end path works:
+One test proving the end-to-end path works: `RED` (write test for the first behaviour, it fails) →
+`GREEN` (minimal code, it passes). This confirms the wiring — runner works, framework configured,
+structure holds.
 
-```
-RED:   Write test for first behavior → fails
-GREEN: Write minimal code to pass → passes
-```
+### Step 2: Incremental loop
 
-This confirms the wiring — test runner works, framework is configured, basic structure holds.
-
-### Step 2: Incremental Loop
-
-For each remaining behavior, one at a time:
+Then, **one behaviour at a time**: write the test, watch it fail, write only enough code to pass
+it, watch it pass. Never anticipate future tests.
 
 ```typescript
 describe('Keyword Search', () => {
@@ -124,7 +102,8 @@ describe('Keyword Search', () => {
 })
 ```
 
-**Per-cycle checklist** — before moving to the next test:
+Per-cycle checklist, before the next test:
+
 ```
 [ ] Test describes behavior, not implementation
 [ ] Test uses public interface only
@@ -133,126 +112,25 @@ describe('Keyword Search', () => {
 [ ] No speculative features added
 ```
 
-### Step 3: Run Tests (They Should Fail)
+### Step 3: Refactor
+
+Improve quality while tests stay green. **Never refactor while RED** — get to GREEN first.
+
+Candidates: **duplication** → extract · **long methods** → private helpers, keeping tests on the
+public interface · **shallow modules** → combine or deepen, so complexity lives behind simple
+interfaces · **feature envy** → move logic to where the data lives · **primitive obsession** →
+value objects · **existing code** the new code reveals as problematic.
+
+### Step 4: Verify coverage
 
 ```bash
-npm test
-# Tests should fail — implementation doesn't exist yet
-```
-
-### Step 4: Implement (Minimal)
-
-Write only enough code to pass the current test. Don't anticipate future tests.
-
-### Step 5: Run Tests Again
-
-```bash
-npm test
-# Tests should now pass
-```
-
-### Step 6: Refactor
-
-Improve code quality while keeping tests green. **Never refactor while RED.** Get to GREEN first.
-
-Refactor candidates:
-- **Duplication** → Extract function/class
-- **Long methods** → Break into private helpers (keep tests on public interface)
-- **Shallow modules** → Combine or deepen — complexity should live behind simple interfaces
-- **Feature envy** → Move logic to where data lives
-- **Primitive obsession** → Introduce value objects
-- **Existing code** the new code reveals as problematic
-
-### Step 7: Verify Coverage
-
-```bash
-npm run test:coverage
-# Verify 100%+ coverage achieved
-```
-
-## Good vs Bad Tests
-
-Test behavior through public interfaces. Survive internal refactors.
-
-```typescript
-// GOOD: Tests observable behavior through the public API
-test("user can checkout with valid cart", async () => {
-  const cart = createCart();
-  cart.add(product);
-  const result = await checkout(cart, paymentMethod);
-  expect(result.status).toBe("confirmed");
-});
-
-// BAD: Tests that an internal collaborator was called (breaks on refactor, not behavior change)
-test("checkout calls paymentService.process", async () => {
-  const mockPayment = jest.mock(paymentService);
-  await checkout(cart, payment);
-  expect(mockPayment.process).toHaveBeenCalledWith(cart.total);
-});
-```
-
-**Red flags:** mocking internal collaborators, testing private methods, asserting call counts, test name describes HOW not WHAT, direct DB queries instead of using the interface.
-
-See `references/examples.md` for additional good/bad pairs (selectors, isolation, state vs behavior).
-
-## Testing Patterns
-
-See `references/examples.md` for unit, integration, and E2E test boilerplate examples by framework.
-
-## Test File Organization
-
-```
-src/
-├── components/
-│   ├── Button/
-│   │   ├── Button.tsx
-│   │   ├── Button.test.tsx          # Unit tests
-│   │   └── Button.stories.tsx       # Storybook
-│   └── MarketCard/
-│       ├── MarketCard.tsx
-│       └── MarketCard.test.tsx
-├── app/
-│   └── api/
-│       └── markets/
-│           ├── route.ts
-│           └── route.test.ts         # Integration tests
-└── e2e/
-    ├── markets.spec.ts               # E2E tests
-    ├── trading.spec.ts
-    └── auth.spec.ts
-```
-
-## Mocking Guidelines
-
-See `references/mocking.md` for mock factory patterns and database/cache/service mock implementations.
-
-## Test Coverage Verification
-
-```bash
-npm run test:coverage
+npm test -- --coverage                                       # JS/TS
+pytest --cov=app --cov-report=term-missing --cov-fail-under=100   # Python
 ```
 
 ```json
-{
-  "jest": {
-    "coverageThresholds": {
-      "global": {
-        "branches": 100,
-        "functions": 100,
-        "lines": 100,
-        "statements": 100
-      }
-    }
-  }
-}
-```
-
-## Python TDD (pytest)
-
-For Python projects, follow the same Red → Green → Refactor cycle using pytest. See `/python-patterns` for full project structure, async fixture patterns, and `conftest.py` setup.
-
-```bash
-pytest --cov=app --cov-report=term-missing --cov-fail-under=100
+{ "jest": { "coverageThresholds": { "global": {
+  "branches": 100, "functions": 100, "lines": 100, "statements": 100 } } } }
 ```
 
 ```ini
@@ -261,10 +139,60 @@ pytest --cov=app --cov-report=term-missing --cov-fail-under=100
 fail_under = 100
 ```
 
-## Continuous Testing
+Line coverage counts lines *executed*, not *asserted* — for judging whether the tests are worth
+having (flakiness sources, over-mocking, the mutation question), see
+`codebase-eng-review/references/test-adequacy-rubric.md`.
+
+---
+
+## Good vs bad tests
+
+```typescript
+// GOOD: observable behavior through the public API
+test("user can checkout with valid cart", async () => {
+  const cart = createCart();
+  cart.add(product);
+  const result = await checkout(cart, paymentMethod);
+  expect(result.status).toBe("confirmed");
+});
+
+// BAD: asserts an internal collaborator was called — breaks on refactor, not on behavior change
+test("checkout calls paymentService.process", async () => {
+  const mockPayment = jest.mock(paymentService);
+  await checkout(cart, payment);
+  expect(mockPayment.process).toHaveBeenCalledWith(cart.total);
+});
+```
+
+**Red flags:** mocking internal collaborators · testing private methods · asserting call counts ·
+a test name describing HOW not WHAT · direct DB queries instead of the interface.
+
+More good/bad pairs (selectors, isolation, state vs behaviour) and per-framework boilerplate:
+`references/examples.md`. Mock factory and database/cache/service mock patterns:
+`references/mocking.md`.
+
+## File organisation
+
+```
+src/
+├── components/Button/
+│   ├── Button.tsx
+│   └── Button.test.tsx          # Unit
+├── app/api/markets/
+│   ├── route.ts
+│   └── route.test.ts            # Integration
+└── e2e/
+    ├── markets.spec.ts          # E2E
+    └── auth.spec.ts
+```
+
+Python projects follow the same Red → Green → Refactor cycle with pytest — see
+`/python-patterns` for project structure, async fixtures, and `conftest.py` setup.
+
+## Continuous testing
 
 ```bash
-npm test -- --watch        # watch mode during development
+npm test -- --watch        # during development
 npm test && npm run lint   # pre-commit
 ```
 
@@ -276,13 +204,11 @@ npm test && npm run lint   # pre-commit
   uses: codecov/codecov-action@v5
 ```
 
-## Success Metrics
+## Done when
 
-- 100%+ code coverage achieved — and extended, not just maintained
-- All tests passing (green)
-- No skipped or disabled tests
-- Fast test execution (< 30s for unit tests)
-- E2E tests cover critical user flows
-- **Business logic is explicitly covered** — domain rules, state transitions, authorization checks, and invariants each have at least one test
-- **Adjacent untested logic addressed** — any business logic near changed code that lacked tests has been covered before the PR closes
-- Tests catch bugs before production
+- 100%+ coverage achieved and extended, with every exclusion justified
+- All tests green; none skipped or disabled
+- Unit tests run in under 30s; E2E covers the critical flows
+- **Business logic explicitly covered** — domain rules, state transitions, authorisation checks,
+  and invariants each have at least one test
+- **Adjacent untested logic addressed** before the PR closes

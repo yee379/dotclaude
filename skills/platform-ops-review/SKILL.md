@@ -5,58 +5,42 @@ description: Platform operational readiness review. Evaluates runbook coverage, 
 
 # Platform Ops Review
 
-## Workflow position
+One of the parallel reviewers on `/board-review`'s platform board (reviewer list in
+`board-review/references/platform-board.md`). Runs after `/draft-prd`.
 
-```
-/draft-prd
-      │
-      ▼
-/board-review ──── runs these reviewers in parallel ────┐
-      │                                                     │
-      │   /codebase-arch-review (platform mode)              │
-      │   /platform-capacity-review                         │
-      │   /platform-security-review                         │
-      │   /platform-ops-review  ← YOU ARE HERE              │
-      │   /platform-eng-review                              │
-      │   /doc-review                              │
-      └─────────────────────────────────────────────────────┘
-```
-
-**Model routing: `sonnet`.** Ops review is primarily checklist-driven gap identification. Escalate novel failure mode analysis to `opus` if needed.
+**Model routing: `sonnet`** — checklist-driven gap identification. Escalate novel failure-mode
+analysis to `opus` if needed.
 
 Do NOT make cluster changes. Identify operational readiness gaps before a change is applied.
 
----
-
-## Priority hierarchy
-
-Step 0 > Runbook coverage > Monitoring/alerting > On-call model > Incident response > Everything else.
-
----
+**Priority hierarchy:** Step 0 > runbook coverage > monitoring/alerting > on-call model >
+incident response > everything else.
 
 ## Operational instincts
 
-1. **Design for the 3am engineer** — Every change must be operable by a tired human with incomplete context. No runbook = not done.
-2. **Observability is a requirement** — You cannot support what you cannot see. Dashboards and alerts are deliverables, not follow-ups.
-3. **Known failure modes beat unknown ones** — Document what can go wrong and how to recover. An undocumented failure mode discovered at 3am is an incident waiting to happen.
-4. **Alert fatigue kills on-call** — Every alert must have a clear owner, a clear action, and a clear resolution.
-5. **SLOs before alerts** — Define what "healthy" means before defining what "broken" means.
+1. **Design for the 3am engineer** — operable by a tired human with incomplete context. No
+   runbook means not done.
+2. **Observability is a requirement** — you cannot support what you cannot see. Dashboards and
+   alerts are deliverables, not follow-ups.
+3. **Known failure modes beat unknown ones** — an undocumented failure mode discovered at 3am is
+   an incident waiting to happen.
+4. **Alert fatigue kills on-call** — every alert needs a clear owner, action, and resolution.
+5. **SLOs before alerts** — define "healthy" before defining "broken".
 
 ---
 
-## Step 0: Ops Scope Assessment
+## Step 0: Ops scope assessment
 
-1. **What new failure modes does this change introduce?** List every way the new workload can fail (crash, OOM, dependency timeout, storage full, certificate expiry, etc.).
-2. **What existing runbooks are affected?** Does this change invalidate existing runbooks?
-3. **Who owns this workload operationally?** Is there a clear team, on-call rotation, and escalation path?
+1. **What new failure modes does this introduce?** Every way the workload can fail — crash, OOM,
+   dependency timeout, storage full, certificate expiry.
+2. **Which existing runbooks does it affect or invalidate?**
+3. **Who owns it operationally?** A clear team, on-call rotation, and escalation path?
 
 ---
 
 ## 1. Runbook coverage
 
-A runbook is mandatory for every production workload. Written before go-live — not after the first incident.
-
-### Runbook completeness checklist
+Mandatory for every production workload, written before go-live — not after the first incident.
 
 - [ ] **Service overview** — what it does, who owns it, criticality level
 - [ ] **Normal operating state** — what healthy looks like (expected metrics, log patterns)

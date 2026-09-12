@@ -5,40 +5,26 @@ description: Platform capacity and feasibility review. Assesses whether the clus
 
 # Platform Capacity Review
 
-## Workflow position
+One of the parallel reviewers on `/board-review`'s platform board (reviewer list in
+`board-review/references/platform-board.md`). Runs after `/draft-prd`.
 
-```
-/draft-prd
-      │
-      ▼
-/board-review ──── runs these reviewers in parallel ────┐
-      │                                                     │
-      │   /codebase-arch-review (platform mode)             │
-      │   /platform-capacity-review  ← YOU ARE HERE         │
-      │   /platform-security-review                         │
-      │   /platform-ops-review                              │
-      │   /platform-eng-review                              │
-      │   /doc-review                              │
-      └─────────────────────────────────────────────────────┘
-```
+**Model routing: `sonnet`** — primarily quantitative: headroom, resource gaps, thresholds.
+Escalate architectural concerns to `/codebase-arch-review` in platform mode.
 
-**Model routing: `sonnet`.** Capacity review is primarily quantitative — checking headroom, identifying resource gaps, flagging thresholds. Escalate specific architectural concerns to `codebase-arch-review (platform mode)`.
+Do NOT make cluster changes. Assess whether the cluster can absorb this change, and what gaps
+must be closed first.
 
-Do NOT make cluster changes. Assess whether the cluster can absorb this change and what gaps need to be addressed first.
+**Priority hierarchy:** Step 0 > compute headroom > storage > networking > control plane > what
+else is needed > everything else.
 
 ---
 
-## Priority hierarchy
+## Step 0: Scope assessment
 
-Step 0 > Compute headroom > Storage > Networking > Control plane > What else is needed > Everything else.
-
----
-
-## Step 0: Scope Assessment
-
-1. **What is the resource footprint of this change?** New workloads, replica counts, resource requests/limits, storage needs, network requirements.
-2. **What is the current cluster state?** Read capacity data from the plan. If not present, flag as a blocking gap.
-3. **Is this a greenfield add or a replacement?** Replacements may free resources.
+1. **Resource footprint of this change?** New workloads, replica counts, requests/limits, storage,
+   network.
+2. **Current cluster state?** Read capacity data from the plan; if absent, that is a blocking gap.
+3. **Greenfield add or replacement?** Replacements may free resources.
 
 ---
 

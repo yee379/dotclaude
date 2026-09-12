@@ -1,7 +1,7 @@
 # Vulnerability Classes the Main Checklist Does Not Cover
 
-Load at Step 3, after the hunt patterns. The ten sections in `SKILL.md` cover the classes that
-show up in code as a *bad pattern*. These classes show up as a *missing* pattern, an
+Load at Step 3, after the hunt patterns. The verification sections in `SKILL.md` §4 cover the
+classes that show up in code as a *bad pattern*. These classes show up as a *missing* pattern, an
 interaction, or a logic error — grep alone will not surface them, so each one below is a
 question you must actively answer for this change.
 
@@ -125,11 +125,45 @@ can call tools.
 - Are credentials sitting untracked in the working tree that a `git add -A` would capture?
 - Do any secrets appear in CI logs, build artefacts, image layers, or error reports?
 
-## 12. Denial of service through resource asymmetry
+## 12. Denial of service and denial of wallet
 
-*Trigger:* any endpoint where a small request causes large work.
+*Trigger:* any endpoint where a small request causes large work, or spends money.
 
 - Unbounded pagination, unbounded query depth (GraphQL), unbounded upload size, unbounded
   regex backtracking, unbounded decompression.
 - Is there a per-caller cost limit, or only a request-count rate limit? Rate limiting by count
   does not stop one expensive request.
+- **Denial of wallet:** on autoscaling and metered infrastructure, the failure mode is a bill
+  rather than an outage — and nothing alerts, because the system stays up. Which caller-triggered
+  paths spend money per request: LLM tokens, a paid third-party API, egress, storage writes, a
+  scale-out that the request load drives? Is there a per-tenant spend cap and an anomaly alert,
+  or only a request-rate limit?
+- Amplification outward: can a caller make the service issue many expensive requests to a
+  third party — turning your credentials into their attack budget?
+
+## 13. API shape abuse
+
+*Trigger:* GraphQL, a batch or bulk endpoint, an export, or any endpoint that accepts a list.
+
+- **Aliasing and batching:** can one HTTP request carry N logical operations? If so, every
+  count-based control — rate limit, lockout counter, quota — is measuring the wrong unit, and
+  1000 password attempts arrive as one request. Verify the limiter counts operations.
+- **Nested resolvers:** is authorisation enforced on each resolver, or only at the top-level
+  query? A field denied via one parent is often reachable via another.
+- **Introspection** in production publishes the schema, including fields the UI never calls.
+- **The bulk path beside the checked path:** a single-record endpoint with a correct ownership
+  check, and an export/bulk/stream endpoint next to it that filters differently or not at all.
+  Compare them directly — this is one of the highest-yield checks in the whole review.
+- **Field selection as disclosure:** can a caller request a field the UI hides? Over-fetching is
+  disclosure regardless of what the client renders.
+
+## 14. Client-side trust boundary
+
+*Trigger:* any browser-facing change. Full treatment in `client-side-security.md`.
+
+- Does any validation, authorisation, or business rule exist **only** in the client? List them
+  and confirm the server repeats each one.
+- Is a hidden or disabled UI control treated as access control?
+- Does the bundle carry a secret, an internal hostname, or an unreleased endpoint path?
+- Is a stored XSS reachable by a lower-privileged user and rendered to a higher-privileged one?
+  That is a privilege-boundary crossing, not a cosmetic bug.

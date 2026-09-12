@@ -11,19 +11,11 @@ End-to-end guidance for deploying and operating services on Kubernetes — from 
 
 **This environment uses [vcluster (loft.sh)](https://www.vcluster.com) virtual clusters and Makefile-driven deployment workflows.** Manifests are rendered from Helm + values files and committed to git as the source of truth. Direct `helm upgrade` is not the deploy mechanism — Make targets are.
 
-## When to Use
-
-- Writing or reviewing Deployment, Service, Ingress, ConfigMap, or Secret manifests
-- Structuring Helm charts for multi-environment promotion
-- Rendering Helm templates to committed manifest files (`helm template`)
-- Writing or reviewing Makefile deploy targets
-- Working with vcluster virtual clusters (creating, connecting, scoping)
-- Planning a test → staging → production promotion workflow
-- Debugging pod scheduling, crashloops, or OOMKills
-- Tuning resource requests/limits and HPA settings
-- Setting up liveness, readiness, and startup probes
-- Writing a post-deploy smoke gate, or verifying that a rollout actually shipped
-- Preparing a rollback plan before a release
+Use for: authoring or reviewing manifests · structuring Helm charts for multi-environment
+promotion · rendering templates to committed manifests · Makefile deploy targets · vcluster work ·
+planning a test → staging → prod promotion · debugging scheduling, crashloops, or OOMKills ·
+tuning resources, HPA, and probes · writing a post-deploy smoke gate or verifying a rollout
+shipped · preparing a rollback plan.
 
 ---
 
@@ -327,20 +319,20 @@ git log --oneline deploy/prod/manifests/
 make rollback ENV=prod ROLLBACK_SHA=<commit-sha>
 ```
 
-### Fallback: kubectl rollout undo (emergency only — reconcile git afterwards)
+### Fallback: `kubectl rollout undo`
+
+**Emergency only.** Per trap 8, `undo` leaves the cluster diverged from the committed manifests,
+so you must reconcile git immediately afterwards or the next routine apply re-applies the bad
+version.
 
 ```bash
 export KUBECONFIG=~/.kube/contexts/ai-playground/prod
 kubectl rollout undo deployment/api -n api
 ```
 
-### Rollback checklist
-
-- [ ] Previous manifests commit SHA identified
-- [ ] Rolled-back manifests applied and rollout status confirmed healthy
-- [ ] git state updated to reflect what's actually running
-- [ ] Database migrations are backward-compatible
-- [ ] Feature flags can disable new code paths without redeployment
+After any rollback: confirm the rolled-back manifests applied and the rollout is healthy, and
+update git to reflect what is actually running. Pre-release readiness for rollback is in the
+Production Readiness Checklist below.
 
 ---
 
@@ -399,6 +391,7 @@ app.get("/readyz", async (_, res) => {
 - [ ] Previous manifests commit SHA recorded
 - [ ] `make rollback` tested in staging
 - [ ] Database migrations are backward-compatible
+- [ ] Feature flags can disable new code paths without a redeploy
 - [ ] Alerts on pod restarts, OOMKills, and error rate spikes
 
 ### Post-deploy verification
@@ -420,12 +413,11 @@ not redundant.
 
 ---
 
-## References
+## Further references
 
-Load when needed:
-- `references/vcluster-cli.md` — vcluster CLI quickstart and KUBECONFIG conventions
-- `references/makefile-workflow.md` — full Makefile template and repository layout
-- `references/deployment-templates.md` — Deployment, Service, Ingress, HPA, PDB YAML
-- `references/debugging.md` — debugging failing deployments and pod issues
+Loaded inline above: `vcluster-cli.md`, `makefile-workflow.md`, `deployment-templates.md`. Also
+available when needed:
+
+- `references/debugging.md` — failing deployments and pod issues
 - `references/dockerfiles.md` — multi-stage Dockerfile templates (Node.js, Go, Python)
 - `references/github-actions.md` — CI/CD pipeline shape

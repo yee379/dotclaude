@@ -83,6 +83,37 @@ read in context and either dismissed with a reason or promoted per `severity-rub
 | Unpinned actions | `rg -n 'uses:\s*[^@]+@(v?[0-9]+\|main\|master)$' .github/workflows/` | A moved tag runs new code with your secrets — pin to a commit SHA |
 | Dependency confusion | check every internal package name resolves from the private index only; `rg -n 'extra-index-url\|registry='` | A public package of the same name can take priority |
 
+## Client-side and browser sinks
+
+Skip only if the change touches no template, no client bundle, and no browser-facing response.
+Full treatment in `client-side-security.md` — an XSS in an authenticated app is account takeover,
+so these rank alongside the server-side injection table, not below it.
+
+| Class | Command | A hit means |
+|---|---|---|
+| Framework HTML sink | `rg -n 'dangerouslySetInnerHTML\|v-html\|\[innerHTML\]\|bypassSecurityTrust'` | Trace the value; sanitised by DOMPurify or by hand? A hand-rolled sanitiser is itself a finding |
+| DOM write | `rg -n '\.innerHTML\s*=\|\.outerHTML\s*=\|insertAdjacentHTML\|document\.write'` | DOM-based XSS never appears in server logs — undetectable after the fact |
+| Dynamic code (client) | `rg -n '\beval\(\|new Function\(\|setTimeout\(\s*["'"'"']\|setInterval\(\s*["'"'"']'` | String-argument timers are `eval` |
+| Template escaping off | `rg -n '\|safe\b\|\{\{\{\|mark_safe\(\|Html\.Raw\|autoescape\s*(off\|False)'` | Escaping disabled on a path that may carry user data |
+| URL sink | `rg -n 'href\s*=\s*\{\|src\s*=\s*\{\|window\.location\s*=\|location\.href\s*='` | `javascript:` / `data:` need an allow-list of schemes, not a blocklist |
+| postMessage | `rg -n 'addEventListener\(\s*["'"'"']message\|postMessage\('` | Receiver must check `event.origin`; sender must not use `*` |
+| Tabnabbing | `rg -n 'target=.?_blank'` | Needs `rel="noopener"` |
+| Token in web storage | `rg -n 'localStorage\.\|sessionStorage\.'` | A token here is readable by any XSS on the origin |
+| CSP weakened | `rg -n "unsafe-inline\|unsafe-eval\|Content-Security-Policy"` | Either directive defeats CSP as an XSS control |
+| Secrets in the bundle | `rg -n '(api[_-]?key\|token\|secret)' dist/ build/ .next/ 2>/dev/null` | Grep the **built** output, not the source |
+| Origin check by prefix | `rg -n 'startsWith\(.*origin\|endsWith\(.*\(host\|origin\)\|origin\.includes\('` | `evil-example.com` and `example.com.evil.com` both pass |
+
+## API shape and GraphQL
+
+| Class | Command | A hit means |
+|---|---|---|
+| GraphQL server | `rg -n 'strawberry\|graphene\|ariadne\|ApolloServer\|makeExecutableSchema\|graphql_sync'` | Then check the four controls below explicitly |
+| Introspection / playground | `rg -n 'introspection\|graphiql\|playground\|ApolloServerPluginLandingPage'` | Enabled in production publishes the whole schema, including staff-only fields |
+| Depth / complexity limit | `rg -n 'depth_limit\|max_depth\|complexity\|costAnalysis\|validationRules'` | **Absence** is the finding — recursive nesting is an unauthenticated DoS |
+| Batching / aliasing | `rg -n 'allowBatchedHttpRequests\|batch\|operations\s*:' ` | Aliases let one HTTP request carry N operations — count-based rate limiting is bypassed entirely (1000 login attempts, one request) |
+| Resolver-level authz | `rg -n 'def resolve_\|resolvers\s*=' -A3` | Authorisation on the top-level query only leaves nested resolvers reachable via another parent |
+| Bulk/export endpoint | `rg -n '/export\|/bulk\|/download\|\.csv\|stream_all\|iter_all'` | Per-record authorisation frequently absent on the bulk path that exists beside a checked single-record path |
+
 ---
 
 ## Coverage rule

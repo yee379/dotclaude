@@ -1,26 +1,12 @@
 ---
 name: platform-security-review
-description: Platform-level security review for Kubernetes infrastructure changes. Covers RBAC, network policies, secrets management, pod security standards, multi-tenancy isolation, service mesh mTLS, image supply chain, and cluster-wide security posture implications. Distinct from /security-review which covers application-layer API and code security. Use when onboarding a new workload, changing cluster security posture, or reviewing infrastructure for security implications.
+description: Platform-level security review for Kubernetes infrastructure changes. Covers RBAC and its escalation closure, network policies, secrets management, pod security standards, multi-tenancy isolation, service mesh mTLS, image supply chain, cluster-wide security posture implications, API audit and runtime detection coverage, and data at rest including backups and residency. Distinct from /security-review which covers application-layer API and code security. Use when onboarding a new workload, changing cluster security posture, or reviewing infrastructure for security implications.
 ---
 
 # Platform Security Review
 
-## Workflow position
-
-```
-/draft-prd
-      │
-      ▼
-/board-review ──── runs these reviewers in parallel ────┐
-      │                                                     │
-      │   /codebase-arch-review (platform mode)              │
-      │   /platform-capacity-review                         │
-      │   /platform-security-review  ← YOU ARE HERE         │
-      │   /platform-ops-review                              │
-      │   /platform-eng-review                              │
-      │   /doc-review                              │
-      └─────────────────────────────────────────────────────┘
-```
+One of the parallel reviewers on `/board-review`'s platform board (reviewer list in
+`board-review/references/platform-board.md`). Runs after `/draft-prd`.
 
 **Model routing: `opus`.** Platform security requires adversarial reasoning — tracing trust boundaries across the full cluster, thinking like an attacker, and catching subtle RBAC and network policy misconfigurations. Do not run at Sonnet or Haiku.
 
@@ -32,7 +18,7 @@ For **application-layer** security (API auth, input validation, secrets in code)
 
 ## Priority hierarchy
 
-Step 0 > RBAC > Network policy > Secrets > Pod security > Multi-tenancy > Supply chain > Everything else.
+Step 0 > RBAC and its escalation paths > Network policy > Secrets > Pod security > Multi-tenancy > Detection & audit > Supply chain > Data at rest > Everything else. **Never skip the RBAC escalation closure** — it is the check a verb-by-verb review passes and an attacker does not.
 
 ---
 
@@ -41,6 +27,8 @@ Step 0 > RBAC > Network policy > Secrets > Pod security > Multi-tenancy > Supply
 1. **What is the trust boundary change?** New service handling sensitive data, new network path, new identity?
 2. **What is the blast radius of a compromise?** If the new workload is compromised, what can it reach?
 3. **Does this change affect cluster-wide security posture?** New admission webhooks, new ClusterRoles, new CRDs, new operators?
+4. **Which adversary does this change most expose the cluster to?** A compromised neighbouring workload, a tenant escaping its namespace, a compromised CI or GitOps credential, or a human with break-glass access? Name it — the rest of the review prioritises against it.
+5. **Would a compromise be visible?** If the answer is "we'd see it in the audit log", check in §9 that the log actually covers these resources and survives an attacker with cluster-admin.
 
 ---
 
@@ -74,6 +62,37 @@ rules:
 - [ ] No wildcard verbs or resources
 - [ ] `automountServiceAccountToken: false` where API access not needed
 - [ ] No human ClusterRoleBindings granting cluster-admin
+
+### RBAC escalation paths
+
+Least privilege is not the same as *non-escalating*. Kubernetes RBAC grants authority
+transitively, and several innocuous-looking permissions are equivalent to a much larger one.
+Walk the closure for every new Role and ClusterRole — this is the check that catches the grants a
+verb-by-verb review passes.
+
+| Granted | Actually equivalent to | Why |
+|---|---|---|
+| `create pods` in a namespace | **Any ServiceAccount in that namespace** | The pod can be created with any SA and mount its token |
+| `create` on deployments / jobs / cronjobs / daemonsets | Same as above, indirectly | Controllers create the pods for you — a namespace's workload-create is its SA set |
+| `get`/`list` secrets in a namespace | Every identity whose token or credential lives there | Includes SA token secrets |
+| `get`/`list` secrets **cluster-wide** | **cluster-admin, in practice** | Some secret somewhere is privileged |
+| `pods/exec`, `pods/attach`, `pods/portforward` | The pod's identity, filesystem, and network position | Bypasses NetworkPolicy from inside the mesh |
+| `pods/ephemeralcontainers` | Same as `exec`, and often overlooked in policy | Debug containers join the pod |
+| `escalate` or `bind` on roles | The right to grant more than you hold | Defeats the normal RBAC guard that you cannot grant what you lack |
+| `impersonate` | Any user, group, or ServiceAccount | Also launders the audit trail unless both identities are recorded |
+| `create` on serviceaccounts/token | A token for any SA in scope | Direct credential minting |
+| `create`/`update` on validating/mutatingwebhookconfigurations | Interception or mutation of every API request | Cluster takeover; also a cluster-wide availability risk |
+| `patch` nodes, or node/proxy access | Kubelet reach, therefore every pod on the node | Node identity is broad |
+| `create` on CRs of a privileged operator | Whatever that operator's SA can do | The operator is the deputy |
+| `update` on a GitOps Application / HelmRelease | Whatever the GitOps controller's SA can do | Usually cluster-admin |
+
+- [ ] Closure walked for each new Role/ClusterRole; any path reaching another identity's
+      credentials or cluster-admin is named with its severity
+- [ ] Deferred/automated actors included — the GitOps controller, CI's cluster credential, and
+      any operator reconciling on a user's behalf (confused deputy: whose authority applies at
+      reconcile time?)
+- [ ] **Break-glass** cluster-admin access: who holds it, is it time-bound, is it separate from
+      day-to-day identity, and is every use alerted rather than merely logged? See §9
 
 **STOP.** One AskUserQuestion per gap.
 
@@ -258,7 +277,66 @@ image: <your-registry>/auth-api@sha256:abc123...
 - **New operators/controllers:** ClusterRole required? Blast radius if compromised?
 - **New webhooks:** `failurePolicy` appropriate? Timeout set?
 - **New CRDs:** New attack surface?
-- **Audit logging:** New security-relevant events to audit?
+
+---
+
+## 9. Detection, audit, and forensic readiness
+
+Sections 1–8 are prevention. This one answers: **if this workload or credential were
+compromised, would we know, and could we reconstruct it?** An attacker who reaches cluster-admin
+can delete in-cluster logs, so the answer depends almost entirely on decisions made before the
+incident. Application-layer detection is `/security-review` §4.13; this is the cluster layer.
+
+- **API audit policy covers the new resources** at a useful level — `Metadata` for most,
+  `RequestResponse` for secrets, RBAC objects, and webhook configurations. A new CRD is not
+  audited by a policy that enumerates resources explicitly
+- **`exec`, `attach`, and `port-forward` are audited and alerted**, not merely logged. These are
+  the human break-glass paths and the most valuable single signal the cluster produces
+- **Impersonation records both identities** — the impersonator and the impersonated. Without
+  this, `impersonate` is a way to act with no attribution
+- **Audit logs ship off-cluster** promptly, to a store the cluster's own credentials cannot
+  delete. In-cluster-only retention fails exactly in the scenario it exists for
+- **Retention stated** and long enough for a dwell time measured in months
+- **RBAC and policy changes alerted** — any new ClusterRoleBinding, any binding to cluster-admin,
+  any webhook configuration change
+- **Runtime detection** for the new workload where one is deployed (Falco or equivalent):
+  unexpected process, unexpected outbound connection, write to a read-only path, shell in a
+  container
+- **Denials are visible:** mesh `AuthorizationPolicy` denials, NetworkPolicy drops (where the CNI
+  can report them), and ingress 403s. A default-deny you cannot observe is a default-deny you
+  cannot debug or alert on
+- **Admission webhook rejections and failures logged** — a failing webhook is both a security
+  control that stopped working and, with the wrong `failurePolicy`, an outage
+- **Forensic question, answered now:** given this workload's ServiceAccount compromised at time
+  *T*, can you list what it called and what it read?
+
+**STOP.** One AskUserQuestion per gap.
+
+---
+
+## 10. Data at rest, backups, and residency
+
+Platform-layer counterpart to `/security-review`'s `references/data-governance.md`. The data a
+workload holds is a platform concern the moment it lands on a volume.
+
+- **Classification of what this workload persists** — is any of it restricted (personal,
+  financial, health, credentials) or governed by a DUA, IRB protocol, or export control? The
+  class determines everything below, so an unstated class is a finding
+- **Volume encryption** at rest, and whose key — cloud-managed, or one you control and can rotate
+- **PVC access mode and reclaim policy:** `Retain` leaves data on a released volume that outlives
+  the namespace; `Delete` destroys it on a mistaken `helm uninstall`. Either can be wrong — state
+  which was chosen and why
+- **Volume snapshots and backups:** encrypted, access-controlled, and **not readable from another
+  namespace or tenant**. A backup bucket is frequently the weakest copy of the strongest data
+- **Restore is tested**, and a restore does not resurrect data a deletion request removed
+- **Residency:** does the storage class, backup destination, or replica target place data in a
+  region the governing agreement prohibits?
+- **Egress destinations** the workload writes to (object storage, external database, telemetry
+  backend) are enumerated and NetworkPolicy-constrained to them — cross-ref §2
+- **Non-production copies:** does any lower environment restore from a production backup? If so
+  it inherits production classification with weaker controls
+
+**STOP.** One AskUserQuestion per gap.
 
 ---
 
@@ -275,7 +353,10 @@ Multi-tenancy:        ✅ clean | ⚠️ warnings | ❌ blocking
 Service mesh / mTLS:  ✅ clean | ⚠️ warnings | ❌ blocking
 Image supply chain:   ✅ clean | ⚠️ warnings | ❌ blocking
 Cluster-wide impact:  ✅ clean | ⚠️ warnings | ❌ blocking
+Detection & audit:    ✅ clean | ⚠️ warnings | ❌ blocking
+Data at rest:         ✅ clean | ⚠️ warnings | ❌ blocking
 ─────────────────────────────────────────────────────
+RBAC escalation:      N paths walked, N reaching other identities or cluster-admin
 Blocking gaps:        N
 Warnings:             N
 ─────────────────────────────────────────────────────

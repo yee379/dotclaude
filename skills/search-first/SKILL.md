@@ -6,71 +6,37 @@ origin: ECC
 
 # /search-first — Research Before You Code
 
-Systematizes the "search for existing solutions before implementing" workflow.
+Systematises "search for existing solutions before implementing". Use when starting a feature
+that likely has existing solutions, adding a dependency or integration, about to write code in
+response to "add X functionality", before creating any new utility, helper, or abstraction, and
+when troubleshooting.
 
-## Trigger
+## The loop
 
-Use this skill when:
-- Starting a new feature that likely has existing solutions
-- Adding a dependency or integration
-- The user asks "add X functionality" and you're about to write code
-- Before creating a new utility, helper, or abstraction
-- Troubleshooting problems
-
-## Workflow
-
-```
-┌─────────────────────────────────────────────┐
-│  1. NEED ANALYSIS                           │
-│     Define what functionality is needed      │
-│     Identify language/framework constraints  │
-├─────────────────────────────────────────────┤
-│  2. PARALLEL SEARCH (researcher agent)      │
-│     ┌──────────┐ ┌──────────┐ ┌──────────┐  │
-│     │  npm /   │ │  MCP /   │ │  GitHub / │  │
-│     │  PyPI    │ │  Skills  │ │  Web      │  │
-│     └──────────┘ └──────────┘ └──────────┘  │
-├─────────────────────────────────────────────┤
-│  3. EVALUATE                                │
-│     Score candidates (functionality, maint, │
-│     community, docs, license, deps)         │
-├─────────────────────────────────────────────┤
-│  4. DECIDE                                  │
-│     ┌─────────┐  ┌──────────┐  ┌─────────┐  │
-│     │  Adopt  │  │  Extend  │  │  Build   │  │
-│     │ as-is   │  │  /Wrap   │  │  Custom  │  │
-│     └─────────┘  └──────────┘  └─────────┘  │
-├─────────────────────────────────────────────┤
-│  5. IMPLEMENT                               │
-│     Install package / Configure MCP /       │
-│     Write minimal custom code               │
-└─────────────────────────────────────────────┘
-```
-
-## Decision Matrix
+**Need analysis** (what functionality, what language/framework constraints) → **parallel search**
+(package registry, MCP servers, installed skills, GitHub/web) → **evaluate** (functionality,
+maintenance, community, docs, license, dependency weight) → **decide** → **implement**.
 
 | Signal | Action |
 |--------|--------|
 | Exact match, well-maintained, MIT/Apache | **Adopt** — install and use directly |
-| Partial match, good foundation | **Extend** — install + write thin wrapper |
-| Multiple weak matches | **Compose** — combine 2-3 small packages |
-| Nothing suitable found | **Build** — write custom, but informed by research |
+| Partial match, good foundation | **Extend** — install + a thin wrapper |
+| Multiple weak matches | **Compose** — combine 2–3 small packages |
+| Nothing suitable | **Build** — custom, but informed by the research |
 
-## How to Use
+## Quick mode (inline)
 
-### Quick Mode (inline)
+Before writing a utility, run through:
 
-Before writing a utility or adding functionality, mentally run through:
+0. **Does this already exist in the repo?** → `rg` through the relevant modules and tests first
+1. Is this a common problem? → search npm / PyPI
+2. Is there an MCP for it? → check `~/.claude/settings.json` and search
+3. Is there a skill for it? → check `~/.claude/skills/`
+4. Is there a maintained OSS implementation or template? → GitHub code search
 
-0. Does this already exist in the repo? → `rg` through relevant modules/tests first
-1. Is this a common problem? → Search npm/PyPI
-2. Is there an MCP for this? → Check `~/.claude/settings.json` and search
-3. Is there a skill for this? → Check `~/.claude/skills/`
-4. Is there a GitHub implementation/template? → Run GitHub code search for maintained OSS before writing net-new code
+## Full mode (agent)
 
-### Full Mode (agent)
-
-For non-trivial functionality, launch the researcher agent:
+For non-trivial functionality:
 
 ```
 Task(subagent_type="general-purpose", prompt="
@@ -83,52 +49,31 @@ Task(subagent_type="general-purpose", prompt="
 ")
 ```
 
-## Search Shortcuts by Category
+## Shortcuts by category
 
-### Development Tooling
-- Linting → `eslint`, `ruff`, `textlint`, `markdownlint`
-- Formatting → `prettier`, `black`, `gofmt`
-- Testing → `jest`, `pytest`, `go test`
-- Pre-commit → `husky`, `lint-staged`, `pre-commit`
+- **Dev tooling** — linting `eslint`/`ruff`/`markdownlint` · formatting `prettier`/`black`/`gofmt`
+  · testing `jest`/`pytest`/`go test` · pre-commit `husky`/`lint-staged`/`pre-commit`
+- **AI/LLM** — Claude SDK docs via Context7 · prompt management: check MCP servers · document
+  processing `unstructured`/`pdfplumber`/`mammoth`
+- **Data & APIs** — HTTP clients `httpx` (Python), `ky`/`got` (Node) · validation `zod` (TS),
+  `pydantic` (Python) · databases: check for an MCP server first
+- **Content** — markdown `remark`/`unified`/`markdown-it` · images `sharp`/`imagemin`
 
-### AI/LLM Integration
-- Claude SDK → Context7 for latest docs
-- Prompt management → Check MCP servers
-- Document processing → `unstructured`, `pdfplumber`, `mammoth`
+## Where it is invoked automatically
 
-### Data & APIs
-- HTTP clients → `httpx` (Python), `ky`/`got` (Node)
-- Validation → `zod` (TS), `pydantic` (Python)
-- Database → Check for MCP servers first
+- **`/codebase-arch-review` §4 (Technology choices)** — for every novel technology or custom
+  component, before accepting it as a plan decision. Boring-by-default requires knowing what
+  already exists; you cannot spend an innovation token wisely without checking whether an
+  off-the-shelf solution almost works. Also consult it for integration patterns and existing
+  reference architectures.
+- **`/codebase-eng-review` Step 0 (Scope Challenge)** — for any new custom utility, helper, or
+  integration, before counting it as implementation work. If a library provides it, the scope
+  shrinks.
+- **`/draft-prd`** — before Phase 1, so available tools land in the plan rather than being
+  reinvented in it.
 
-### Content & Publishing
-- Markdown processing → `remark`, `unified`, `markdown-it`
-- Image optimization → `sharp`, `imagemin`
+## Example
 
-## Integration Points
-
-### In the review pipeline
-
-`/search-first` is invoked automatically at two points in `/board-review`:
-
-- **`/codebase-arch-review` Section 4 (Technology choices)** — run for every novel technology or custom component before accepting it as a plan decision. The boring-by-default instinct requires knowing what already exists. Cannot spend an innovation token wisely without first checking whether an off-the-shelf solution almost works.
-- **`/codebase-eng-review` Step 0 (Scope Challenge)** — run for any new custom utility, helper, or integration before counting it as implementation work. If a library already provides it, the scope shrinks.
-
-### With planner agent
-The `/draft-prd` skill should invoke researcher before Phase 1 (Architecture Review):
-- Researcher identifies available tools
-- Planner incorporates them into the implementation plan
-- Avoids "reinventing the wheel" in the plan
-
-### With architect agent
-`/codebase-arch-review` should consult researcher for:
-- Technology stack decisions (Section 4: Technology and infrastructure choices)
-- Integration pattern discovery
-- Existing reference architectures
-
-## Examples
-
-### Example 1: "Add dead link checking"
 ```
 Need: Check markdown files for broken links
 Search: npm "markdown dead link checker"
@@ -137,27 +82,9 @@ Action: ADOPT — npm install textlint-rule-no-dead-link
 Result: Zero custom code, battle-tested solution
 ```
 
-### Example 2: "Add HTTP client wrapper"
-```
-Need: Resilient HTTP client with retries and timeout handling
-Search: npm "http client retry", PyPI "httpx retry"
-Found: got (Node) with retry plugin, httpx (Python) with built-in retry
-Action: ADOPT — use got/httpx directly with retry config
-Result: Zero custom code, production-proven libraries
-```
+## Anti-patterns
 
-### Example 3: "Add config file linter"
-```
-Need: Validate project config files against a schema
-Search: npm "config linter schema", "json schema validator cli"
-Found: ajv-cli (score: 8/10)
-Action: ADOPT + EXTEND — install ajv-cli, write project-specific schema
-Result: 1 package + 1 schema file, no custom validation logic
-```
-
-## Anti-Patterns
-
-- **Jumping to code**: Writing a utility without checking if one exists
-- **Ignoring MCP**: Not checking if an MCP server already provides the capability
-- **Over-customizing**: Wrapping a library so heavily it loses its benefits
-- **Dependency bloat**: Installing a massive package for one small feature
+- **Jumping to code** — writing a utility without checking whether one exists
+- **Ignoring MCP** — not checking whether a server already provides the capability
+- **Over-customising** — wrapping a library so heavily it loses its benefits
+- **Dependency bloat** — a massive package for one small feature

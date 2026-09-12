@@ -21,29 +21,14 @@ State the detected mode at the top of your review: `> Mode: Platform` or `> Mode
 ## Workflow position
 
 ```
-/draft-prd
-      │
-      ▼
-/board-review ──── runs its reviewers in parallel ────┐
-      │                                               │
-      │   /codebase-arch-review  ← YOU ARE HERE       │
-      │   /codebase-eng-review                        │
-      │   /doc-review                                 │
-      │   /security-review                            │
-      │                                               │
-      └───────────────────────────────────────────────┘
-      │  all reviewers pass
-      ▼
-implementation → /closeout-prd → /prod-release
+/draft-prd → /board-review (parallel reviewers) → implementation → /closeout-prd → /prod-release
 ```
 
-In **Platform mode** the board swaps the codebase reviewers for `/platform-capacity-review`,
-`/platform-security-review`, `/platform-ops-review`, and `/platform-eng-review` — this skill
-and `/doc-review` sit on both boards.
+A parallel reviewer on **both** of `/board-review`'s boards, alongside `/doc-review` (reviewer
+lists in `board-review/references/{codebase,platform}-board.md`).
 
-When invoked standalone (outside a board-review), run **after** the draft skill and **before** the eng-review. This skill reviews **structure** — the decisions that are expensive to reverse.
-
-To run all gates in sequence automatically, use `/board-review` instead of invoking each skill individually.
+Invoked standalone, run **after** the draft skill and **before** eng-review. This skill reviews
+**structure** — the decisions that are expensive to reverse.
 
 ---
 
@@ -258,16 +243,7 @@ Architectural decisions considered and explicitly deferred, with one-line ration
 Existing infrastructure, services, or patterns that the plan should reuse — and whether it does.
 
 ### TODOS.md updates
-After all review sections are complete, present each potential TODO as its own individual AskUserQuestion. Never batch TODOs — one per question.
-
-For each TODO:
-- **What:** One-line description.
-- **Why:** The concrete problem it solves.
-- **Pros/Cons:** Brief.
-- **Context:** Enough detail for someone picking this up in 3 months.
-- **Depends on / blocked by:** Prerequisites.
-
-Options: **A)** Add to TODOS.md **B)** Skip **C)** Resolve now.
+Load `references/todo-capture.md` and follow it — one AskUserQuestion per TODO, never batched.
 
 ---
 

@@ -7,49 +7,48 @@ compatibility: opencode
 
 # TODO Scout
 
-Explore the codebase and project state to surface prioritised improvement candidates — then
-write accepted ones into the backlog as first-class task files.
+Explore the codebase and project state to surface prioritised improvement candidates, then write
+accepted ones into the backlog as first-class task files.
 
-This skill is **generative and exploratory**, not evaluative. It asks "what *should* we build
-or fix?" rather than "is this plan safe to build?". It runs before `/draft-prd`, feeding
-the backlog that `/prd-workflow` tracks.
-
-## Workflow position
+**Generative and exploratory, not evaluative.** It asks "what *should* we build or fix?", not "is
+this plan safe to build?". Runs before `/draft-prd`, feeding the backlog `/prd-workflow` tracks.
 
 ```
-/codebase-scout            ← YOU ARE HERE: read codebase → surface candidates → populate backlog
+/codebase-scout       ← YOU ARE HERE: read codebase → surface candidates → populate backlog
       │
       ▼
 /prd-workflow         ← user picks an item, task file already exists
       │
       ▼
-/draft-prd          ← turns thin task file into a full design
+/draft-prd            ← turns the thin task file into a full design
       │
       ▼
 /board-review → implementation → /closeout-prd → /prod-release
 ```
 
----
+Activate on: "what should we work on next?" · "find tech debt / improvements" · "scout the
+codebase" · "build the backlog" · a new session with no clear next task · just after shipping ·
+a thin or stale backlog.
 
-## When to Activate
+## Invocation
 
-- "What should we work on next?"
-- "Find tech debt / improvements / things that need fixing"
-- "Scout the codebase for issues"
-- "Build the backlog" / "fill the backlog"
-- "What would make this project better?"
-- Starting a new session with no clear next task
-- After shipping a feature — before picking the next one
-- When the backlog looks thin or stale
+```
+/codebase-scout                  — lenses 1–6, full codebase
+/codebase-scout security         — one lens
+/codebase-scout debt quality     — several lenses
+/codebase-scout --market         — lenses 1–6 plus Lens 7
+/codebase-scout --market-only    — Lens 7 alone
+/codebase-scout --quick          — P0/P1 only: skips lenses 5 and 6, caps at 5 candidates
+/codebase-scout --area src/api   — restrict codebase lens globs to a subdirectory
+```
 
----
+`--quick` is incompatible with Lens 7 — market research is inherently P2/P3 territory. `--area`
+does not affect Lens 7.
 
 ## Lenses
 
-The scout examines the project through **seven lenses**. Lenses 1–6 are inward-facing: they
-read the codebase and surface problems that already exist. Lens 7 is outward-facing: it
-researches the broader ecosystem and surfaces features worth building. Run lenses 1–6 by
-default; Lens 7 is **opt-in** because it is slower and more speculative.
+Lenses 1–6 are inward-facing: they read the codebase and surface problems that already exist.
+Lens 7 is outward-facing and **opt-in** — slower and more speculative.
 
 ```
 LENS                      DEFAULT   QUESTION
@@ -64,178 +63,107 @@ LENS                      DEFAULT   QUESTION
 ──────────────────────────────────────────────────────────────────────────
 ```
 
-The user can scope to one or more lenses: `/codebase-scout security` or `/codebase-scout debt quality`.
-Lens 7 is activated with `--market`, `--features-deep`, or by naming it explicitly.
-
 ---
 
 ## Step 0: Orient
 
-Before exploring, answer these questions:
-
-1. **Read `TODO.md`** (if it exists) — what's already tracked? Do not re-surface items that are
-   already open or in progress. Note the next available task number.
-
-2. **Read `CLAUDE.md`, `README.md`, `ARCHITECTURE.md`** (if they exist) — understand the
-   project's stated goals, tech stack, domain, and target users. This context is especially
-   important for Lens 7 — knowing what the project *is* determines what comparators to research.
-
-3. **Scan the git log** for recent activity:
+1. **Read `TODO.md`** — what is already tracked? Never re-surface an open or in-progress item.
+   Note the next available number.
+2. **Read `CLAUDE.md`, `README.md`, `ARCHITECTURE.md`** — the project's stated goals, stack,
+   domain, and target users. Essential for Lens 7: what the project *is* determines the
+   comparators.
+3. **Scan recent activity** — churn is high-signal, since often-changed files are either
+   important or troubled:
    ```bash
    git log --oneline -20
    git diff $(git merge-base HEAD main 2>/dev/null || echo HEAD~10)...HEAD --stat 2>/dev/null | head -40
    ```
-   Recent churn areas are high-signal: files changed often are either important or troubled.
+4. **Announce scope and ask about Lens 7** — unless `--market` or `--market-only` already
+   answered it. Wait for the response before launching anything.
 
-4. **Announce scope and ask about Lens 7** — unless `--market` or `--market-only` was
-   already passed (in which case the answer is known), always ask before proceeding:
-
-   > "Ready to scout [all lenses / named lenses]. Before I start — do you also want
-   > **Lens 7: Market & ecosystem**? It researches comparable projects and user demand
-   > signals to surface feature ideas grounded in real evidence. It runs in parallel with
-   > the codebase lenses but takes longer due to web research.
+   > "Ready to scout [lenses]. Before I start — do you also want **Lens 7: Market & ecosystem**?
+   > It researches comparable projects and user demand signals to surface feature ideas grounded
+   > in real evidence. It runs in parallel with the codebase lenses but takes longer due to web
+   > research.
    >
-   > **y** / **n** / **market-only** (skip codebase lenses, just do market research)"
-
-   Wait for the response before launching any subagents. If the user says **y**, add Lens 7
-   to the active set. If **n**, proceed with codebase lenses only. If **market-only**, skip
-   Lenses 1–6 and run Lens 7 alone.
-
----
+   > **y** / **n** / **market-only** (skip codebase lenses)"
 
 ## Step 1: Parallel lens exploration
 
-Launch one subagent per active lens, all in parallel (`run_in_background: true`). Each subagent
-explores the codebase for its specific lens and writes findings to a shared scratch file.
+One subagent per active lens, all in parallel (`run_in_background: true`), each writing findings
+to `todo/scout/<run-slug>/<lens-slug>.md`.
 
-**Lenses 1–6** use the codebase-reading subagent prompt template in `references/lens-codebase-subagent.md`. Load it now and substitute `[LENS NAME]`, the lens question, and the codebase summary before launching each subagent.
+**Lenses 1–6:** load `references/lens-codebase-subagent.md` as the prompt template and substitute
+the lens name, its question, and the codebase summary.
 
-**Lens-specific signals to look for:**
+**Lens 7:** load `references/lens-market-subagent.md` — a web research subagent, not a
+codebase-reading one. It looks outward at comparable projects, competitor features, ecosystem
+trends, and demand patterns. Substitute the project summary and existing TODO items. The grounding
+rule lives in that file: **every candidate carries a source URL — no evidence, no candidate.**
+Suited to quarterly "where should this go?" and pre-roadmap sessions, not sprint-level scouting.
 
-### Lens 1 — Code quality
-- Functions > 50 lines with multiple responsibilities
-- Copy-pasted blocks (same logic in 2+ places) — apply the Rule of Three: three instances = extract
-- Shallow abstractions that pass data through without simplifying it (wrapper that barely wraps)
-- Premature abstractions that generalise before there are two real use cases
-- Missing or incorrect error handling (bare `except`, swallowed errors)
-- Magic numbers / hardcoded strings that should be constants or config
-- Dead code (unused functions, commented-out blocks > 20 lines)
-- Inconsistent naming or style that breaks the mental model
-- Files that import from too many other modules (high fan-in coupling)
-- Parallel data structures updated in lockstep (same field in two places) — usually signals a missing abstraction
-- Divergent change: one module changed for multiple unrelated reasons — split it
-- Shotgun surgery: one conceptual change requires edits across many files — consolidate
+### Signals per lens
 
-### Lens 2 — Tech debt
-- TODOs, FIXMEs, HACKs in comments — especially ones with dates
-- Dependencies pinned to old versions (check package files)
-- Deprecated API usage (library or internal)
-- Abstraction that has grown past its original design (god classes, fat models)
-- Tests that are brittle, slow, or have been skipped/commented out
-- Config values that should be environment-specific but are hardcoded
-- Areas where the current approach is known to hit a wall at scale
+**1 — Code quality.** Functions >50 lines with multiple responsibilities · copy-pasted blocks
+(Rule of Three: three instances means extract) · shallow abstractions that pass data through
+without simplifying it · premature abstractions built before two real use cases · missing or
+wrong error handling (bare `except`, swallowed errors) · magic numbers and hardcoded strings ·
+dead code (unused functions, commented blocks >20 lines) · inconsistent naming that breaks the
+mental model · files importing from too many modules · parallel data structures updated in
+lockstep (a missing abstraction) · divergent change (one module changed for unrelated reasons —
+split it) · shotgun surgery (one change requiring edits across many files — consolidate).
 
-### Lens 3 — Production readiness
-- Missing health check / readiness probe endpoints
-- No graceful shutdown handling
-- Secrets or credentials in code, config files, or git history
-- Missing request timeout / circuit breaker for external calls
-- No retry logic for transient failures (network, DB)
-- Missing or incomplete logging (no request IDs, no structured logs)
-- Error responses that leak internal details to clients
-- No rate limiting on public-facing endpoints
-- Missing database connection pool limits or query timeouts
-- Lack of observability: no metrics, no tracing, no alerting hooks
+**2 — Tech debt.** TODO/FIXME/HACK comments, especially dated ones · dependencies pinned to old
+versions · deprecated API usage, library or internal · abstractions grown past their design (god
+classes, fat models) · tests that are brittle, slow, skipped, or commented out · hardcoded values
+that should be environment-specific · approaches known to hit a wall at scale.
 
-### Lens 4 — Security
-- User input that flows to SQL, shell, file paths, or template engines without validation
-- Authentication checks that can be bypassed (missing middleware, wrong order)
-- Authorisation gaps (user A can access user B's resources)
-- Secrets in environment variable names that suggest they're checked into source
-- Dependencies with known CVEs (check `npm audit`, `pip-audit`, `trivy`, etc.)
-- Missing CSRF protection on state-changing endpoints
-- Overly broad CORS policy (`*`)
-- JWT/session tokens with long expiry and no revocation story
-- File upload handlers that don't validate type/size/content
+**3 — Production readiness.** Missing health/readiness endpoints · no graceful shutdown · secrets
+in code, config, or git history · no request timeout or circuit breaker on external calls · no
+retry for transient failures · incomplete logging (no request IDs, unstructured) · error responses
+leaking internals · no rate limiting on public endpoints · missing connection pool limits or query
+timeouts · no metrics, tracing, or alerting hooks.
 
-### Lens 5 — Features
-- Obvious gaps relative to the project's stated goals (from README/ARCHITECTURE)
-- Partial implementations with clear next steps (feature flags that are never on)
-- Repeated patterns that suggest an abstraction is missing
-- Common user/operator workflows that require too many steps
-- Missing export/import capabilities for important data
-- Admin or observability tools that don't exist (no audit log, no admin panel)
-- API endpoints that exist but lack documented error cases or validation
+**4 — Security.** User input reaching SQL, shell, file paths, or template engines unvalidated ·
+auth checks bypassable (missing middleware, wrong order) · authorisation gaps (user A reaching
+user B's resources) · secrets suggested by env var names checked into source · dependencies with
+known CVEs (`npm audit`, `pip-audit`, `trivy`) · missing CSRF protection on state-changing
+endpoints · `*` CORS · long-expiry tokens with no revocation story · file uploads not validating
+type, size, or content.
 
-### Lens 6 — Developer experience
-- Local setup that requires > 5 manual steps (missing Makefile, docker-compose, scripts)
-- Tests that take > 60s to run in full, with no fast subset
-- No linting / formatting enforced in CI
-- Missing or stale documentation for non-obvious design decisions
-- Hard-to-mock external dependencies (no interfaces, no test doubles)
-- Dev/prod config parity gaps (works locally, breaks in CI or staging)
-- Missing seed data or fixtures for common development scenarios
+**5 — Features.** Gaps against the project's stated goals · partial implementations with clear
+next steps (flags never turned on) · repeated patterns suggesting a missing abstraction · common
+workflows needing too many steps · missing export/import for important data · absent admin or
+observability tooling (no audit log, no admin panel) · endpoints lacking documented error cases.
 
----
-
-### Lens 7 — Market & ecosystem (opt-in)
-
-**This lens is different from Lenses 1–6.** It looks *outward* — at comparable projects,
-competitor features, ecosystem trends, and user demand patterns — then cross-references
-inward against the codebase to filter out anything already built. It runs a web research
-subagent rather than a codebase-reading one.
-
-**When to use:** Quarterly "where should this project go?" sessions, pre-roadmap planning,
-when the inward lenses are clean but you want to find the next meaningful feature bets.
-Not suited to sprint-level scouting.
-
-Load `references/lens-market-subagent.md` as the subagent prompt template for Lens 7. Substitute the project summary and existing TODO items before launching. The grounding rule is in that file: every candidate must include a source URL — no evidence, no candidate.
-
----
+**6 — Developer experience.** Local setup needing >5 manual steps · full test runs over 60s with
+no fast subset · no linting or formatting in CI · missing or stale documentation for non-obvious
+decisions · hard-to-mock dependencies (no interfaces, no test doubles) · dev/prod parity gaps ·
+missing seed data or fixtures.
 
 ## Step 2: Poll and collect
-
-Poll all subagents until complete. Show a simple progress line while waiting:
 
 ```
 🔍 Scouting...  quality ✅  debt ⏳  production ⏳  security 🔵  features ✅  devxp 🔵  market ⏳
 ```
 
-(Market column only shown when Lens 7 is active.)
-
-Once all complete, read each `todo/scout/<run-slug>/<lens-slug>.md` file and consolidate
-all candidates into a single ranked list.
-
-**Lens 7 post-processing:** before mixing market candidates into the ranked list, run a
-quick codebase cross-check on each one — glob and grep for obvious implementations of the
-suggested feature. Drop any candidate where the feature already clearly exists. Mark
-retained candidates with `[market-verified]` to indicate the cross-check passed.
-
----
+Once all complete, read each lens file and consolidate into one ranked list. **Lens 7
+post-processing:** before mixing market candidates in, glob and grep for obvious implementations
+of each suggested feature. Drop anything that clearly already exists; mark the rest
+`[market-verified]`.
 
 ## Step 3: Rank and deduplicate
 
-Before presenting to the user:
-
-1. **Deduplicate** — merge candidates that describe the same underlying problem from different
+1. **Deduplicate** — merge candidates describing the same underlying problem from different
    lenses. Keep the richer description, note both lenses.
+2. **Rank:** P0 — actively causing failures or data loss *right now* · P1 — security gaps,
+   production-readiness gaps, actively compounding debt · P2 — quality and feature improvements
+   with clear value · P3 — nice-to-haves, low-signal DX. Within a tier prefer smaller effort,
+   higher impact, more reversible.
+3. **Cap at 12** for presentation (5 with `--quick`). If more were found, note "N additional
+   lower-signal candidates found — ask to see them."
 
-2. **Rank** using this signal stack:
-   - P0 first: anything that is actively causing failures or data loss *right now*
-   - P1: security gaps, production-readiness gaps, or debt that is actively compounding
-   - P2: quality and feature improvements with clear value
-   - P3: nice-to-haves, low-signal DX improvements
-
-   Within each tier, prefer: smaller effort → higher impact → more reversible.
-
-3. **Cap at 12 candidates** for presentation. If more were found, keep the highest-signal ones
-   and note "N additional lower-signal candidates found — ask to see them."
-
----
-
-## Step 4: Present candidates
-
-Show the ranked list in a clear table, then expand each one:
+## Step 4: Present
 
 ```
 TODO Scout — <N> candidates found  (<date>)
@@ -245,125 +173,64 @@ TODO Scout — <N> candidates found  (<date>)
 1   Missing request timeouts on API    Production  🟠 P1     small
 2   Auth bypass in admin middleware    Security    🔴 P0     small
 3   User.find_all() loads all rows     Debt        🟠 P1     trivial
-4   No structured logging              Production  🟡 P2     medium
-5   Duplicate validation logic (×3)    Quality     🟡 P2     small
-...
 ══════════════════════════════════════════════════════════════════
 ```
 
-Then for each candidate, show the full entry (problem, why it matters, suggested fix, effort,
-dependencies).
+Then expand each: problem, why it matters, suggested fix, effort, dependencies. Then ask:
 
-After presenting all candidates, ask:
-
-> "Which of these should I add to the backlog? You can say:
-> - **all** — add everything
-> - **numbers** — e.g. '1 3 5' to add specific ones
-> - **priority** — e.g. 'P0 and P1 only'
-> - **none** — skip for now
->
-> You can also adjust priority or title before I write them."
-
----
+> "Which should I add to the backlog? **all** · **numbers** (e.g. '1 3 5') · **priority**
+> (e.g. 'P0 and P1 only') · **none**. You can also adjust priority or title before I write them."
 
 ## Step 5: Write accepted items
 
-For each accepted candidate:
-
-1. **Assign the next TODO number** (from the sequence in `TODO.md`).
-
-2. **Create `todo/<number>-<slug>.md`** using the standard task file template. Pre-fill:
-   - Problem Statement (from candidate's "Problem" + "Why it matters")
-   - Goals (1-2 goals derived from "Suggested fix")
-   - Priority and Status (`⬜ Open`)
-   - Source: `> *Surfaced by /codebase-scout on <date> — <lens> lens*`
-   - Leave Design and Implementation Plan sections as stubs — those get filled by
-     `/draft-prd` when the item is picked up.
-
-3. **Add a row to `TODO.md`** with the correct priority, `⬜ Open` status, branch `—`, PR `—`.
-
-4. After all items are written, show a confirmation:
+Per accepted candidate: assign the next number from `TODO.md` → create `todo/<number>-<slug>.md`
+from the standard template, pre-filling Problem Statement (from "Problem" + "Why it matters"),
+Goals (1–2, from "Suggested fix"), priority, status `⬜ Open`, and
+`> *Surfaced by /codebase-scout on <date> — <lens> lens*`. Leave Design and Implementation Plan as
+stubs for `/draft-prd`. Add the `TODO.md` row (priority, `⬜ Open`, branch `—`, PR `—`).
 
 ```
 Added to backlog:
   #007  Auth bypass in admin middleware        🔴 P0
   #008  Missing request timeouts on API        🟠 P1
-  #009  User.find_all() loads all rows         🟠 P1
 
 TODO.md updated. Run /prd-workflow to pick the next item.
 ```
 
-5. Commit:
 ```bash
 git add TODO.md todo/
 git commit -m "docs(todo): add N scout candidates from /codebase-scout [<lens(es)>]"
 ```
 
----
-
 ## Step 6: Suggest next action
 
-After writing items, always suggest what to do next based on what was found:
-
-- If any P0 items were added: "There's a P0 item — recommend picking it up immediately with
-  `/prd-workflow`."
-- If security items were added: "Consider running `/security-review` for a deeper pass."
-- If production-readiness items were added: "Consider running `/twelve-factor-standards` for a
-  systematic audit."
-- If the backlog is now well-stocked: "Run `/prd-workflow` to review the full backlog
-  and pick the highest-value item."
+Any P0 added → "There's a P0 item — recommend picking it up immediately with `/prd-workflow`."
+Security items → "Consider `/security-review` for a deeper pass." Production items → "Consider
+`/twelve-factor-standards` for a systematic audit." Otherwise → "Run `/prd-workflow` to review the
+full backlog and pick the highest-value item."
 
 ---
 
 ## Quality rules
 
-1. **Specific over vague.** "Add timeout to `PaymentClient.charge()` in `services/payment.py`"
-   is a good candidate. "Improve error handling" is not.
-2. **Problem first.** Every candidate must describe what is broken or missing *today* — not
-   just describe a solution. A well-written problem statement makes the fix obvious.
-3. **Don't duplicate the backlog.** Always read `TODO.md` first. Never surface what's already
-   tracked.
-4. **Effort honesty.** Don't underestimate to make items look attractive. A wrong effort
-   estimate is worse than none.
-5. **Fewer, sharper candidates win.** 5 high-signal items are better than 15 vague ones.
-   The user's attention is the scarce resource.
-6. **Write task files that can be picked up cold.** The Problem Statement must be good enough
-   that someone reading the file three months from now immediately understands what to do and
-   why.
+1. **Specific over vague.** "Add timeout to `PaymentClient.charge()` in `services/payment.py`" is
+   a candidate. "Improve error handling" is not.
+2. **Problem first.** Describe what is broken or missing *today*, not just a solution. A good
+   problem statement makes the fix obvious.
+3. **Effort honesty.** Never underestimate to make an item attractive — a wrong estimate is worse
+   than none.
+4. **Fewer, sharper candidates win.** Five high-signal items beat fifteen vague ones; the user's
+   attention is the scarce resource.
+5. **Task files must be pickupable cold.** The Problem Statement should be good enough that
+   someone reading it in three months knows what to do and why.
 
----
+## Integration
 
-## Integration with other skills
-
-| Skill | How it integrates |
-|-------|------------------|
-| `/prd-workflow` | Scout writes task files in the same format; `/prd-workflow` picks them up |
-| `/draft-prd` | Scout writes thin task files; `/draft-prd` fills in the design when the item is picked |
-| `/board-review` | Scout does not gate items — that happens later when a design exists |
-| `/security-review` | Scout's security lens is a quick pass; `/security-review` is the deep audit |
-| `/twelve-factor-standards` | Scout's production lens overlaps; `/twelve-factor-standards` is the systematic checklist |
-| `/code-review` | Scout finds structural patterns; `/code-review` reviews specific changes |
-
----
-
-## Invocation variants
-
-```
-/codebase-scout                        — lenses 1–6, full codebase
-/codebase-scout security               — security lens only
-/codebase-scout debt quality           — two lenses
-/codebase-scout --market               — lenses 1–6 plus Lens 7 (market & ecosystem)
-/codebase-scout --market-only          — Lens 7 only, skip codebase lenses
-/codebase-scout --quick                — surface only P0/P1 candidates, skip P2/P3
-/codebase-scout --area src/api         — scope codebase lenses to a subdirectory
-```
-
-When `--market` or `--market-only` is passed: activate Lens 7 in parallel with other active
-lenses. Announce to the user that it will take longer due to web research.
-
-When `--quick` is passed: skip Lens 5 (features) and Lens 6 (devxp), focus on P0/P1 signals
-only, cap at 5 candidates. Lens 7 is not compatible with `--quick` — market research is
-inherently P2/P3 territory.
-
-When `--area` is passed: restrict glob patterns for codebase lenses to the specified path.
-Lens 7 is unaffected by `--area`.
+| Skill | Integration |
+|-------|------------|
+| `/prd-workflow` | Same task file format; picks up what scout writes |
+| `/draft-prd` | Fills in the design when a scouted item is picked |
+| `/board-review` | Does not gate scout items — that happens once a design exists |
+| `/security-review` | Scout's security lens is a quick pass; that is the deep audit |
+| `/twelve-factor-standards` | Overlaps the production lens; that is the systematic checklist |
+| `/code-review` | Scout finds structural patterns; that reviews specific changes |

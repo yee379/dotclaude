@@ -21,208 +21,158 @@ triggers:
 
 # Draft PRD
 
-A structured approach to planning before touching code or the cluster. Produces a clear spec, design decisions, ADRs, and a delivery sequence the board can gate against.
+Planning before touching code or the cluster. Produces a spec, design decisions, ADRs, and a
+delivery sequence the board can gate against.
+
+Use for: a significant feature or system change, an architectural decision (database, service
+split, API design), onboarding a service to the cluster, capacity planning, or an RFC for team
+review. When a task number is given, glob `todo/<number>-*.md` for the task file first.
 
 ## Mode detection
 
-**At the start of every run, detect the mode:**
-
 | Signal | Mode |
 |---|---|
-| `[INFRA]`, "cluster", "k8s", "Helm", "namespace", "workload", "vcluster", "onboard", `platform/` in branch/path, or explicit `platform <number>` | **Platform** |
+| `[INFRA]`, "cluster", "k8s", "Helm", "namespace", "workload", "vcluster", "onboard", `platform/` in branch/path, explicit `platform <number>` | **Platform** |
 | Everything else — software feature, API, refactor, bug fix | **Codebase** |
 
-State the detected mode: `> Mode: Codebase` or `> Mode: Platform`.
+State it: `> Mode: Codebase` or `> Mode: Platform`.
+
+**Workflow position** — `/draft-prd` → `/board-review` → implementation → `/closeout-prd` →
+`/prod-release`. In platform mode the tail is `/prd-workflow` (close out, mark 🚀 Applied).
 
 ---
 
 ## Precision discipline — applies to every phase
 
-**Load `references/precision-rules.md` before Phase 1 and keep it in force throughout.** It is not a
-final polish step; the rules are cheap while writing and expensive to retrofit.
-
-The nine rules in one line each:
+**Load `references/precision-rules.md` before Phase 1 and keep it in force throughout.** These
+rules are cheap while writing and expensive to retrofit.
 
 1. **Never write a value you could derive** — state the command, endpoint, or accessor instead.
+   Number *words* count; derive reference targets rather than composing plausible ones.
 2. **State each rule normatively in exactly one place** — name it, reference the name elsewhere.
-3. **Requirements say *where*, not just *what*** — insertion point, and every behaviour of anything
-   being replaced.
+3. **Requirements say *where*, not just *what*** — insertion point (including clause order), every
+   behaviour of anything being replaced, and every *instance* of a mechanism being replaced.
+   Finish the audit; do not defer it into the plan.
 4. **Slice placement follows a stated invariant** — not case-by-case judgement.
-5. **Test specs are checked against the fixtures they would run on** — by running them.
+5. **Run anything you can run** — the tests you claim will flip, the mechanism you recommend, and
+   any claim made while presenting options to the user.
 6. **Claims are scoped to the strength that actually holds.**
 7. **Rejected alternatives carry the fact that kills them.**
 8. **Byte-level content is written as `\uXXXX` escapes**, never as glyphs.
 9. **Length is a defect generator** — more copies, more drift, more amendments.
 
-Why this is in the authoring skill rather than the review skill: a board review measures whether a
-plan agrees with itself and with the repo. In one three-round review, ~48 of 53 final-round
-amendments were the plan disagreeing with itself — self-inflicted, and each one displaced budget the
-reviewers could have spent on real design defects. **Fix these as you go. Do not leave them for the
-board.**
+This lives in the authoring skill because a board review measures whether a plan agrees with
+itself. In one three-round review, ~48 of 53 final-round amendments were the plan disagreeing with
+itself — each one displacing budget the reviewers could have spent on real design defects.
+**Fix these as you go.**
 
 ---
 
-## When to Trigger
+## Pre-flight
 
-- `plan <number>` / `plan #<number>` / `platform <number>` — plan a specific task
-- `/draft-prd` — explicit invocation
-- "plan this out", "write a PRD", "create a PRD", "product requirements document"
-- Before onboarding any new application to the cluster
-- Before any significant infrastructure change
-- "grill me", "grill this", `/grill-me`, "stress-test this plan", "interview me about" — **Grill Mode** (see below)
+**Existing task file:**
+1. Task number given — glob `todo/<number>-*.md` and read it.
+2. Working from a branch (codebase) — check `TODO.md` for a matching `🔄 In Progress` / `⬜ Open`
+   item and read its task file.
+3. No task file — create one via `/prd-workflow` first.
 
-When a task number is given, glob `todo/<number>-*.md` to find the task file before starting.
+If one exists: use its **Problem Statement** as Phase 1 input rather than re-deriving, its
+**Goals** as the Phase 2 starting point, and any partial **Design** section as a base. Phase 0
+research can usually be skipped unless Design is empty *and* the technology is unfamiliar. All
+output goes back into the task file, not a separate document.
 
----
-
-## Workflow position
-
-**Codebase:**
-```
-/draft-prd  ← YOU ARE HERE
-      │
-      ▼
-/board-review → implementation → /closeout-prd → /prod-release
-```
-
-**Platform:**
-```
-/draft-prd  ← YOU ARE HERE
-      │
-      ▼
-/board-review → implementation → /prd-workflow (close out, mark 🚀 Applied)
-```
-
----
-
-## When to Use
-
-- Planning a significant new feature or system change
-- Making an architectural decision (database, service split, API design)
-- Onboarding a new service to the cluster
-- Capacity planning and infrastructure design
-- Creating an RFC or design document for team review
-
----
-
-## Pre-flight: Check for an existing task file
-
-1. **If a task number was given**: glob `todo/<number>-*.md` and read it.
-2. **If working from current branch** (codebase): check `TODO.md` for a matching `🔄 In Progress` or `⬜ Open` item and read its task file.
-3. **If no task file exists**: create one via `/prd-workflow` before continuing.
-
-If a task file already exists:
-- Use its **Problem Statement** as Phase 1 input — do not re-derive from scratch.
-- Use its **Goals** as the starting point for Phase 2.
-- Check whether a **Design** section is already partially filled — start from there.
-- Phase 0 research can usually be skipped unless the Design is empty *and* the technology is unfamiliar.
-
-All output should be written back into the task file — not into a separate document.
-
----
-
-## Pre-flight: Interview Mode
-
-Two modes. Detect from the trigger phrase:
+**Interview mode** — from the trigger phrase:
 
 | Trigger | Mode |
 |---|---|
-| "grill me", "grill this", `/grill-me`, "stress-test this plan", "interview me about" | **Grill Mode** — relentless, adversarial, every branch |
-| All other triggers | **Standard Mode** — targeted, efficient, skip what's obvious |
-
----
+| "grill me", "grill this", `/grill-me`, "stress-test this plan", "interview me about" | **Grill** — relentless, adversarial, every branch |
+| All others | **Standard** — targeted, efficient, skip what's obvious |
 
 ### Standard Mode
 
-Ask for a **brief initial description** of the problem. Keep this short — resolve details through exploration and follow-up.
+Ask for a **brief** initial description; resolve details through exploration and follow-up.
 
-**1. Explore first.** Read the codebase or cluster state, existing task files, tests, docs, ADRs, and anything referenced in the description. For platform work: check Helm charts, namespace manifests, runbooks, and prior board review decisions. Answer as many questions as you can without involving the user.
+1. **Explore first.** Codebase or cluster state, task files, tests, docs, ADRs, anything the
+   description references. Platform: Helm charts, namespace manifests, runbooks, prior board
+   decisions. Answer everything you can without the user.
+2. **Ask only what you cannot determine** — preference and priority calls, trade-offs with no
+   correct answer, conflicting signals. One thread at a time.
+3. **Surface conflicts explicitly**, including when the user's own answer conflicts with their own
+   earlier example. If an option you offer would refuse, invert, or exclude a case they have
+   already described wanting, say so *before* writing it into the plan. **An answer that
+   contradicts the asker's own worked example is a conflict to resolve, not a caveat to record.**
+4. **Iterate until shared understanding** — until you can restate the full plan and the user
+   confirms it. Do not proceed to Phase 1 before that.
 
-**2. Ask about what you cannot determine.** Targeted questions only — preference/priority decisions, trade-offs with no correct answer, conflicting signals, unknowns only the user can resolve. Ask one thread at a time.
-
-**3. Surface conflicts explicitly.** If exploration reveals something that conflicts with the stated approach, raise it directly.
-
-**4. Iterate until shared understanding.** Keep exploring and asking until you can restate the full plan and the user confirms it is correct. Do not proceed to Phase 1 until this point is reached.
-
-Load `references/discovery-questions.md` and ask each question in order, waiting for answers before continuing. Do not skip this even when a task file exists — the task file captures *what*, not *why*.
-
----
+Load `references/discovery-questions.md` and ask each in order, waiting for answers. Do not skip
+it when a task file exists — the task file captures *what*, not *why*.
 
 ### Grill Mode
 
-Interview the user relentlessly about every aspect of the plan until you reach shared understanding. Walk down each branch of the decision tree, resolving dependencies one at a time. **Ask one question at a time. Wait for the answer before continuing.**
+Interview relentlessly down every branch of the decision tree, resolving dependencies one at a
+time. **One question at a time. Wait for the answer.**
 
-**Before asking anything:** explore the codebase or cluster state, read the task file and any existing design doc, and build a map of the decision tree — what are the load-bearing decisions, and what depends on each one? If a question can be answered by exploration, answer it yourself and confirm the finding rather than asking.
+**Before asking anything:** explore the codebase or cluster, read the task file and any design
+doc, and map the decision tree — which decisions are load-bearing, and what depends on each. If
+exploration can answer a question, answer it and confirm the finding instead of asking.
 
-**Tell the user the scope upfront:**
-> "I'll work through [N areas]: [list]. Starting with the most load-bearing decision."
+Tell the user the scope upfront: *"I'll work through [N areas]: [list]. Starting with the most
+load-bearing decision."*
 
-**For each open question, in dependency order:**
-1. State the question clearly — name the specific decision or assumption being tested.
-2. Give your recommended answer based on what you've read, and why in one sentence. Make it a real recommendation, not a hedge.
-3. Wait for the user's response.
-4. If they confirm: lock it in, note it, move to the next dependent question.
-5. If they correct or refine: update your model, check whether it invalidates any already-locked decisions, then continue.
-6. If they're unsure: offer a concrete trade-off (option A vs B, one sentence each), then ask them to choose.
+For each open question, in dependency order:
+1. State the question — name the specific decision or assumption being tested.
+2. Give your recommended answer and why, in one sentence. A real recommendation, not a hedge.
+3. Wait.
+4. Confirmed → lock it in, note it, move to the next dependent question.
+5. Corrected → update your model, check whether it invalidates a locked decision, continue.
+6. Unsure → offer a concrete trade-off (A vs B, one sentence each) and ask them to choose.
 
-**Conflict rule:** when an answer contradicts a prior locked decision, stop and name it:
-> "That conflicts with what we decided about X — [what was decided]. Which takes priority, or do we need to revise X?"
-Resolve before continuing.
+**Conflict rule:** when an answer contradicts a locked decision, stop and name it — *"That
+conflicts with what we decided about X — [what was decided]. Which takes priority?"* Resolve
+before continuing.
 
-**Question quality:**
-- One question = one decision. Never bundle two decisions.
-- Concrete over abstract: "Postgres or Redis for session state?" not "what's your persistence strategy?"
-- Load-bearing decisions first — ask about what other decisions depend on before those dependents.
-- If a section has no open questions, say so and move on.
+**Question quality:** one question = one decision, never bundled. Concrete over abstract
+("Postgres or Redis for session state?" not "what's your persistence strategy?"). Load-bearing
+decisions before their dependents. If a section has no open questions, say so and move on.
 
-**On completion,** produce a locked-decisions summary before proceeding to the planning phases:
+On completion, produce a locked-decisions summary:
 
 ```
 ## Grill summary
-
 ### Locked decisions
 - [decision]: [what was decided]
-
 ### Revised from initial plan
 - [what changed and why]
-
 ### Still open
 - [anything explicitly deferred with reason]
 ```
 
-Ask whether to write the locked decisions into the task file's Design section now, or proceed directly to the planning phases with them as context.
+Then ask whether to write it into the task file's Design section now or carry it as context.
 
 ---
 
 ## Phase 0 — Research
 
-Runs in parallel with the pre-flight interview. Every lookup is an opportunity to answer a question before asking the user.
+Runs in parallel with the pre-flight interview. Every lookup is a chance to answer a question
+before asking the user.
 
-**What to explore:**
-- Codebase: relevant source files, tests, existing similar features, library docs
-- Platform: Helm charts, namespace manifests, operator docs, upstream changelogs
-- Prior ADRs, design docs, or task files that touch this area
-- Whether something already exists in the codebase/cluster that meets this need
+Explore: relevant source and tests, existing similar features, library docs; platform — Helm
+charts, namespace manifests, operator docs, upstream changelogs; prior ADRs and task files
+touching this area; whether something already exists that meets the need.
 
-**When to run `/research` or `/search-first`:**
-- The technology, library, operator, or pattern is unfamiliar
-- There are competing approaches and trade-offs are unclear
-- A security, compliance, or regulatory question must be resolved before design
-
-Save findings to `todo/research/<slug>/` and link from the task file's Design section.
+Run `/research` or `/search-first` when the technology or pattern is unfamiliar, trade-offs
+between competing approaches are unclear, or a security/compliance question must be resolved
+before design. Save findings to `todo/research/<slug>/` and link from the Design section.
 
 ---
 
 ## Phase 1 — Problem framing
 
-**Questions to answer:**
-1. What problem does this solve? (not "implement X" — the underlying need)
-2. What does success look like? (measurable outcome)
-3. What is explicitly out of scope?
-4. What are the constraints? (timeline, existing tech/topology, compliance, team size)
-5. Who are the stakeholders and what do they care about?
+Answer: what problem does this solve (the underlying need, not "implement X")? What does success
+look like, measurably? What is explicitly out of scope? What are the constraints (timeline,
+existing tech/topology, compliance, team size)? Who are the stakeholders and what do they care
+about?
 
-**Output:**
 ```
 Problem: [what is broken, missing, or at risk today]
 Goal: [what we want to be true after this ships/applies]
@@ -235,13 +185,9 @@ Constraints: [time, tech/topology, compliance, team]
 
 ## Phase 1.5 — User Stories [Codebase only]
 
-Write a long, numbered list covering all actors and all aspects of the feature:
-
-```
-As a <actor>, I want <feature>, so that <benefit>
-```
-
-Be **extremely extensive** — cover happy paths, error paths, edge cases, admin flows, and every actor. Check this list with the user before proceeding.
+A long, numbered list covering all actors and all aspects: `As a <actor>, I want <feature>, so
+that <benefit>`. Be **extremely extensive** — happy paths, error paths, edge cases, admin flows,
+every actor. Check the list with the user before proceeding.
 
 ---
 
@@ -256,35 +202,29 @@ FR-1: [requirement]
               "before the cold-store 503 check", not just "in _authorize"]
 ```
 
-A requirement that names *what* but not *where* gets implemented in the wrong place, or read three
-different ways by three reviewers. If the change **replaces** an existing function, enumerate every
-behaviour of the old one and state explicitly whether the new one keeps it — a dropped behaviour
-nobody listed is how a silent allow→deny regression ships (precision rule 3).
+A requirement naming *what* but not *where* gets implemented in the wrong place or read three
+ways by three reviewers. If the change **replaces** an existing function, enumerate every
+behaviour of the old one and state whether the new one keeps it — a dropped behaviour nobody
+listed is how a silent allow→deny regression ships (rule 3).
 
-**Non-functional requirements** — how well it must do it:
-```
-NFR-1: [requirement]
-```
+**Non-functional requirements** — how well: `NFR-1: [requirement]`
 
-Any NFR that defines a **set** (error reasons, states, labels, metric values) gets a `Produced by`
-column naming the code path that emits each member. A set whose members come from different paths is
-two sets wearing one name, and its count will be wrong.
+Any NFR defining a **set** (error reasons, states, labels, metric values) gets a `Produced by`
+column naming the code path emitting each member. A set whose members come from different paths
+is two sets wearing one name, and its count will be wrong.
 
-**Acceptance criteria** — definition of done (testable):
+**Acceptance criteria** — testable:
 ```
 AC-1: Given [context], when [action], then [outcome]
       Verified by: [test name + fixture, or the exact command that checks it]
 ```
 
-Every AC that names a test must name its **fixture** and the guards that fixture must pass. Then run
-the tests you claim will change and paste the real output — the list is an executable fact, not a
-prediction (precision rule 5).
+Every AC naming a test names its **fixture** and the guards that fixture must pass. Then run the
+tests you claim will change and paste the real output — an executable fact, not a prediction
+(rule 5).
 
-See `references/prd-examples.md` for FR/NFR/AC examples.
-
-**Measured facts block.** If the plan reasons over any measured quantity (a count, a size, a
-utilisation), put every one of them in a single dated block with the exact command that produced
-each, and state that no other section may re-quote them:
+**Measured facts block.** If the plan reasons over any measured quantity, put every one in a
+single dated block with the exact command that produced it:
 
 ```
 ## Measured facts — measured YYYY-MM-DD, re-derive before implementing
@@ -296,6 +236,8 @@ each, and state that no other section may re-quote them:
 Quantities that are easy to conflate get one row each, named distinctly.
 No other section restates these values; they reference this block by name.
 ```
+
+FR/NFR/AC examples: `references/prd-examples.md`.
 
 ### [Platform] Feasibility & Capacity
 
@@ -309,46 +251,45 @@ Answer: **can the cluster handle this?**
 | LoadBalancer IPs | N | +N | N remaining | ✅/⚠️/❌ |
 | Namespace count | N | +1 | — | ✅/⚠️/❌ |
 
-**Safety thresholds:** Flag any resource above 75% after the change. Flag above 90% as blocking.
+**Thresholds:** flag any resource above 75% after the change; above 90% is blocking.
 
-Beyond raw compute — does the change also require: new StorageClasses, Vault roles, OIDC config, observability capacity, DNS records, TLS certificates?
+Beyond raw compute — does it also need new StorageClasses, Vault roles, OIDC config,
+observability capacity, DNS records, TLS certificates?
 
 ---
 
 ## Phase 2.5 — Feasibility checks [mandatory, both modes]
 
-**Run this before Phase 3. It is not optional and it is not a formality.**
+Run before Phase 3. A dependency that doesn't resolve, a symbol that doesn't exist, a cluster
+resource that isn't there, or a schema assumption that doesn't hold is cheap to check here and
+costs a reviewer's Round 1 judgement otherwise.
 
-The board's budget is finite; a dependency that doesn't resolve, a symbol that doesn't exist, a
-cluster resource that isn't there, or a schema assumption that doesn't hold is a cheap check here and
-a reviewer's judgement spent discovering it in Round 1 otherwise.
+Work `references/feasibility-checks.md` for the detected mode. Fix what fails, or record it
+explicitly as an accepted unverified assumption — do not carry a silent ❌ into Phase 3.
 
-Open `references/feasibility-checks.md` and work through the checks for the detected mode. Fix what
-fails, or record it explicitly as an accepted unverified assumption — do not carry a silent ❌ into
-Phase 3.
+Distinct from Phase 11: precision checks whether the plan agrees with **itself**; this checks
+whether it agrees with **reality**. Run both.
 
-This is distinct from Phase 11's precision sweep: precision checks whether the plan agrees with
-itself; this checks whether the plan agrees with reality. Run both.
-
-Report to the user in one line:
-
-> "Feasibility checks: N of M passed live (K dependency, J resource, …). L unresolved, recorded as
-> assumptions."
-
-If everything passed, say that too — it's a real signal, not an empty result.
+Report in one line: *"Feasibility checks: N of M passed live (K dependency, J resource, …). L
+unresolved, recorded as assumptions."* If everything passed, say so — that is a real signal.
 
 ---
 
-## Phase 3 — Architecture Decision Records (ADRs)
+## Phase 3 — Architecture Decision Records
 
-For each significant decision, write a short ADR using the format from `~/.claude/skills/codebase-arch-review/references/adr-template.md`.
+For each significant decision, a short ADR using
+`~/.claude/skills/codebase-arch-review/references/adr-template.md`.
 
-**Every ADR records the rejected alternatives and, for each, the specific fact that kills it** — the
-import cycle, the unreachable branch, the measurement. A decision recorded without its rejected
-alternatives gets re-litigated: reviewers independently propose the options you already closed, and
-you spend a round re-explaining rather than reviewing (precision rule 7).
+**Every ADR records the rejected alternatives and, for each, the specific fact that kills it** —
+the import cycle, the unreachable branch, the measurement. A decision recorded without them gets
+re-litigated: reviewers independently propose options you already closed (rule 7).
 
-See `references/prd-examples.md` for ADR examples in both codebase and platform modes.
+**Do not allocate from a shared monotonic sequence while another branch or agent holds it** — ADR
+numbers, migration numbers, task ids. Record *"next free is N, confirm against the merged tree"*
+and state the derivation (`ls docs/adr/`), not the number. Do not assume concurrent work consumes
+exactly one.
+
+Examples: `references/prd-examples.md`.
 
 ---
 
@@ -356,21 +297,20 @@ See `references/prd-examples.md` for ADR examples in both codebase and platform 
 
 ### [Codebase] Module Design
 
-Sketch the major modules to **build or modify**. Look for deep modules — significant functionality behind a simple, rarely-changing interface.
+Sketch the modules to build or modify. Look for deep modules — significant functionality behind a
+simple, rarely-changing interface. Per module: name, responsibility, interface (in/out), new or
+modification, testable in isolation? Format: `references/prd-examples.md`.
 
-For each module: name, responsibility, interface (what in / what out), new or modification, testable in isolation?
+Check the list with the user, and ask which modules they want tests written for.
 
-See `references/prd-examples.md` for the module design format.
-
-Check this list with the user before continuing. Ask which modules they want tests written for.
-
-If this change requires data migration or schema changes, load `references/migration-checklist.md` and select the appropriate pattern (expand-contract / strangler fig / hard cutover).
+For data migration or schema changes, load `references/migration-checklist.md` and select the
+pattern (expand-contract / strangler fig / hard cutover).
 
 ### [Platform] Migration & Transition Path
 
-**Only required when the plan includes:** topology changes, operator/CRD upgrades, storage class migration, DNS/endpoint changes affecting live traffic, or a Kubernetes version upgrade.
-
-**If none apply:** note "No migration required — additive change" and skip.
+**Required only for:** topology changes, operator/CRD upgrades, storage class migration,
+DNS/endpoint changes affecting live traffic, or a Kubernetes version upgrade. **If none apply:**
+note "No migration required — additive change" and skip.
 
 Load `references/migration-template.md` and fill in each applicable field.
 
@@ -378,19 +318,14 @@ Load `references/migration-template.md` and fill in each applicable field.
 
 ## Phase 4 — System / Infrastructure Design
 
-### [Codebase] System Design
+**[Codebase]** Diagram data flow and component interactions. Include data model changes (SQL),
+API contract (endpoints, request/response shapes), and background processing paths.
 
-Diagram the data flow and component interactions. Include: data model changes (SQL), API contract (endpoints, request/response shapes), and any background processing paths.
+**[Platform]** Diagram namespace topology and component relationships — Deployments, Services,
+NetworkPolicies, ServiceAccounts, HPA settings, Ingress rules. Include Helm/manifest changes:
+new charts, new values files, modified manifests.
 
-See `references/prd-examples.md` for system design diagram and API contract format.
-
-### [Platform] Infrastructure Design
-
-Diagram the namespace topology and component relationships: Deployments, Services, NetworkPolicies, ServiceAccounts, HPA settings, Ingress rules.
-
-Include Helm/manifest changes: new charts, new values files, modified manifests.
-
-See `references/prd-examples.md` for infrastructure design diagram format.
+Formats: `references/prd-examples.md`.
 
 ---
 
@@ -406,11 +341,9 @@ See `references/prd-examples.md` for infrastructure design diagram format.
 | Capacity baseline recorded | ❌ | Document in task file |
 | Backup policy | ✅ | No action |
 
-### Smoke tests, integration tests, end-to-end tests [Platform only]
-
-"It deployed" is not the same as "it works." Scripted tests are mandatory — manual curl-and-eyeball is not a gate.
-
-Load `references/smoke-test-template.md` and fill in each section. Every production change requires a pre-apply baseline entry.
+**Smoke, integration, and end-to-end tests.** "It deployed" is not "it works." Scripted tests are
+mandatory — manual curl-and-eyeball is not a gate. Load `references/smoke-test-template.md` and
+fill in each section. Every production change requires a pre-apply baseline entry.
 
 ---
 
@@ -429,15 +362,14 @@ Load `references/smoke-test-template.md` and fill in each section. Every product
 
 ## Phase 7 — Trade-off Analysis
 
-For each significant choice, explicitly state what you're giving up.
-
-See `references/prd-examples.md` for trade-off format.
+For each significant choice, state what you are giving up. Format:
+`references/prd-examples.md`.
 
 ---
 
 ## Phase 8 — Delivery Sequencing
 
-Break into shippable slices — each must be independently deployable and useful on its own.
+Shippable slices — each independently deployable and useful on its own.
 
 **State the placement invariant before listing any slice**, then check every row against it:
 
@@ -445,16 +377,15 @@ Break into shippable slices — each must be independently deployable and useful
 > lands in the slice where its statement first becomes true. Not the slice that motivated it, and
 > not the slice where it was noticed.
 
-Write the invariant into the plan itself, not just apply it silently. With the rule stated, a
-misplaced row is self-evident to any reader; without it, each misplacement has to be independently
-rediscovered — the same one gets caught by three different reviewers across two rounds, which reads
-as three findings and burns three reviewers' budget.
+Write it into the plan, not just apply it silently: with the rule stated a misplaced row is
+self-evident, and without it the same misplacement gets independently rediscovered by three
+reviewers across two rounds.
 
 **Then state build-order prerequisites explicitly.** "Everything else may ship in any order" is
-almost always false: anything consuming a new module depends on the slice that creates it. Name the
+almost always false — anything consuming a new module depends on the slice creating it. Name the
 edges, or say there are none and be right.
 
-See `references/prd-examples.md` for slice format examples (codebase and platform).
+Slice formats: `references/prd-examples.md`.
 
 ---
 
@@ -463,7 +394,14 @@ See `references/prd-examples.md` for slice format examples (codebase and platfor
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
 
-See `references/prd-examples.md` for risk register examples.
+**For each risk, name the guard that already mitigates it, or state that none does — checked, not
+assumed.** Grep for an existing refusal before inventing a mitigation. A risk whose mitigation is
+an unbuilt design option is two unresolved things in one row, and it invites the reviewer to
+debate the option instead of the risk.
+
+**Label rows the way the repo labels them** — `RISK-1` is this skill's convention, not every
+project's. See the plan-file guard check in `references/precision-rules.md`. Examples:
+`references/prd-examples.md`.
 
 ---
 
@@ -505,52 +443,38 @@ See `references/prd-examples.md` for risk register examples.
 
 ## Phase 11 — Precision sweep [mandatory, both modes]
 
-**Run this before handing off to `/board-review`. It is not optional and it is not a formality.**
+Run before handing to `/board-review`. A defect fixed here costs one edit; the same defect fixed
+via the board costs a reviewer's budget, a round of amendments, a re-review of the amended text,
+and often a second defect introduced by the amendment.
 
-Open `references/precision-rules.md`, work the self-check at the bottom, and **fix what it finds
-now**. This is the whole point: a defect fixed here costs one edit; the same defect fixed via the
-board costs a reviewer's budget, a round of amendments, a re-review of the amended text, and often a
-second defect introduced by the amendment.
+Work the self-check at the bottom of `references/precision-rules.md` and **fix what it finds
+now**. Every line is checkable without judgement:
 
-The sweep is mechanical — every line is checkable without judgement:
-
-- **Re-verify every `file:line` citation against the file as it is now**, and replace with a symbol
-  reference wherever the exact line does not matter. Citations written during Phase 0 have already
-  drifted by Phase 10.
-- **Grep for every number in the plan.** Each is either in the `## Measured facts` block with its
-  command, or derived at implementation time. Any number appearing in two places is a defect even if
-  both copies currently agree.
+- **Re-verify every `file:line` citation** against the file as it is now, and replace with a
+  symbol reference wherever the exact line does not matter. Phase 0 citations have already drifted.
+- **Grep for every number.** Each is either in `## Measured facts` with its command, or derived at
+  implementation time. A number in two places is a defect even if both copies agree today.
 - **Grep for each normative rule's keywords** to find restatements. Where prose and a table both
   state a rule, delete one or mark which is normative.
 - **Run the tests the plan claims will change**, and correct the list from real output.
-- **Grep for universal quantifiers** — "always", "never", "every", "only", "any order", "strictly",
-  "monotonically" — and scope or delete each one.
-- **Grep for duplication.** Any value, normative rule, or code block appearing more than once is the
-  defect — not the plan's overall length. Collapse to one source of truth; reference the repo
-  instead of re-quoting it where a citation suffices.
+- **Grep for universal quantifiers** — "always", "never", "every", "only", "any order",
+  "strictly", "monotonically" — and scope or delete each.
+- **Grep for duplication.** Any value, rule, or code block appearing more than once is the defect.
+  Collapse to one source of truth; cite the repo instead of re-quoting it.
 
-Then report to the user in one line:
-
-> "Precision sweep: fixed N items (M stale citations, K duplicated values, J unscoped claims,
-> …). Plan is at L lines."
-
-If it fixed nothing, say that explicitly — it is a real signal, not an empty result.
+Report in one line: *"Precision sweep: fixed N items (M stale citations, K duplicated values, J
+unscoped claims, …). Plan is at L lines."* If it fixed nothing, say so explicitly.
 
 ---
 
-## Status update on completion
+## Completion
 
-When `/draft-prd` finishes writing the plan into the task file, **immediately**:
+1. Set `**Status:**` in the task file to `⬜ Open`.
+2. Update the matching `TODO.md` row to `⬜ Open`.
+3. Do **not** set `🔍 Reviewed` — that is reserved for after `/board-review` passes.
 
-1. Set `**Status:**` in the task file to `⬜ Open`
-2. Update the matching row in `TODO.md` to `⬜ Open`
-3. Do **not** set status to `🔍 Reviewed` — that is reserved for after `/board-review` passes.
-
-Then prompt:
-
-> "Plan written and status set to ⬜ Open. Ready to run `/board-review` to gate this through the board before [implementation / applying to the cluster]?"
-
----
+Then prompt: *"Plan written and status set to ⬜ Open. Ready to run `/board-review` before
+[implementation / applying to the cluster]?"*
 
 ## Output template
 
@@ -571,12 +495,7 @@ Then prompt:
 ## Measured facts (dated, with the command for each)
 ```
 
-Keep it concise — the goal is alignment, not documentation theatre.
-A good plan says everything it needs to say exactly once; a great plan also has diagrams.
-
-**No line-count target.** Length on its own is not a defect and is not scored. What generates review
-amendments is duplication — a value, rule, or code block stated more than once, able to drift out of
-sync with itself. A long plan that says everything once is fine. A short plan that restates a value
-in three places is not. If a plan feels long, look for restatement to cut, not content to trim —
-reference the repo instead of quoting it where a citation suffices, and trust the reader to follow a
-symbol reference; do not cut requirements, ADRs, or risk entries just to hit a page count.
+**No line-count target.** Length alone is not a defect and is not scored; duplication is. A long
+plan that says everything once is fine; a short plan restating a value in three places is not. If
+a plan feels long, cut restatement, not content — never cut requirements, ADRs, or risk entries to
+hit a page count. A great plan also has diagrams.

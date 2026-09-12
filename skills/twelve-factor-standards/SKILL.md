@@ -7,28 +7,25 @@ compatibility: opencode
 
 # Twelve-Factor App
 
-Practical guidance for auditing and implementing the [12-factor app methodology](https://12factor.net) in modern cloud-native services. Covers all 12 original factors, their Kubernetes implementations, common anti-patterns, and the three modern extensions (API-first, telemetry, auth/authz).
+Auditing and implementing the [12-factor methodology](https://12factor.net) in cloud-native
+services — all 12 factors, their Kubernetes implementations, common anti-patterns, and the three
+modern extensions.
 
-## When to Use
+Use for: reviewing a new or existing service for compliance · designing a service from scratch ·
+diagnosing why a service is hard to scale, deploy, or operate · auditing config, secrets, or
+logging · planning a monolith-to-cloud-native migration.
 
-- Reviewing a new or existing service for 12-factor compliance
-- Designing a new service from scratch
-- Diagnosing why a service is hard to scale, deploy, or operate
-- Auditing config, secrets, or logging practices
-- Planning a migration from a legacy monolith to cloud-native
+**Implementation examples for every factor below live in
+`references/twelve-factor-examples.md`**, indexed by factor number. Cross-skill depth:
+`/python-patterns` (II, VI, XI, XIV), `/k8s-deploy` (II, V, IX, XI, XII), `/security-review`
+(III, XV).
 
----
+## Audit workflow
 
-## Audit Workflow
-
-When asked to audit a service for 12-factor compliance:
-
-1. **Read** the codebase structure, Dockerfile, CI config, and any Kubernetes manifests
+1. **Read** the codebase structure, Dockerfile, CI config, and Kubernetes manifests
 2. **Score** each factor: ✅ compliant / ⚠️ partial / ❌ violation
-3. **Report** findings grouped by severity — violations first, then gaps, then improvements
+3. **Report** grouped by severity — violations, then gaps, then improvements
 4. **Recommend** the smallest concrete change that fixes each violation
-
-Output format:
 
 ```
 ## 12-Factor Audit: <service-name>
@@ -37,7 +34,6 @@ Output format:
 |---|--------------------|--------|---------|
 | I | Codebase           | ✅     | Single repo, one deployable unit |
 | III | Config           | ❌     | DATABASE_URL hardcoded in app.py:14 |
-...
 
 ### Critical violations
 [Factor III] Config — fix: move DATABASE_URL to env var, validate with Pydantic Settings at startup
@@ -46,11 +42,9 @@ Output format:
 ...
 ```
 
----
+## Factor → Kubernetes primitive
 
-## Quick Reference: Factor → Kubernetes Primitive
-
-| # | Factor | K8s / Cloud-Native Implementation |
+| # | Factor | K8s / cloud-native implementation |
 |---|--------|-----------------------------------|
 | I | Codebase | One repo → one OCI image; GitOps repo as "many deploys" |
 | II | Dependencies | `Dockerfile` + lockfile; Trivy/Grype CVE scanning in CI |
@@ -58,199 +52,133 @@ Output format:
 | IV | Backing Services | K8s `Service` DNS names; Helm/Operators for DBs |
 | V | Build/Release/Run | CI pipeline → immutable OCI image → ArgoCD/Flux GitOps |
 | VI | Processes | Stateless `Deployment` pods; `StatefulSet` only for stateful services |
-| VII | Port Binding | Container `port` + K8s `Service` + Ingress / Gateway API |
+| VII | Port Binding | Container `port` + `Service` + Ingress / Gateway API |
 | VIII | Concurrency | `Deployment.replicas` + HPA + KEDA |
-| IX | Disposability | Liveness/Readiness/Startup probes + `preStop` hook + PDB |
-| X | Dev/Prod Parity | Same OCI image promoted through envs; Kind/k3d for local dev |
+| IX | Disposability | Liveness/readiness/startup probes + `preStop` hook + PDB |
+| X | Dev/Prod Parity | Same OCI image promoted through envs; Kind/k3d locally |
 | XI | Logs | stdout → Fluent Bit DaemonSet → Loki/Elastic; OTel Collector |
 | XII | Admin Processes | `Job` / `CronJob` / init containers using the same image |
 
 ---
 
-## The 12 Factors
+## The 12 factors
 
-### I. Codebase — One codebase, many deploys
+### I. Codebase — one codebase, many deploys
+One version-controlled repo → one deployable service. Environments are deploys of the same
+codebase, never separate repos.
 
-**Rule:** One version-controlled repo → one deployable service. Many environments (dev/staging/prod) are deploys of the same codebase, never separate repos.
+**Violations:** separate repos per environment (`api-prod`, `api-staging`) · multiple apps in one
+repo with no independent deploy boundaries · deploying from a developer's laptop.
 
-**Violations:**
-- Separate repos per environment (`api-prod`, `api-staging`)
-- Multiple apps sharing one repo without independent deploy boundaries
-- Deploying directly from a developer's laptop
+Monorepos (Nx, Turborepo) are fine — each *service* still needs an independently deployable unit.
+Trunk-based development with short-lived branches is preferred.
 
-**2026 practice:** Monorepos (Nx, Turborepo) are fine — each *service* must still have an independently deployable unit. Trunk-based development with short-lived branches is preferred.
+### II. Dependencies — explicit declaration and isolation
+All dependencies in a manifest; no reliance on system-installed tools. Isolation is what prevents
+"works on my machine".
 
----
+**Violations:** no lockfile committed (`package-lock.json`, `uv.lock`, `go.sum`) · relying on
+globally installed binaries (`curl`, `imagemagick`, `ffmpeg`) absent from the image · base image
+on a mutable tag (`FROM python:3.12` — the tag can change).
 
-### II. Dependencies — Explicit declaration and isolation
+### III. Config — store config in the environment
+Anything that varies between deploys (URLs, credentials, feature flags) lives in the environment —
+not in code, not in committed config files.
 
-**Rule:** All dependencies declared in a manifest; no reliance on system-installed tools. Isolation prevents "works on my machine."
+**Violations:** hardcoded database URLs or API keys · `.env` committed to git · per-environment
+config files in the repo (`config/prod.yaml`).
 
-**Violations:**
-- No lockfile committed (`package-lock.json`, `uv.lock`, `go.sum`)
-- Relying on globally installed binaries (`curl`, `imagemagick`, `ffmpeg`) not in the image
-- Base image pinned to a mutable tag (`FROM python:3.12` — tag can change)
+### IV. Backing services — treat as attached resources
+Databases, caches, queues, SMTP, S3 are all attached resources reached via a URL from config.
+Swapping local Postgres for RDS is a config change, never a code change.
 
-> For implementation examples, see `references/twelve-factor-examples.md` (Factor II), `/python-patterns`, or `/k8s-deploy`.
+**Violations:** `if env == "local": use sqlite else: use postgres` · hardcoded `localhost` ·
+any logic that behaves differently based on whether a service is "local" or "remote".
 
----
+### V. Build, release, run — strict stage separation
+**Build** source → immutable artifact (OCI image). **Release** artifact + environment config →
+versioned, immutable release. **Run** launches the release, with no runtime modification.
 
-### III. Config — Store config in the environment
+**Violations:** `git pull && restart` (collapses all three) · rebuilding per environment, so the
+dev image ≠ the prod image · baking secrets into the image at build time.
 
-**Rule:** Anything that varies between deploys (URLs, credentials, feature flags) lives in the environment — not in code, not in config files committed to the repo.
+### VI. Processes — stateless, share-nothing
+Processes are stateless; persistent data lives in a backing service. No sticky sessions, no
+on-disk state between requests, no in-process shared memory as a cache.
 
-**Violations:**
-- Hardcoded database URLs or API keys in source code
-- `.env` files committed to git
-- Per-environment config files in the repo (`config/prod.yaml`)
+**Violations:** in-memory session store (`app.sessions = {}` — lost on restart) · uploads to local
+disk (`/tmp/uploads/` — invisible to other pods) · sticky sessions required.
 
-> For implementation examples, see `references/twelve-factor-examples.md` (Factor III) or `/security-review`.
+### VII. Port binding — export services via port binding
+The app is self-contained and binds a port; the web server library is a declared dependency, not a
+pre-installed external server.
 
----
+**Violations:** requires a separately installed Apache/Nginx on the host · port hardcoded to 80 or
+443 (needs root, not configurable) · only works inside one orchestrator's injection mechanism.
 
-### IV. Backing Services — Treat as attached resources
+In K8s: the container declares `containerPort`, a `Service` routes to it, TLS terminates at
+ingress.
 
-**Rule:** Databases, caches, queues, SMTP, S3 — all are "attached resources" accessed via a URL or config. Swapping local Postgres for AWS RDS requires only a config change, never a code change.
+### VIII. Concurrency — scale out via the process model
+Scale horizontally by running more processes, not by making one bigger. Workload types (web,
+worker, scheduler) are separate process types that scale independently.
 
-**Violations:**
-- `if env == "local": use sqlite else: use postgres` branches in code
-- Hardcoded `localhost` for a backing service
-- Logic that behaves differently based on whether a service is "local" or "remote"
+**Violations:** background threads inside the web process handling async jobs · cron tied to one
+server that must always be up · only vertical scaling considered.
 
-> For implementation examples, see `references/twelve-factor-examples.md` (Factor IV).
+### IX. Disposability — fast startup, graceful shutdown
+Processes start in seconds and shut down gracefully on `SIGTERM`, finishing in-flight requests.
+Workers return unfinished jobs to the queue.
 
----
+**Violations:** startup takes minutes (loading huge files, running migrations, warming caches
+synchronously) · no `SIGTERM` handler, so Kubernetes kills the pod and drops in-flight requests ·
+non-idempotent job processing duplicating side effects on restart.
 
-### V. Build, Release, Run — Strict stage separation
+### X. Dev/prod parity — keep environments similar
+Minimise three gaps: **time** (deploy frequently), **people** (developers own what they ship),
+**tools** (same backing service versions — Postgres in both, not SQLite in dev).
 
-**Rule:** Three strictly separated stages:
-- **Build**: source → immutable artifact (OCI image)
-- **Release**: artifact + environment config → versioned, immutable release
-- **Run**: launch the release — no modification allowed at runtime
+**Violations:** SQLite in dev, Postgres in prod — hides behaviour differences until production ·
+months between deploys · developers with no visibility into production behaviour.
 
-**Violations:**
-- `git pull && restart` deployments (collapses all three stages)
-- Rebuilding the image per environment (dev image ≠ prod image)
-- Baking secrets into the image at build time
+### XI. Logs — treat as event streams
+The app writes everything to `stdout`/`stderr` — never to files, never managing rotation. The
+execution environment captures and routes the stream. In 2026 that means structured logs plus
+metrics plus distributed traces.
 
-> For implementation examples, see `references/twelve-factor-examples.md` (Factor V) or `/k8s-deploy`.
+**Violations:** writing to `/var/log/app.log` inside the container · running `logrotate` in the
+app · unstructured plaintext with no correlation ID.
 
----
+Instrument OpenTelemetry at the framework level (FastAPI middleware, SQLAlchemy events) so traces
+propagate across services automatically.
 
-### VI. Processes — Stateless, share-nothing
+### XII. Admin processes — one-off tasks as first-class processes
+Admin tasks (migrations, cache warm-ups, backups, one-off scripts) run in the same environment as
+the app — same codebase, config, and image. Not from a laptop against production, and not baked
+into app startup.
 
-**Rule:** Processes are stateless. Persistent data lives in a backing service. No sticky sessions, no on-disk state between requests, no in-process shared memory as a cache.
-
-**Violations:**
-- In-memory session store (`app.sessions = {}` — lost on restart)
-- Uploading files to local disk (`/tmp/uploads/` — not visible to other pods)
-- Sticky sessions required (load balancer must always route user to same pod)
-
-> For implementation examples, see `references/twelve-factor-examples.md` (Factor VI) or `/python-patterns`.
-
----
-
-### VII. Port Binding — Export services via port binding
-
-**Rule:** The app is self-contained and exports HTTP (or other protocols) by binding to a port. It does not rely on a pre-installed external web server. The web server library is a declared dependency.
-
-**Violations:**
-- App requires a separately installed Apache/Nginx on the host to function
-- Port hardcoded to `80` or `443` (requires root; not configurable)
-- App only works inside a specific orchestrator's injection mechanism
-
-> For implementation examples, see `references/twelve-factor-examples.md` (Factor VII). K8s: container declares `containerPort`; `Service` routes to it; TLS terminated at ingress.
-
----
-
-### VIII. Concurrency — Scale out via the process model
-
-**Rule:** Scale horizontally by running more processes, not by making one process bigger. Different workload types run as separate process types (web, worker, scheduler) that scale independently.
-
-**Violations:**
-- Background threads spawned inside the web process to handle async jobs
-- Cron jobs tied to a specific server that must always be running
-- Only vertical scaling (bigger VM) considered
-
-> For implementation examples, see `references/twelve-factor-examples.md` (Factor VIII).
+**Violations:** migrations inside `app.startup` (a race across replicas) · admin scripts on
+different dependency versions · hotfixing prod data over SSH from a laptop.
 
 ---
 
-### IX. Disposability — Fast startup, graceful shutdown
+## Modern extensions
 
-**Rule:** Processes start quickly (seconds) and shut down gracefully on `SIGTERM` — finishing in-flight requests before exiting. Workers return unfinished jobs to the queue on shutdown.
+From Kevin Hoffman's *Beyond the Twelve-Factor App* (O'Reilly, 2016), widely adopted by 2026.
+Apply in addition to the original twelve.
 
-**Violations:**
-- Startup takes minutes (loads huge files, runs migrations, warms caches synchronously)
-- No `SIGTERM` handler — Kubernetes kills the pod and in-flight requests are dropped
-- Non-idempotent job processing causes duplicate side-effects on restart
+### XIII. API first
+Design the contract *before* the implementation. The OpenAPI spec, Protobuf definition, or
+AsyncAPI schema is the source of truth — which is what enables parallel team development and clear
+service boundaries.
 
-> For implementation examples, see `references/twelve-factor-examples.md` (Factor IX) or `/k8s-deploy`.
-
----
-
-### X. Dev/Prod Parity — Keep environments as similar as possible
-
-**Rule:** Minimise three gaps: (1) **time** — deploy frequently; (2) **people** — developers own what they ship; (3) **tools** — same backing service versions in dev and prod (Postgres in both, not SQLite in dev).
-
-**Violations:**
-- SQLite in dev, Postgres in prod — hides behaviour differences until production
-- Months between deploys (large time gap = large risk)
-- Developers have no visibility into production behaviour
-
-> For implementation examples, see `references/twelve-factor-examples.md` (Factor X).
-
----
-
-### XI. Logs — Treat as event streams
-
-**Rule:** The app writes all output to `stdout`/`stderr` — never to files, never manages rotation. The execution environment captures and routes the stream. In 2026, this means full observability: structured logs + metrics + distributed traces.
-
-**Violations:**
-- Writing to `/var/log/app.log` inside the container
-- Managing log rotation (`logrotate`) inside the app
-- Unstructured plaintext logs with no correlation ID
-
-Use OpenTelemetry for distributed tracing — instrument at the framework level (FastAPI middleware, SQLAlchemy events) so traces propagate automatically across services.
-
-> For implementation examples, see `references/twelve-factor-examples.md` (Factor XI), `/python-patterns`, or `/k8s-deploy`.
-
----
-
-### XII. Admin Processes — One-off tasks as first-class processes
-
-**Rule:** Admin tasks (DB migrations, cache warm-ups, data backups, one-off scripts) run in the same environment as the app — same codebase, same config, same image. They are not run from a developer's laptop directly against production, and not baked into app startup.
-
-**Violations:**
-- DB migrations run inside `app.startup` (race condition across multiple replicas)
-- Admin scripts use different dependency versions than the app
-- Hotfixing prod data via SSH from a developer's laptop
-
-> For implementation examples, see `references/twelve-factor-examples.md` (Factor XII) or `/k8s-deploy`.
-
----
-
-## Modern Extensions (Beyond 12-Factor)
-
-Kevin Hoffman's *Beyond the Twelve-Factor App* (O'Reilly, 2016) adds three factors widely adopted by 2026. Apply these in addition to the original twelve.
-
-### XIII. API First
-
-**Rule:** Design the API contract *before* writing implementation code. The OpenAPI spec, Protobuf definition, or AsyncAPI schema is the source of truth — enables parallel team development and clear service boundaries.
-
-**Practice:**
-- Commit `openapi.yaml` / `.proto` to the repo before any implementation
-- Generate server stubs and client SDKs from the contract
-- Consumer-driven contract testing (Pact) so service changes don't silently break consumers
-- GraphQL: introspection disabled in production
-
----
+Commit `openapi.yaml` / `.proto` before any implementation · generate server stubs and client SDKs
+from the contract · consumer-driven contract testing (Pact) so changes don't silently break
+consumers · GraphQL introspection disabled in production.
 
 ### XIV. Telemetry
-
-**Rule:** Apps emit structured observability data as a first-class concern — not an afterthought. "Logs to stdout" (Factor XI) is necessary but insufficient. Full observability = logs + metrics + traces.
-
-**The three pillars:**
+Structured observability data is a first-class concern. "Logs to stdout" (Factor XI) is necessary
+but insufficient.
 
 | Pillar | Tool | What it answers |
 |--------|------|----------------|
@@ -258,47 +186,33 @@ Kevin Hoffman's *Beyond the Twelve-Factor App* (O'Reilly, 2016) adds three facto
 | Metrics | Prometheus client → Grafana | "How is the system performing?" |
 | Traces | OpenTelemetry → Tempo / Jaeger | "Why is this request slow?" |
 
-**Minimum implementation:** `/healthz` (liveness — no deps), `/readyz` (readiness — checks backing services), `/metrics` (Prometheus). See `references/twelve-factor-examples.md` (Factor XIV) or `/python-patterns` for the FastAPI lifespan pattern.
+Minimum: `/healthz` (liveness — no dependency checks), `/readyz` (readiness — checks backing
+services), `/metrics` (Prometheus). FastAPI lifespan pattern: `/python-patterns`.
+
+### XV. Auth & authz
+Every service treats authentication and authorisation as a built-in design concern. In a
+microservices world every inter-service call has identity. Zero trust: never trust, always verify.
+
+Workload identity via SPIFFE/SPIRE or service mesh mTLS, not network-level trust · JWT/OIDC for
+user identity, verified on **every** request rather than only at the gateway · OPA or Casbin for
+fine-grained policy decisions.
 
 ---
 
-### XV. Auth & Authz
+## Pre-ship compliance checklist
 
-**Rule:** Every service handles authentication and authorisation as a built-in design concern. In a microservices world, every inter-service call has identity. Zero-trust: never trust, always verify.
-
-**Practice:**
-- Workload identity via SPIFFE/SPIRE or service mesh mTLS (not network-level trust)
-- JWT/OIDC for user identity; verified on every request, not just at the gateway
-- OPA (Open Policy Agent) or Casbin for fine-grained policy decisions
-- See `security-review` skill for full auth/authz implementation patterns
-
----
-
-## Compliance Checklist
-
-Use this for a rapid pre-ship audit. Each item maps to a factor above.
-
-### Codebase & Dependencies
-- [ ] I: Single repo, one deployable unit; no env-specific repos
-- [ ] II: Lockfile committed; base image pinned to digest; CVE scan in CI
-
-### Config & Secrets
-- [ ] III: No hardcoded secrets; config validated at startup; ESO or vault for sensitive values
-
-### Architecture
-- [ ] IV: No env-conditional backing service logic; all services accessed by URL from config
-- [ ] V: Image built once in CI, promoted unchanged; no runtime `pip install`
-- [ ] VI: Stateless processes; sessions in Redis; uploads in object storage
-- [ ] VII: Port configurable via env var; web server is a dependency
-- [ ] VIII: Web and worker processes separate; HPA/KEDA configured
-
-### Operations
-- [ ] IX: SIGTERM handler; `preStop` sleep; `terminationGracePeriodSeconds` tuned; PDB set
-- [ ] X: Same DB engine/version in dev and prod; same image across environments
-- [ ] XI: Structured JSON to stdout; no PII in logs; OTel tracing; Prometheus metrics
-- [ ] XII: Migrations as K8s Jobs (not at startup); admin tasks use same image + config
-
-### Modern Extensions
-- [ ] XIII: API contract (OpenAPI/Protobuf) written before implementation
-- [ ] XIV: `/healthz`, `/readyz`, `/metrics` endpoints present
-- [ ] XV: Auth verified per-request in service layer, not only at gateway
+- [ ] **I** Single repo, one deployable unit; no env-specific repos
+- [ ] **II** Lockfile committed; base image pinned to digest; CVE scan in CI
+- [ ] **III** No hardcoded secrets; config validated at startup; ESO or vault for sensitive values
+- [ ] **IV** No env-conditional backing service logic; all services reached by URL from config
+- [ ] **V** Image built once in CI and promoted unchanged; no runtime `pip install`
+- [ ] **VI** Stateless processes; sessions in Redis; uploads in object storage
+- [ ] **VII** Port configurable via env var; web server is a dependency
+- [ ] **VIII** Web and worker processes separate; HPA/KEDA configured
+- [ ] **IX** SIGTERM handler; `preStop` sleep; `terminationGracePeriodSeconds` tuned; PDB set
+- [ ] **X** Same DB engine and version in dev and prod; same image across environments
+- [ ] **XI** Structured JSON to stdout; no PII; OTel tracing; Prometheus metrics
+- [ ] **XII** Migrations as K8s Jobs, not at startup; admin tasks use the same image and config
+- [ ] **XIII** API contract written before implementation
+- [ ] **XIV** `/healthz`, `/readyz`, `/metrics` present
+- [ ] **XV** Auth verified per-request in the service layer, not only at the gateway

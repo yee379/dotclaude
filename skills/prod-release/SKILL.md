@@ -7,334 +7,217 @@ compatibility: opencode
 
 # Production Release
 
-## Workflow position
+Promoting code from test through staging to production safely — gates, checklists, and a clear
+rollback plan at every step. Runs after `/closeout-prd`; earlier skills validate plans, this one
+ships them.
+
+Use it for promoting a feature or fix to production, planning a significant release, setting up a
+release process for a new service, writing an on-call runbook before a high-risk deploy, or
+post-incident review of which gate was missed.
 
 ```
-/draft-prd → /board-review → implementation → /closeout-prd
-      │
-      ▼
-/prod-release          ← YOU ARE HERE: environment promotion, smoke tests, feature flag
-                         rollout, monitoring validation, rollback procedure
-```
-
-Run after `/codebase-eng-review` has passed and implementation is complete. This skill owns the promotion path from feature branch to production. Earlier skills validate plans — this skill ships them safely.
-
----
-
-A disciplined process for promoting code from test through staging to production safely — with gates, checklists, and a clear rollback plan at every step.
-
-## When to Use
-
-- Promoting a feature or fix from staging to production
-- Planning the release of a significant change
-- Setting up a release process for a new service
-- Writing a runbook for on-call before a high-risk deploy
-- Post-incident: reviewing what release gate was missed
-
----
-
-## Release Workflow
-
-```
-feature branch
-     │
-     ▼
-[1] Test environment
-     │  automated tests pass
-     │  smoke tests pass
-     ▼
-[2] Staging environment
-     │  integration tests pass
-     │  QA sign-off (for user-facing changes)
-     │  load test passes NFRs
-     ▼
-[3] Pre-release checklist
-     │  all gates green
-     ▼
-[4] Production deploy (canary or full)
-     │  health check passes
-     │  error rate / latency baseline holds
-     ▼
-[5] Soak period (15min – 24h depending on risk)
-     │  metrics stable
-     ▼
-[6] Full rollout / feature flag enable
-     │
-     ▼
-[7] Post-release verification
+feature branch → [1] test env (automated + smoke tests)
+               → [2] staging (integration, QA sign-off, load test vs NFRs)
+               → [3] pre-release checklist (all gates green)
+               → [4] production deploy (canary or full)
+               → [5] soak 15 min – 24 h by risk
+               → [6] full rollout / flag enable
+               → [7] post-release verification
 ```
 
 ---
 
-## Gate 1: Test Environment
-
-**Automated — must pass before staging promotion:**
+## Gate 1: Test environment
 
 ```bash
-# Run full test suite
 pytest --tb=short -q               # Python
 npm test -- --ci                   # Node
 go test ./...                      # Go
 
-# Smoke tests against deployed test service
 curl -sf https://api-test.internal/healthz
 curl -sf https://api-test.internal/readyz
-
-# Integration tests
 pytest tests/integration/ -m "smoke"
 ```
 
-**Checklist:**
-- [ ] All unit tests pass
-- [ ] All integration tests pass
+- [ ] All unit and integration tests pass
 - [ ] Health and readiness endpoints return 200
-- [ ] No new errors in test environment logs (compare to baseline)
-- [ ] DB migrations ran successfully on test DB
+- [ ] No new errors in test logs, compared to baseline
+- [ ] DB migrations ran successfully on the test DB
 
----
-
-## Gate 2: Staging Environment
-
-**Deploy to staging:**
+## Gate 2: Staging
 
 ```bash
-# Render manifests, commit, and deploy
 make release ENV=staging IMAGE_TAG=$IMAGE_TAG
-
-# Verify rollout
 kubectl rollout status deployment/api -n staging
 kubectl get pods -n staging -l app=api
-```
 
-**Run staging checks:**
-
-```bash
-# Smoke test
 curl -sf https://api-staging.example.com/healthz
 curl -sf https://api-staging.example.com/readyz
 
-# Key user flows (automated or manual)
-# - Auth: can a user log in?
-# - Core action: does the primary feature work end-to-end?
-# - Error path: does a bad request return the right error?
+# Load test for performance-sensitive changes — against staging, never prod
+k6 run --vus 50 --duration 2m load-test.js   # check p95, error rate, no OOMKills
 ```
 
-**Load test (for performance-sensitive changes):**
+Key user flows, automated or manual: can a user log in? does the primary feature work end to end?
+does a bad request return the right error?
 
-```bash
-# k6 or locust — run against staging, not prod
-k6 run --vus 50 --duration 2m load-test.js
-# Check: p95 latency, error rate, no OOMKills
-```
-
-**Checklist:**
-- [ ] Deployment is healthy (`kubectl get pods` — all Running)
-- [ ] Smoke tests pass
-- [ ] Key user flows verified
+- [ ] Deployment healthy — all pods Running
+- [ ] Smoke tests pass; key user flows verified
 - [ ] Load test meets NFR targets (if applicable)
 - [ ] No unexpected errors in staging logs
-- [ ] DB migration tested against staging dataset
+- [ ] DB migration tested against the staging dataset
 - [ ] Feature flags set correctly for staging
 
 ---
 
-## Pre-Release Checklist
+## Gate 3: Pre-release checklist
 
-Complete this before every production deployment:
-
-### Code & Build
-- [ ] PR merged, all CI checks green on main
-- [ ] Image digest / tag recorded: `$IMAGE_TAG`
-- [ ] Previous stable image tag recorded for rollback: `$PREV_TAG`
-- [ ] No secrets committed to the repository
+**Code & build**
+- [ ] PR merged, all CI green on main
+- [ ] Image digest/tag recorded: `$IMAGE_TAG`; previous stable tag recorded for rollback: `$PREV_TAG`
+- [ ] No secrets committed
 - [ ] Dependencies scanned (`pip-audit` / `npm audit`) — no critical CVEs
 
-### Database
-- [ ] Migration is backward-compatible (old app can run against new schema)
-- [ ] Migration tested on a copy of production data (row counts, timing)
+**Database**
+- [ ] Migration is backward-compatible — the old app can run against the new schema
+- [ ] Tested on a copy of production data (row counts, timing)
 - [ ] Destructive changes (DROP, TRUNCATE) explicitly signed off
 - [ ] Rollback migration written and tested
 
-### Infrastructure
-- [ ] Kubernetes manifests reviewed (resources, probes, PDB)
-- [ ] `helm diff` run — unexpected changes reviewed
-- [ ] **Drift check:** `kubectl diff -f deploy/prod/manifests/` run — no unexplained live state before applying
-- [ ] Secrets updated in vault/external-secrets if needed
-- [ ] New environment variables documented
-- [ ] **Certs and secrets expiry:** no TLS certs or rotated secrets expire within the next 7 days (would fail mid-soak)
+**Infrastructure**
+- [ ] Manifests reviewed (resources, probes, PDB); `helm diff` run and unexpected changes reviewed
+- [ ] **Drift check:** `kubectl diff -f deploy/prod/manifests/` — no unexplained live state
+- [ ] Secrets updated in vault/external-secrets if needed; new env vars documented
+- [ ] **No TLS cert or rotated secret expires within 7 days** — it would fail mid-soak
 
-### Operations
-- [ ] **Dependency health pre-check:** all upstream dependencies (databases, caches, external APIs, message queues) confirmed healthy *before* deploying — degraded dependencies at deploy time cause misattributed incidents
-- [ ] **Metric baseline recorded:** key metrics snapshot taken immediately before deploy (error rate, p95 latency, RPS, pod count) — stored in the task file or release notes for post-deploy comparison
-- [ ] Monitoring dashboard updated for new metrics/endpoints
-- [ ] Alerts configured for error rate, latency, and any new SLOs
-- [ ] On-call informed of release (especially for high-risk changes)
-- [ ] Runbook updated with new failure modes
-- [ ] Rollback plan documented (see below)
+**Operations**
+- [ ] **Dependency health pre-check** — every upstream (databases, caches, external APIs, queues)
+      confirmed healthy *before* deploying. A degraded dependency at deploy time causes
+      misattributed incidents
+- [ ] **Metric baseline recorded** — error rate, p95 latency, RPS, pod count snapshotted
+      immediately before deploy, stored in the task file or release notes. Everything in
+      post-deploy verification compares against this
+- [ ] Dashboard updated for new metrics/endpoints; alerts configured for error rate, latency, and
+      any new SLOs
+- [ ] On-call informed, especially for high-risk changes; runbook updated with new failure modes
+- [ ] Rollback plan documented
 
-### Communication
-- [ ] Stakeholders notified (if user-visible change)
-- [ ] Maintenance window scheduled (if required)
+**Communication**
+- [ ] Stakeholders notified (user-visible change); maintenance window scheduled (if required)
 - [ ] Feature flag ready for gradual rollout (if applicable)
 
 ---
 
-## Production Deploy
-
-### Standard deploy (Makefile-driven)
+## Deploy
 
 ```bash
-# 1. Diff first — no surprises
-make diff ENV=prod
-
-# 2. Render manifests, commit, and deploy
-make release ENV=prod IMAGE_TAG=$IMAGE_TAG
-
-# 3. Verify immediately
-kubectl rollout status deployment/api -n prod
+make diff ENV=prod                              # 1. diff first — no surprises
+make release ENV=prod IMAGE_TAG=$IMAGE_TAG      # 2. render, commit, deploy
+kubectl rollout status deployment/api -n prod   # 3. verify immediately
 kubectl get pods -n prod -l app=api
 ```
 
-> We use `make render` + `make deploy` (not `helm upgrade` directly). See `/k8s-deploy` for the full Makefile workflow.
+> Uses `make render` + `make deploy`, not `helm upgrade` directly. Full Makefile workflow:
+> `/k8s-deploy`.
 
-### Canary deploy (for high-risk changes)
+**Canary, for high-risk changes:** deploy `deploy-canary.yaml` (replicas 1, new tag) alongside
+stable and route ~5% of traffic via Ingress or mesh weights. Watch error rate and latency for
+15 min — stable → raise the weight; degraded → scale the canary to 0 immediately. Then promote:
 
-```yaml
-# Deploy canary alongside stable
-# Route 5% of traffic to canary using Ingress or service mesh weights
-
-# Step 1: Deploy canary deployment
-kubectl apply -f deploy-canary.yaml   # replicas: 1, image: NEW_TAG
-
-# Step 2: Watch error rate + latency for 15 min
-# If stable → increase canary weight
-# If degraded → scale canary to 0 immediately
-
-# Step 3: Promote fully
+```bash
 kubectl set image deployment/api-stable api=$IMAGE_TAG -n prod
 kubectl delete deployment api-canary -n prod
 ```
 
----
-
-## Post-Deploy Verification
-
-Run immediately after deploying to production:
+## Post-deploy verification
 
 ```bash
-# Health checks
 curl -sf https://api.example.com/healthz
 curl -sf https://api.example.com/readyz
-
-# Key smoke tests
 ./scripts/smoke-test-prod.sh
 
-# Check pod health
 kubectl get pods -n prod -l app=api
 kubectl top pods -n prod -l app=api
-
-# Check for new errors in logs (last 5 min)
 kubectl logs -n prod -l app=api --since=5m | grep -E "ERROR|CRITICAL|Exception"
 ```
 
-**Metrics to watch for 15–30 min after deploy — compare against recorded baseline, not absolute thresholds:**
+**Watch for 15–30 min, comparing every metric to the recorded baseline — not to an absolute
+threshold.** A service at 0.8% error rate pre-deploy that jumps to 1.5% has regressed
+significantly, but neither value alone trips a naive "error rate > 1%" rule.
 
-Compare each metric to the baseline snapshot recorded in the Pre-Release Checklist. A value that looks acceptable in absolute terms may still represent a meaningful regression from baseline.
-
-| Metric | Rollback if delta exceeds | Investigate if delta exceeds |
+| Metric | Roll back if delta exceeds | Investigate if delta exceeds |
 |---|---|---|
 | HTTP 5xx error rate | > +1% above baseline | > +0.1% above baseline |
 | p95 latency | > 2× baseline, sustained > 5 min | > 1.3× baseline |
-| Pod restarts | > 2 restarts in 10 min (new, not pre-existing) | Any new restarts |
-| DB connection errors | Any new errors not present at baseline | — |
+| Pod restarts | > 2 in 10 min (new, not pre-existing) | Any new restarts |
+| DB connection errors | Any not present at baseline | — |
 | Memory usage | > +30% above baseline (OOMKill risk) | > +15% above baseline |
-| RPS | Drop > 20% vs baseline (traffic not reaching service) | Drop > 5% |
-
-> **Why delta, not absolute:** a service running at 0.8% error rate pre-deploy that jumps to 1.5% post-deploy has regressed significantly — but neither value alone triggers a naive "error rate > 1%" threshold. Always compare to what you measured before applying.
-
----
+| RPS | Drop > 20% vs baseline (traffic not arriving) | Drop > 5% |
 
 ## Rollback
 
-**Decision: rollback if any of these are true:**
-- Error rate > 1% and rising
-- p95 latency > 2× baseline for > 5 min
-- Pod crashlooping
-- Data corruption detected
-- Security incident triggered by the change
-
-**Rollback procedure:**
+**Roll back when any "roll back if" column above is breached**, or on pod crashlooping, detected
+data corruption, or a security incident triggered by the change.
 
 ```bash
 # Preferred: git-based rollback via Makefile
 git log --oneline deploy/prod/manifests/   # find last known-good SHA
 make rollback ENV=prod ROLLBACK_SHA=<sha>
 
-# Fallback: kubectl rollout undo (emergency — reconcile git state afterwards)
+# Fallback: emergency only — reconcile git state afterwards
 kubectl rollout undo deployment/api -n prod
 kubectl rollout status deployment/api -n prod
 
-# If DB migration needs rollback — run BEFORE rolling back app
-# Test the down migration in staging first!
+# If the DB migration needs rolling back, run this BEFORE rolling back the app.
+# Test the down migration in staging first.
 alembic downgrade -1               # Python/Alembic
 python manage.py migrate app 0023  # Django
 ```
 
-**After rollback:**
-- [ ] Verify error rate returns to baseline
-- [ ] Write incident summary: what broke, how detected, time to rollback
-- [ ] File ticket for fix before re-attempting
-- [ ] Update pre-release checklist if a gate was missed
+Afterwards:
+- [ ] Verify metrics return to baseline
+- [ ] Write an incident summary: what broke, how it was detected, time to rollback
+- [ ] File a ticket for the fix before re-attempting
+- [ ] Update the pre-release checklist if a gate was missed
 
----
+## Feature flag rollout
 
-## Feature Flag Rollout
-
-For gradual rollout without a canary deploy:
+For gradual rollout without a canary:
 
 ```python
 # LaunchDarkly / Unleash / homegrown — same pattern
 def can_use_new_feature(user_id: str) -> bool:
     return feature_flags.is_enabled("new-upload-flow", user_context={"id": user_id})
 
-# Rollout stages
-# 1. Internal team only (0.1%)
-# 2. 5% of users — watch metrics
-# 3. 25% — watch metrics
-# 4. 100% — retire flag
+# Stages: internal team (0.1%) → 5% → 25% → 100%, watching metrics at each
 ```
 
-**Flag naming convention:**
-```
-<service>-<feature>-<date>
-e.g.: upload-new-resize-2026-03-18
-```
-
-**Cleanup:** Remove feature flags within 1 sprint of full rollout. Dead flags are a maintenance burden.
+Naming: `<service>-<feature>-<date>`, e.g. `upload-new-resize-2026-03-18`. **Remove the flag
+within one sprint of full rollout** — dead flags are a maintenance burden and a permanently
+untested branch.
 
 ---
 
-## Release Notes Template
+## Release notes
 
-**Find where this repo already records releases before deciding where to write this — do not
-default to creating a root `CHANGELOG.md` unasked.** Check, in order:
+**Find where this repo already records releases — do not default to creating a root
+`CHANGELOG.md` unasked.** In order:
 
-1. A root `CHANGELOG.md` — if it exists, this is almost always the right target. Append, using
-   `Edit` with an exact `old_string` match — **never `Write`, never regenerate an existing entry**.
-   A rewritten history is a worse outcome than a missing one; if you're unsure whether content
-   already exists for this version, read the whole file first.
-2. A per-service equivalent — some repos keep release history somewhere else on purpose (a
-   `SKILL.md` "version history" table maintained alongside a debug/runbook skill, a `## Deployment
-   Log` section inside each task file, a `docs/RUNBOOK.md` changelog section). If one exists and is
-   already being kept up to date, that **is** this repo's changelog — use it, don't create a
-   competing one. A repo-specific test that asserts the version table has a row for the current
-   `VERSION` is a strong signal this is the enforced convention, not an informal habit.
-3. **Neither exists:** ask the user whether to create a root `CHANGELOG.md` now or skip it for this
-   release. Don't silently decide either way — a missing changelog is a real gap worth surfacing,
-   and creating one nobody asked for is scope creep on a release you were asked to ship.
+1. **A root `CHANGELOG.md`** — almost always the right target. Append with `Edit` and an exact
+   `old_string` match; **never `Write`, never regenerate an existing entry**. A rewritten history
+   is worse than a missing one — if unsure whether content exists for this version, read the whole
+   file first.
+2. **A per-service equivalent** — some repos deliberately keep history elsewhere: a version-history
+   table in a debug/runbook `SKILL.md`, a `## Deployment Log` in each task file, a changelog
+   section in `docs/RUNBOOK.md`. If one exists and is being kept current, that **is** this repo's
+   changelog — use it rather than creating a competitor. A test asserting the version table has a
+   row for the current `VERSION` means this is enforced convention, not habit.
+3. **Neither** — ask whether to create a root `CHANGELOG.md` or skip it this release. Don't decide
+   silently either way: a missing changelog is a real gap, and creating one nobody asked for is
+   scope creep on a release you were asked to ship.
 
-Whatever the target, the same content applies — adapt the shape to match what's already there
-(don't force this exact template onto a repo with a denser or terser existing convention):
+Adapt the shape to whatever convention already exists — don't force this template onto a repo with
+a terser one:
 
 ```markdown
 ## Release v1.4.2 — 2026-03-18
@@ -342,7 +225,6 @@ Whatever the target, the same content applies — adapt the shape to match what'
 ### Changes
 - feat: user photo upload with automatic resizing
 - fix: order status not updating on cancellation
-- chore: upgrade PostgreSQL driver to 2.9.1
 
 ### Migration
 - `ALTER TABLE users ADD COLUMN photo_url TEXT` (backward-compatible, nullable)
@@ -359,24 +241,16 @@ Whatever the target, the same content applies — adapt the shape to match what'
 - If upload errors spike: check S3 bucket policy and CloudFront distribution
 ```
 
-Write this in the **same commit** as the version bump, not as a follow-up — a version bumped
-without its changelog entry is exactly the kind of drift a later `git log -p` archaeology session
-has to reconstruct by hand.
+Write it in the **same commit** as the version bump — a version bumped without its changelog entry
+is exactly the drift a later `git log -p` archaeology session has to reconstruct by hand.
 
----
+## After a successful deployment
 
-## After a successful production deployment
+1. Task file (`todo/<number>-<slug>.md`): `**Status:**` → `🚀 Deployed`
+2. `TODO.md`: status column → `🚀 Deployed`
+3. **Confirm the changelog entry actually landed** — a separate check, not implied by steps 1–2.
+   Task tracking and release history answer different questions ("what's the status of #NNN" vs
+   "what shipped in v1.4.2"), so a task marked Deployed with no changelog row is a classic miss.
 
-Once smoke tests pass and the rollout is complete, update the task tracking:
-
-1. In the task file (`todo/<number>-<slug>.md`): set `**Status:**` to `🚀 Deployed`
-2. In `TODO.md`: flip the status column to `🚀 Deployed`
-3. Confirm the changelog entry from "Release Notes Template" above actually landed — this is a
-   separate check from steps 1–2, not implied by them. A task file marked `🚀 Deployed` with no
-   corresponding changelog row is exactly the kind of thing a `TODO.md`-driven workflow can miss,
-   since task-tracking and release-history are two different documents answering two different
-   questions ("what's the status of #NNN" vs. "what shipped in v1.4.2").
-
-> **Note:** This skill uses `🚀 Deployed` as the terminal status for codebase tasks. The platform workflow (`/prd-workflow`) uses `🚀 Applied` for Kubernetes changes — the different labels reflect the different deployment verbs (code deployed vs manifests applied). Check which workflow you're in before updating status.
-
-This is the terminal state — the feature is live in production.
+> `🚀 Deployed` is the terminal status for codebase tasks; `/prd-workflow` uses `🚀 Applied` for
+> Kubernetes changes — code is deployed, manifests are applied. Check which workflow you are in.

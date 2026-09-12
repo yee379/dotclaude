@@ -8,17 +8,9 @@ compatibility: opencode
 # React Patterns
 
 Production React patterns — component design, hooks, state, GraphQL integration, and testing.
-
-## When to Use
-
-- Designing or reviewing React components
-- Implementing custom hooks or context
-- Integrating GraphQL with Apollo Client or urql
-- Debugging re-render performance issues
-- Writing component tests with React Testing Library
-- Setting up TypeScript for a React project
-
----
+Use when designing or reviewing components, implementing custom hooks or context, integrating
+Apollo Client or urql, debugging re-render performance, writing RTL tests, or setting up
+TypeScript for a React project.
 
 ## Component Design
 
@@ -72,8 +64,12 @@ export function UserCard({ user, onEdit, className }: UserCardProps) {
 
 ### Controlled vs uncontrolled
 
+**Controlled** — the parent owns the state; prefer this for forms needing validation, since the
+parent can render errors alongside the value. **Uncontrolled** — the component owns its own state;
+simpler for an isolated input that only reports a final value.
+
 ```tsx
-// Controlled — parent owns state (prefer for forms that need validation)
+// Controlled: value + onChange come from the parent
 function EmailInput({ value, onChange, error }: ControlledProps) {
   return (
     <div>
@@ -83,7 +79,7 @@ function EmailInput({ value, onChange, error }: ControlledProps) {
   );
 }
 
-// Uncontrolled — component owns state (simpler for isolated inputs)
+// Uncontrolled: state is internal, only the result escapes
 function SearchBar({ onSearch }: { onSearch: (q: string) => void }) {
   const [query, setQuery] = useState("");
   return (

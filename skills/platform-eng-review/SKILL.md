@@ -5,22 +5,8 @@ description: Engineering review of platform implementation plans — Helm chart 
 
 # Platform Engineering Review
 
-## Workflow position
-
-```
-/draft-prd
-      │
-      ▼
-/board-review ──── runs these reviewers in parallel ────┐
-      │                                                     │
-      │   /codebase-arch-review (platform mode)              │
-      │   /platform-capacity-review                         │
-      │   /platform-security-review                         │
-      │   /platform-ops-review                              │
-      │   /platform-eng-review  ← YOU ARE HERE              │
-      │   /doc-review                              │
-      └─────────────────────────────────────────────────────┘
-```
+One of the parallel reviewers on `/board-review`'s platform board (reviewer list in
+`board-review/references/platform-board.md`). Runs after `/draft-prd`.
 
 **Model routing: `sonnet`.** Engineering review of platform manifests is implementation-correctness work. Use `opus` only if complex failure domain analysis is needed.
 
@@ -30,7 +16,7 @@ Do NOT make cluster changes. Review the implementation plan for correctness, com
 
 ## Priority hierarchy
 
-Step 0 > Manifest correctness > Resource tuning > Health probes > Rollout strategy > Upgrade & transition path > Test plan > Everything else.
+Step 0 > Manifest correctness > Resource tuning > Health probes > Rollout strategy > Re-appliability & stateful transitions > Upgrade & transition path > Observability wiring > Test plan > Everything else.
 
 ---
 
@@ -170,7 +156,78 @@ spec:
 
 ---
 
-## 6. Test plan
+## 6. Re-appliability and stateful transitions
+
+§1 asks whether the chart is idempotent. This section is the version that actually catches
+things: **what happens on the second apply, and on an apply that fails halfway?** A reconciler
+will run this manifest hundreds of times, so "it worked once" is not evidence.
+
+**Re-apply and reconciliation**
+- [ ] `helm upgrade --install` re-run on an unchanged release is a no-op — no restart, no
+      regenerated Secret (`randAlphaNum` in a template regenerates a password on every upgrade
+      and silently breaks the consumers that cached it)
+- [ ] Helm hooks are safe to re-run: a `pre-install`/`pre-upgrade` Job with a fixed name fails
+      on the second apply unless it carries a delete policy. State the policy
+- [ ] Jobs and one-shot migrations are idempotent **and resumable** — a pod restart mid-run must
+      not corrupt or duplicate. For data backfills, work
+      `/codebase-eng-review`'s `references/migration-checklist.md` **Migration mechanics**
+      section; the chunking, resumability, runtime-at-production-volume, and integrity-check
+      questions are identical and are usually skipped on the platform side
+- [ ] **Immutable fields** are identified: Service `clusterIP`, Deployment/StatefulSet
+      `selector`, StatefulSet `volumeClaimTemplates`, Job `spec.template`, PVC `storageClassName`.
+      Changing one requires delete-and-recreate, not an upgrade — say so explicitly and state the
+      downtime, because the apply will simply fail otherwise
+- [ ] GitOps self-heal will not fight an intended manual change, and drift is surfaced rather
+      than silently reverted
+- [ ] A **failed** apply leaves a recoverable state: no half-created CRs, no released PVC, no
+      release stuck `pending-upgrade` needing a manual rollback
+
+**Stateful transitions** *(only when the change touches a PVC, StatefulSet, CRD, or operator)*
+- [ ] PVC resize path confirmed: the StorageClass has `allowVolumeExpansion`, and **volumes
+      cannot shrink** — a wrong size is a migration, not an edit
+- [ ] StorageClass change requires new volumes and a data copy; the copy procedure and the
+      downtime are stated
+- [ ] CRD schema change: stored version, conversion strategy, and whether existing CRs remain
+      readable. An `apiVersion` promotion without conversion orphans every existing object
+- [ ] Operator upgrade path checked against **its** supported skew, not just Kubernetes' — and
+      whether it reconciles differently on the new version
+- [ ] StatefulSet rollout is ordinal-ordered and the app tolerates mixed versions across
+      ordinals during it
+- [ ] Backup taken and **restore tested** before any irreversible step
+
+**STOP.** One AskUserQuestion per gap.
+
+---
+
+## 7. Observability wiring
+
+§9 sequences monitoring last; nothing currently verifies it is connected. A workload that is not
+scraped is invisible, and it will be discovered during the first incident.
+
+- [ ] `ServiceMonitor`/`PodMonitor` exists **and its label selector matches** the Service — the
+      usual failure is a selector mismatch that silently scrapes nothing. Confirm the target
+      appears in Prometheus, do not infer it from the manifest
+- [ ] The metrics port is named and exposed on the Service, and NetworkPolicy permits ingress
+      from the scraper's namespace — a default-deny policy added in §2 of the security review
+      blocks scraping unless it is explicitly allowed
+- [ ] `PrometheusRule` exists for the failure modes `/platform-ops-review` identifies, and the
+      alerts route to a receiver that exists
+- [ ] A dashboard shows this workload, and RED/USE panels are populated (not empty panels
+      pointing at a metric name that was never emitted)
+- [ ] Logs are shipped, structured, and carry the namespace/workload labels the aggregator
+      queries by
+- [ ] New metric labels are bounded — no pod name, request ID, or user ID as a label value; one
+      unbounded label can take the metrics backend down mid-incident
+- [ ] Mesh-layer resilience is set where the mesh owns it: request timeout, retry policy and
+      budget, and outlier detection. These are the platform analogue of the application checks in
+      `/codebase-eng-review`'s `references/resilience-review.md` — retries configured at both
+      layers multiply
+
+**STOP.** One AskUserQuestion per gap.
+
+---
+
+## 8. Test plan
 
 Load `references/test-adequacy-rubric.md` — it carries the automated-vs-manual baseline, the
 per-change-type minimum coverage table, the six verification dimensions to assess, and the
@@ -189,7 +246,7 @@ Then judge the plan against it and record the verdict:
 
 ---
 
-## 7. Implementation sequencing
+## 9. Implementation sequencing
 
 Safe and correct order:
 
@@ -218,7 +275,10 @@ Resource tuning:      N issues found
 Health probes:        N issues found
 HPA / scaling:        N issues found
 Rollout strategy:     N issues found
+Re-appliability:      N issues found (immutable fields: N identified)
+Stateful transitions: N gaps found (or: skipped — stateless change)
 Upgrade/transition:   N gaps found (or: skipped — additive change)
+Observability wiring: N gaps found (scrape target confirmed: yes|no)
 Test plan:            written
 ─────────────────────────────────────────────────────
 Blocking gaps:        N

@@ -7,59 +7,33 @@ compatibility: opencode
 
 # GraphQL Design
 
-Patterns and conventions for building production-quality GraphQL APIs — schema first, resolver discipline, N+1 elimination, and federation.
+Patterns for production-quality GraphQL APIs — schema first, resolver discipline, N+1
+elimination, and federation. Use when designing or extending a schema, writing resolvers, fixing
+N+1 problems, implementing cursor pagination, designing mutation error handling, planning
+federation, or reviewing API performance.
 
-## When to Use
+## Schema design
 
-- Designing or extending a GraphQL schema
-- Writing resolvers (query, mutation, subscription)
-- Fixing N+1 query problems
-- Implementing cursor-based pagination
-- Designing mutations with proper error handling
-- Planning schema federation across services
-- Reviewing GraphQL API performance
-
----
-
-## Schema Design Principles
-
-### 1. Design for the client, not the database
-
-The schema is a product contract. Name fields after what they mean to consumers, not what they're called in your database.
+**Design for the client, not the database.** The schema is a product contract — name fields for
+what they mean to consumers, not what the DB calls them.
 
 ```graphql
-# BAD — leaks DB column names
-type User {
-  usr_id: ID!
-  created_ts: String
-  is_act: Boolean
-}
-
-# GOOD — clear, consumer-facing names
-type User {
-  id: ID!
-  createdAt: DateTime!
-  isActive: Boolean!
-}
+# BAD — leaks DB column names        # GOOD — consumer-facing
+type User {                          type User {
+  usr_id: ID!                          id: ID!
+  created_ts: String                   createdAt: DateTime!
+  is_act: Boolean                      isActive: Boolean!
+}                                    }
 ```
 
-### 2. Non-null carefully
+**Non-null carefully.** Use `!` only where the field can never be null for a valid object. Making
+everything non-null forces clients to treat unexpected nulls as hard errors. Mind the difference
+between `[Item!]`, `[Item]!`, and `[Item!]!`.
 
-- Use `!` when the field can never be null for a valid object
-- Do NOT make everything non-null — it forces clients to handle unexpected nulls as errors
-- Nullable lists vs non-null items: `[Item!]` vs `[Item]!` vs `[Item!]!`
+**Custom scalars for semantic types; enums for finite sets.** Definitions, enum examples, and
+non-null usage patterns: `references/schema-design.md`.
 
-### 3. Use custom scalars for semantic types
-
-### 4. Enums for finite sets
-
-See `references/schema-design.md` for custom scalar definitions, enum examples, and non-null usage patterns.
-
----
-
-## Query Design
-
-### Nested resources
+## Query design
 
 ```graphql
 type Query {
@@ -85,14 +59,10 @@ input UserSort {
   direction: SortDirection!
 }
 
-enum UserSortField {
-  CREATED_AT
-  NAME
-  EMAIL
-}
+enum UserSortField { CREATED_AT  NAME  EMAIL }
 ```
 
-### Cursor-based pagination (Relay spec)
+Cursor-based pagination follows the Relay spec:
 
 ```graphql
 type UserConnection {
@@ -114,71 +84,42 @@ type PageInfo {
 }
 ```
 
-Usage:
+Clients page with `users(first: 20, after: "cursor123")`, reading `pageInfo.endCursor` for the
+next call.
 
-```graphql
-query {
-  users(first: 20, after: "cursor123") {
-    edges {
-      node { id name email }
-      cursor
-    }
-    pageInfo {
-      hasNextPage
-      endCursor
-    }
-    totalCount
-  }
-}
-```
+## Mutations
 
----
+Naming is verb + noun (`createUser`, `publishPost`). Always wrap arguments in an input type.
+Return the mutated object plus an `errors` array in the payload — **never throw for validation
+failures**. Input type, payload type, and client usage: `references/mutations.md`.
 
-## Mutation Design
+## N+1 prevention
 
-Naming: verb + noun (`createUser`, `publishPost`). Always wrap args in an input type. Return the mutated object plus an `errors` array in the payload — never throw for validation failures.
+The single biggest performance issue in GraphQL. Batch per-request with **one DataLoader instance
+per request** — never a singleton. Setup, resolver usage, and batching rules:
+`references/dataloader.md`.
 
-Load `references/mutations.md` for input type, payload type, and client usage patterns.
+## Other references
 
----
+| Topic | File |
+|---|---|
+| Resolver map and centralised authorisation | `references/resolvers.md` |
+| Error category patterns and global error formatter | `references/error-handling.md` |
+| Subscription resolvers (graphql-ws) and Apollo Federation v2 | `references/subscriptions.md` |
 
-## N+1 Prevention with DataLoader
-
-The single biggest performance issue in GraphQL. Always batch per-request with one DataLoader instance per request (never singleton).
-
-Load `references/dataloader.md` for DataLoader setup, resolver usage, and batching rules.
-
----
-
-## Resolver Structure
-
-Load `references/resolvers.md` for resolver map and centralised authorization patterns.
-
----
-
-## Error Handling
-
-Load `references/error-handling.md` for error category patterns and global error formatter.
-
----
-
-## Subscriptions & Federation
-
-Load `references/subscriptions.md` for subscription resolvers (graphql-ws) and Apollo Federation v2 patterns.
-
----
-
-## Performance Checklist
-
-Before shipping a GraphQL API:
+## Performance and safety checklist
 
 - [ ] DataLoaders created per-request for all N+1-prone fields
-- [ ] Query depth limiting configured (prevent deeply nested abuse)
-- [ ] Query complexity limiting configured (prevent expensive queries)
+- [ ] Query depth limiting configured
+- [ ] Query complexity limiting configured
+- [ ] **Rate limits count operations, not HTTP requests** — aliasing and batching let one request
+      carry N operations, which walks straight through a request-count limiter (e.g. 1000 login
+      attempts in one POST). See `/security-review` `references/vuln-classes.md` class 13
 - [ ] Persisted queries or operation allowlisting for public APIs
-- [ ] Pagination required on all list fields (no unbounded lists)
+- [ ] Pagination required on every list field — no unbounded lists
 - [ ] Introspection disabled in production
-- [ ] Auth checks in resolvers, not just at the gateway
+- [ ] Auth checks **in every resolver**, not just at the gateway — a field denied via one parent
+      is often reachable via another
 - [ ] Subscription topics namespaced per resource ID
 - [ ] Error details masked for internal errors
 - [ ] Response caching (Apollo Cache-Control hints) on read-heavy queries
