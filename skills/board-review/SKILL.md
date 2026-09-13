@@ -152,12 +152,25 @@ stated three times, unscoped universal claims, requirements with no insertion po
 placement invariant. `/draft-prd` Phase 11 should have done this; it is repeated here because the
 gate belongs where the cost is paid, and plans arrive from elsewhere.
 
+### c. Run the slop sweep
+
+Load `~/.claude/skills/agentic-standards/references/no-ai-slop-eval.md` and work its checks
+against the plan. **Fix what it finds now**, in the main session: importance puffery, weasel
+attribution, interpretive metadiscourse, faux-insight setups, summary-recap endings, formatting
+slop. Precision rules catch a plan that is *wrong*; this catches one that is *unreadable*, and a
+reviewer who spends budget decoding prose has less left for the design.
+
+Load the full `no-ai-slop.md` only if the eval alone is not enough to fix what it flags. Do not
+rewrite the author's voice, and do not invent facts to satisfy a check — if a claim has no
+source, flag it rather than sourcing it.
+
 ```
 Precision gate — #NNN
 ──────────────────────────────────────────────────────
 Ground truth measured:  <N facts, from <source>>  (<M corrections made>)
                          (<K reused from draft-prd's Feasibility checks table, J re-measured fresh>)
 Precision sweep:        <N items fixed>  (<breakdown>)
+Slop sweep:             <N items fixed>  (<breakdown>)
 Plan length:            <L lines>
 ──────────────────────────────────────────────────────
 ```
