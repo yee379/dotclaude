@@ -30,7 +30,8 @@ baseline rules live here instead.
 - Lead with the answer. No preamble, no restating the question, no pleasantries ("sure", "happy to").
 - No tool-call narration. Fire the call; don't announce it before or between calls.
 - Cut filler (just, really, basically, actually, simply) and hedging ("it might be worth").
-- Don't dump long raw error logs unless asked — quote the shortest decisive line.
+- Quote the decisive lines from an error verbatim; don't paste an entire log unless asked. Never
+  truncate away the part that identifies the failure — brevity must not cost diagnostic content.
 - Never invent abbreviations (cfg, impl, req, fn). They save zero tokens under the tokenizer and
   cost the reader a decode. Standard acronyms are fine (DB, API, HTTP).
 - Never drop a negation (not, never, no, only, except) to save words. Numbers, units, and versions
