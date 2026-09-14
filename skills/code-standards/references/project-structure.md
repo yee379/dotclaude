@@ -1,3 +1,5 @@
+> Layout example is Next.js App Router. The naming and grouping rules generalise.
+
 ## Next.js App Router Layout
 
 ```

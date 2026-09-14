@@ -31,7 +31,7 @@ When the user's intent matches a pattern below, invoke the listed skill via the 
 | Plan a feature, design a system, draft a PRD, "what should we build", "how should we approach" | `draft-prd` |
 | Stress-test a plan, "grill me", relentless design interview | `draft-prd` (Grill Mode) |
 | Review a plan, gate a design, "is this ready", "board review this" | `board-review` |
-| Write code for a new feature, fix a bug, refactor — any implementation task | `tdd-standards` |
+| Write code for a new feature, fix a bug, refactor — any implementation task | `code-standards` (the ladder — how much to write) + `tdd-standards` (how to test it) |
 | Debug an issue, diagnose a failure, "why is X broken", "help me troubleshoot" | `troubleshoot` |
 | Research a topic, "deep dive", "what's the current state of", competitive analysis | `research` |
 | Search for existing libraries/tools before writing custom code | `search-first` |

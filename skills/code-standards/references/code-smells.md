@@ -1,3 +1,5 @@
+> Examples are TypeScript. The principles are language-agnostic.
+
 ## Long Functions (> 50 lines)
 
 ```typescript

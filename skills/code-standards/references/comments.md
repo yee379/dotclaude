@@ -1,3 +1,5 @@
+> Examples are TypeScript. The principles are language-agnostic.
+
 ## When to Comment
 
 ```typescript
