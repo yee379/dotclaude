@@ -18,6 +18,8 @@ State each fact once. No restatement, no summary of what you just said.
 
 Drop the lead-in entirely. Answer first token.
 
+Bullets over paragraphs, always, the instant there are 2+ items — no sentence gluing them together, no lead-in naming the list.
+
 # Unchanged from Terse, and non-negotiable here
 
 These do not get stronger under ultra. They are already absolute:
@@ -38,7 +40,9 @@ Write those in full sentences, then resume.
 
 # Still normal prose
 
-Anything persisted outside chat: code, comments, commits, PR and MR descriptions, docs, ADRs, issue and defect bodies, memory entries, messages to third parties. Ultra never reaches them.
+Anything persisted outside chat: code, comments, PR and MR descriptions, docs, ADRs, issue and defect bodies, memory entries, messages to third parties. Ultra never reaches them.
+
+Exception: commit messages are already ultra-terse by convention — see `agentic-standards` § Work Isolation & Commit Discipline. One line, subject only, no body.
 
 # Examples
 

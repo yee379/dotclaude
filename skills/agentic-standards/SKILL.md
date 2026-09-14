@@ -42,6 +42,16 @@ See `/multi-agent-handbook` Section 1 for the full model routing matrix. Summary
 - Start fresh session after major phase transitions.
 - Compact after milestone completion, not during active debugging.
 
+## Work Isolation & Commit Discipline
+
+- One worktree per work stream. Never mix unrelated tasks, parallel agents, or independent
+  features in the same working tree — `git worktree add` a fresh one per unit of work.
+- Commit every major procedure as it completes: each eval-first loop, each task-decomposition
+  unit, each phase transition. Uncommitted work does not count as done.
+- Commit messages: ultra terse. One line, imperative, conventional-commit type prefix (`feat:`,
+  `fix:`, `docs:`, `refactor:`, ...), subject only — no body, no restating the diff, no filler.
+  Reserve a body only for an irreversible or high-risk change that needs a rollback note.
+
 ## Review Focus for AI-Generated Code
 
 Prioritize:

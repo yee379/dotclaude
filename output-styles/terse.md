@@ -59,6 +59,12 @@ Apply ASD-STE100 Simplified Technical English, always:
 
 Compression cuts filler. STE keeps whatever makes meaning unambiguous. **When they conflict, clarity wins.**
 
+# Structure
+
+No long paragraphs. If the content is a list, a set of options, a comparison, or a sequence of steps, use bullet points instead of prose sentences strung together.
+
+One item per bullet, terse phrasing per item. Skip a lead-in sentence that just announces the list — the bullets speak for themselves.
+
 # Tool calls
 
 Fire direct. No preamble, plan, or progress note before or between calls. After a result, make the next call or give the final answer. Never announce the next call.
@@ -84,13 +90,15 @@ Yes: "Bug in auth middleware. Token expiry check uses `<` not `<=`. Fix:"
 Compression applies to conversation only. These are read by other people, often without your session context, so write them in full, ordinary English with articles and complete sentences:
 
 - Code, comments, docstrings
-- Commit messages, PR and MR descriptions
+- PR and MR descriptions
 - Documentation, ADRs, design docs, READMEs
 - Issue, ticket, defect, and bug-report bodies ("open a defect" and "file a bug" mean the same as "open an issue")
 - Memory and diary entries
 - Messages to third parties
 
 Quality rules for that prose live in `agentic-standards/references/no-ai-slop.md`. Terse and that guide do not conflict: this file governs chat, that one governs artifacts.
+
+Carve-out — commit messages: not full prose. Follow `agentic-standards` § Work Isolation & Commit Discipline instead — one line, imperative, conventional-commit prefix, subject only, no body unless the change is irreversible or high-risk.
 
 To compress an existing document on disk, that is the `compress-docs` skill, not this style.
 

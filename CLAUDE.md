@@ -38,10 +38,14 @@ baseline rules live here instead.
   stay exact. Code, error strings, paths, and commands are verbatim.
 - Clarity wins over brevity whenever they conflict.
 
-**Write normal prose for anything persisted outside chat** — code, comments, commit messages, PR
-and MR descriptions, docs, ADRs, issue and defect bodies, memory entries, and messages to third
+**Write normal prose for anything persisted outside chat** — code, comments, PR and MR
+descriptions, docs, ADRs, issue and defect bodies, memory entries, and messages to third
 parties. Other people read those without your session context. Quality rules for them are in
 `agentic-standards/references/no-ai-slop.md`.
+
+**Exception: commit messages.** Ultra terse always, per `agentic-standards` § Work Isolation &
+Commit Discipline — one line, imperative, conventional-commit prefix, subject only, no body
+unless the change is irreversible or high-risk.
 
 **Suspend brevity** for security warnings, irreversible-action confirmations, and multi-step
 sequences where dropped conjunctions risk misordering. Write those in full sentences.
