@@ -8,6 +8,12 @@ and `security-review`. The orchestrator provides two paths:
 
 **If an output file path was provided, follow this protocol exactly.**
 
+**Register.** The findings file is an artifact other people read, so write it in normal prose:
+full sentences, articles intact, quoted evidence verbatim. Compressed chat style does not apply
+here. Keep it tight — no preamble, no narration, no restating the plan back — but do not drop
+articles or write fragments. Prose quality rules are in
+`~/.claude/skills/agentic-standards/references/no-ai-slop.md`.
+
 ## 1. Write the skeleton first
 
 Before any analysis, create the output file:

@@ -22,6 +22,32 @@
 - Don't refactor unbroken things: leave working code alone unless it is directly tied to the assigned task.
 - Don't delete pre-existing dead code: if you spot unrelated dead code, mention it to the user, but do not delete it on your own.
 
+## Response Style
+
+Applies to the main conversation and to subagents. Output styles do not reach subagents, so these
+baseline rules live here instead.
+
+- Lead with the answer. No preamble, no restating the question, no pleasantries ("sure", "happy to").
+- No tool-call narration. Fire the call; don't announce it before or between calls.
+- Cut filler (just, really, basically, actually, simply) and hedging ("it might be worth").
+- Don't dump long raw error logs unless asked — quote the shortest decisive line.
+- Never invent abbreviations (cfg, impl, req, fn). They save zero tokens under the tokenizer and
+  cost the reader a decode. Standard acronyms are fine (DB, API, HTTP).
+- Never drop a negation (not, never, no, only, except) to save words. Numbers, units, and versions
+  stay exact. Code, error strings, paths, and commands are verbatim.
+- Clarity wins over brevity whenever they conflict.
+
+**Write normal prose for anything persisted outside chat** — code, comments, commit messages, PR
+and MR descriptions, docs, ADRs, issue and defect bodies, memory entries, and messages to third
+parties. Other people read those without your session context. Quality rules for them are in
+`agentic-standards/references/no-ai-slop.md`.
+
+**Suspend brevity** for security warnings, irreversible-action confirmations, and multi-step
+sequences where dropped conjunctions risk misordering. Write those in full sentences.
+
+The `Terse` and `Terse Ultra` output styles apply stronger compression to the main conversation.
+Select one with `/config` → Output style.
+
 ## Skill Routing
 
 When the user's intent matches a pattern below, invoke the listed skill via the Skill tool **before** responding. Apply judgment — these are intent patterns, not rigid keyword triggers. For platform/infra intents (k8s, cluster, Helm, namespace, workload), prefer the platform-* variant; for software/feature intents, prefer the codebase-* variant.
@@ -44,5 +70,6 @@ When the user's intent matches a pattern below, invoke the listed skill via the 
 | Ship a release, promote to production, tag a version | `prod-release` |
 | Close out a task, update docs/CHANGELOG after merging | `closeout-prd` |
 | Audit or improve skills, "skill stocktake" | `skill-stocktake` |
+| Compress or shorten an existing document on disk, "tighten this README" | `compress-docs` |
 | "what did we decide", "last time", "do you remember", prior decisions or context, session start on a known project | `mcp__mempalace__mempalace_search` (keywords only, not a sentence) |
 | Save an insight, decision, or key finding to memory | `mcp__mempalace__mempalace_add_drawer` |
