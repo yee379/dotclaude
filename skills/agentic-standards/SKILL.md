@@ -44,8 +44,10 @@ See `/multi-agent-handbook` Section 1 for the full model routing matrix. Summary
 
 ## Work Isolation & Commit Discipline
 
-- One worktree per work stream. Never mix unrelated tasks, parallel agents, or independent
-  features in the same working tree — `git worktree add` a fresh one per unit of work.
+- One worktree per work stream, each on its own new branch. Never mix unrelated tasks, parallel
+  agents, or independent features in the same working tree or branch — `git worktree add -b
+  <branch> <path>` a fresh worktree+branch per unit of work. A branch can't be checked out in two
+  worktrees at once, so this also stops parallel agents from colliding on the same branch.
 - Commit every major procedure as it completes: each eval-first loop, each task-decomposition
   unit, each phase transition. Uncommitted work does not count as done.
 - Commit messages: ultra terse. One line, imperative, conventional-commit type prefix (`feat:`,
