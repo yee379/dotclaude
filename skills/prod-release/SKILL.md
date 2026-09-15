@@ -15,6 +15,12 @@ Use it for promoting a feature or fix to production, planning a significant rele
 release process for a new service, writing an on-call runbook before a high-risk deploy, or
 post-incident review of which gate was missed.
 
+**Check for a project-local `deploy-*` skill first.** Convention: a project's real release
+process — its actual gates, environments, and rollback commands — lives in a directory-scoped
+skill named `deploy-*` inside that project's own `.claude/skills/`. It appears in the skill
+listing with a path prefix. If the repo you're in has one, load and follow it instead — most
+specific wins. This file is the generic fallback for repos with no project-local `deploy-*` skill.
+
 ```
 feature branch → [1] test env (automated + smoke tests)
                → [2] staging (integration, QA sign-off, load test vs NFRs)

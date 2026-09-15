@@ -57,6 +57,12 @@ Select one with `/config` → Output style.
 
 When the user's intent matches a pattern below, invoke the listed skill via the Skill tool **before** responding. Apply judgment — these are intent patterns, not rigid keyword triggers. For platform/infra intents (k8s, cluster, Helm, namespace, workload), prefer the platform-* variant; for software/feature intents, prefer the codebase-* variant.
 
+**Deploy intents:** convention is a project-local, directory-scoped skill named `deploy-*` (e.g.
+`deploy-ai-playground`) living in that project's own `.claude/skills/` — it carries the project's
+actual Makefile targets, environments, and gates. It shows up in the skill listing with a path
+prefix. If one exists for the repo you're in, load it — most specific wins. Fall back to
+`k8s-deploy` / `prod-release` only when no project-local `deploy-*` skill exists.
+
 | Intent | Skill / Tool |
 |---|---|
 | Plan a feature, design a system, draft a PRD, "what should we build", "how should we approach" | `draft-prd` |
@@ -71,8 +77,8 @@ When the user's intent matches a pattern below, invoke the listed skill via the 
 | Discover tech debt, generate backlog ideas, "what should we improve" | `codebase-scout` |
 | Review a PR or code diff | `code-review` |
 | Security concerns, "is this safe", audit for vulnerabilities | `security-review` |
-| Deploy to Kubernetes, apply Helm charts, `make apply` | `k8s-deploy` |
-| Ship a release, promote to production, tag a version | `prod-release` |
+| Deploy to Kubernetes, apply Helm charts, `make apply` | project-local `deploy-*` skill, else `k8s-deploy` |
+| Ship a release, promote to production, tag a version | project-local `deploy-*` skill, else `prod-release` |
 | Close out a task, update docs/CHANGELOG after merging | `closeout-prd` |
 | Audit or improve skills, "skill stocktake" | `skill-stocktake` |
 | Compress or shorten an existing document on disk, "tighten this README" | `compress-docs` |

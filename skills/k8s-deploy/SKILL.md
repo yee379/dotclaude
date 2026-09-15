@@ -19,6 +19,17 @@ shipped · preparing a rollback plan.
 
 ---
 
+## Check for a project-local `deploy-*` skill first
+
+Convention: a project's real deployment rules — its actual Makefile targets, environments,
+namespaces, and gates — live in a directory-scoped skill named `deploy-*` inside that project's
+own `.claude/skills/` (e.g. `deploy-ai-playground`). It appears in the skill listing with a path
+prefix. If the repo you're in has one, load and follow it instead — most specific wins. This file
+is the generic fallback for repos with no project-local `deploy-*` skill, and general background
+patterns a project-local skill can override.
+
+---
+
 ## vcluster (loft.sh)
 
 [vcluster](https://www.vcluster.com) runs a fully functional virtual Kubernetes control plane inside a namespace of a host cluster. Each vcluster gets its own API server, scheduler, and etcd — so it behaves like a real cluster while sharing the host's nodes and network infrastructure.
