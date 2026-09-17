@@ -41,7 +41,9 @@ baseline rules live here instead.
 **Write normal prose for anything persisted outside chat** — code, comments, PR and MR
 descriptions, docs, ADRs, issue and defect bodies, memory entries, and messages to third
 parties. Other people read those without your session context. Quality rules for them are in
-`agentic-standards/references/no-ai-slop.md`.
+`agentic-standards/references/no-ai-slop.md`, and `agentic-standards/references/technical-prose.md`
+covers generating one from scratch — tense, marking a fact as verified or assumed, and keeping
+the session out of the document.
 
 **Exception: commit messages.** Ultra terse always, per `agentic-standards` § Work Isolation &
 Commit Discipline — one line, imperative, conventional-commit prefix, subject only, no body

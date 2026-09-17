@@ -201,6 +201,9 @@ formatting any final document.
 
 ## Output conventions
 
+Every file below is prose a future reader opens cold. Write it per
+`~/.claude/skills/agentic-standards/references/technical-prose.md`.
+
 **Concepts** capture **what a thing is** — spec, architecture, known behaviour, quirks, fit.
 Reference material, not opinion. Filename `<kebab-slug>.md`; template
 `references/templates/concept.md`.

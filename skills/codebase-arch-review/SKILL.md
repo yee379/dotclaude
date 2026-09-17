@@ -218,6 +218,8 @@ mkdir -p docs/adr
 ```
 
 Each ADR follows the format in `references/adr-template.md`. Load that file when writing an ADR.
+The ADR is read months later by someone with none of your context, so its prose rules are in
+`~/.claude/skills/agentic-standards/references/technical-prose.md`.
 
 **Prototype snippets:** If a short snippet encodes a decision more precisely than prose can — a schema shape, state machine, type definition, or API contract — inline it trimmed to the decision-relevant parts and note it came from a prototype. Do not include working implementation code; only the parts that capture the decision itself.
 

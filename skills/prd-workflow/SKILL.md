@@ -131,6 +131,8 @@ index gets edited during a rollout when the task file is not open, so duplicatio
 the same direction, with no way to tell which is current.
 
 Templates: `references/codebase-task-template.md` · `references/platform-task-template.md`.
+Prose rules for filling them in:
+`~/.claude/skills/agentic-standards/references/technical-prose.md`.
 
 ---
 

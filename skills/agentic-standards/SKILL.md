@@ -100,12 +100,19 @@ Load `references/no-ai-slop.md` in full when:
 - auditing a draft for slop without rewriting it (detect mode)
 - writing a document long enough that the six rules above are not enough
 
+Load `references/technical-prose.md` when generating a document that persists in the repo: an
+ADR, PRD, todo task file, research report, runbook, incident write-up, review findings file, or
+README section. The six rules and `no-ai-slop.md` both assume a human draft with a voice to
+preserve; a document generated from scratch has neither, and needs the tense, evidence-marking,
+and session-leakage rules that file supplies.
+
 ## Reference material
 
 | Topic | File |
 |---|---|
 | Editing principles, banned words, slop patterns, edit/detect/self-check workflow | `references/no-ai-slop.md` |
 | Pass/fail checklist to run after any rewrite | `references/no-ai-slop-eval.md` |
+| Generative voice for persisted technical documents: reader model, tense, evidence marking, format choice | `references/technical-prose.md` |
 
 ## Architecture for Agent-Friendly Systems
 

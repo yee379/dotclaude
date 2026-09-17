@@ -61,6 +61,10 @@ rules are cheap while writing and expensive to retrofit.
 8. **Byte-level content is written as `\uXXXX` escapes**, never as glyphs.
 9. **Length is a defect generator** — more copies, more drift, more amendments.
 
+Precision rules keep the plan from contradicting itself. For the prose itself — tense, marking a
+fact as verified, derived, or assumed, and choosing a table over bullets — use
+`~/.claude/skills/agentic-standards/references/technical-prose.md`.
+
 This lives in the authoring skill because a board review measures whether a plan agrees with
 itself. In one three-round review, ~48 of 53 final-round amendments were the plan disagreeing with
 itself — each one displacing budget the reviewers could have spent on real design defects.

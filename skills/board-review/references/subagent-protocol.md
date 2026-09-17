@@ -12,7 +12,8 @@ and `security-review`. The orchestrator provides two paths:
 full sentences, articles intact, quoted evidence verbatim. Compressed chat style does not apply
 here. Keep it tight — no preamble, no narration, no restating the plan back — but do not drop
 articles or write fragments. Prose quality rules are in
-`~/.claude/skills/agentic-standards/references/no-ai-slop.md`.
+`~/.claude/skills/agentic-standards/references/no-ai-slop.md`, and the voice, tense, and
+evidence-marking rules for a findings file are in the same directory's `technical-prose.md`.
 
 ## 1. Write the skeleton first
 
