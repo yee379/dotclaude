@@ -6,10 +6,9 @@ origin: ECC
 
 # /search-first — Research Before You Code
 
-Systematises "search for existing solutions before implementing". Use when starting a feature
-that likely has existing solutions, adding a dependency or integration, about to write code in
-response to "add X functionality", before creating any new utility, helper, or abstraction, and
-when troubleshooting.
+Systematises "search for existing solutions before implementing". Use when starting a feature that
+likely has one, adding a dependency or integration, writing code for "add X functionality", before
+creating any new utility, helper, or abstraction, and when troubleshooting.
 
 ## The loop
 
@@ -63,13 +62,11 @@ Task(subagent_type="general-purpose", prompt="
 
 - **`/codebase-arch-review` §4 (Technology choices)** — for every novel technology or custom
   component, before accepting it as a plan decision. Boring-by-default requires knowing what
-  already exists; you cannot spend an innovation token wisely without checking whether an
-  off-the-shelf solution almost works. Also consult it for integration patterns and existing
-  reference architectures.
+  already exists; you cannot spend an innovation token wisely without checking whether something
+  off-the-shelf almost works. Also covers integration patterns and reference architectures.
 - **`/codebase-eng-review` Step 0 (Scope Challenge)** — for any new custom utility, helper, or
-  integration, before counting it as implementation work. If a library provides it, the scope
-  shrinks.
-- **`/draft-prd`** — before Phase 1, so available tools land in the plan rather than being
+  integration, before counting it as implementation work. If a library provides it, scope shrinks.
+- **`/draft-prd`** — before Phase 1, so available tools land in the plan instead of being
   reinvented in it.
 
 ## Example

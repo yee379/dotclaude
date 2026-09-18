@@ -24,10 +24,10 @@ Use this skill for workflows where AI agents perform most implementation work an
 
 ## Task Decomposition
 
-Apply the 15-minute unit rule:
-- each unit should be independently verifiable
-- each unit should have a single dominant risk
-- each unit should expose a clear done condition
+Apply the 15-minute unit rule. Each unit:
+- is independently verifiable
+- has a single dominant risk
+- exposes a clear done condition
 
 ## Model Routing
 
@@ -62,7 +62,7 @@ Prioritize:
 - security and auth assumptions
 - hidden coupling and rollout risk
 
-Do not waste review cycles on style-only disagreements when automated format/lint already enforce style.
+Do not spend review cycles on style-only disagreements when format and lint already enforce style.
 
 ## Cost Discipline
 
@@ -116,7 +116,7 @@ and session-leakage rules that file supplies.
 
 ## Architecture for Agent-Friendly Systems
 
-Prefer architectures that are agent-friendly:
+Prefer agent-friendly architectures:
 - explicit boundaries
 - stable contracts
 - typed interfaces

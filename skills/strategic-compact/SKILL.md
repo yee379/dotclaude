@@ -6,10 +6,9 @@ origin: ECC
 
 # Strategic Compact Skill
 
-Suggests manual `/compact` at strategic points rather than relying on arbitrary auto-compaction.
-Relevant in long sessions approaching context limits, multi-phase tasks (research → plan →
-implement → test), when switching between unrelated tasks, and when responses start to degrade
-under context pressure.
+Suggests manual `/compact` at strategic points rather than arbitrary auto-compaction. Use in long
+sessions near context limits, multi-phase tasks (research → plan → implement → test), when
+switching between unrelated tasks, and when responses degrade under context pressure.
 
 ## How it works
 
@@ -57,8 +56,7 @@ threshold (`COMPACT_THRESHOLD`, default 50), then reminds every 25 calls after t
 ## Practices
 
 1. **The hook tells you *when*; you decide *if*.**
-2. **Write before compacting** — save important context to a file or a MemPalace drawer
-   (`mcp__mempalace__mempalace_add_drawer`) so it survives as something retrievable rather than
-   living only in context. Recover it afterwards with `mcp__mempalace__mempalace_search`
-   (keywords, not a sentence).
+2. **Write before compacting** — save key context to a file or a MemPalace drawer
+   (`mcp__mempalace__mempalace_add_drawer`) so it stays retrievable instead of living only in
+   context. Recover it with `mcp__mempalace__mempalace_search` (keywords, not a sentence).
 3. **Compact with a summary** — `/compact Focus on implementing auth middleware next`
