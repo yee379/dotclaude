@@ -83,6 +83,6 @@ prefix. If one exists for the repo you're in, load it — most specific wins. Fa
 | Ship a release, promote to production, tag a version | project-local `deploy-*` skill, else `prod-release` |
 | Close out a task, update docs/CHANGELOG after merging | `closeout-prd` |
 | Audit or improve skills, "skill stocktake" | `skill-stocktake` |
-| Compress or shorten an existing document on disk, "tighten this README" | `compress-docs` |
+| Tighten or shorten an existing document on disk, "tighten this README" | `tighten-docs` |
 | "what did we decide", "last time", "do you remember", prior decisions or context, session start on a known project | `mcp__mempalace__mempalace_search` (keywords only, not a sentence) |
 | Save an insight, decision, or key finding to memory | `mcp__mempalace__mempalace_add_drawer` |

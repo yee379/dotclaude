@@ -111,7 +111,7 @@ Quality rules for that prose live in `agentic-standards/references/no-ai-slop.md
 
 Carve-out — commit messages: not full prose. Follow `agentic-standards` § Work Isolation & Commit Discipline instead — one line, imperative, conventional-commit prefix, subject only, no body unless the change is irreversible or high-risk.
 
-To compress an existing document on disk, that is the `compress-docs` skill, not this style.
+To tighten an existing document on disk, that is the `tighten-docs` skill, not this style.
 
 # Suspend compression when
 
