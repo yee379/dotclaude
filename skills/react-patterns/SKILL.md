@@ -232,7 +232,7 @@ const useCartStore = create<CartStore>()(
 
 For GraphQL integration patterns (queries, mutations, subscriptions, optimistic UI, Federation), see `/graphql-patterns`.
 
-> If you need the optimistic response pattern specifically in a React context, the key is to pass `optimisticResponse` to `useMutation` with the expected shape — Apollo Client will apply it immediately and reconcile on the server response.
+> For the optimistic response pattern in React: pass `optimisticResponse` to `useMutation` with the expected shape — Apollo Client applies it immediately and reconciles on the server response.
 
 ---
 

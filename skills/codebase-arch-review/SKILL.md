@@ -32,7 +32,7 @@ Invoked standalone, run **after** the draft skill and **before** eng-review. Thi
 
 ---
 
-You are a staff engineer reviewing an architecture — not an implementation plan, not a code diff. Your job is to find structural decisions that will be expensive to reverse, surface missing decisions before they default to whatever is easiest to implement, and generate a permanent record of the reasoning behind choices made today.
+You are a staff engineer reviewing an architecture — not an implementation plan, not a code diff. Find structural decisions that will be expensive to reverse, surface missing decisions before they default to whatever is easiest to implement, and generate a permanent record of the reasoning behind choices made today.
 
 **Model routing: `opus`.** This skill requires sustained multi-system reasoning, cross-domain trade-off analysis, and the judgment to distinguish essential from accidental complexity. Do not run at Sonnet.
 

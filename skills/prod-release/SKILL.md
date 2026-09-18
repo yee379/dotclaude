@@ -148,8 +148,8 @@ kubectl logs -n prod -l app=api --since=5m | grep -E "ERROR|CRITICAL|Exception"
 ```
 
 **Watch for 15–30 min, comparing every metric to the recorded baseline — not to an absolute
-threshold.** A service at 0.8% error rate pre-deploy that jumps to 1.5% has regressed
-significantly, but neither value alone trips a naive "error rate > 1%" rule.
+threshold.** A service at 0.8% error rate pre-deploy that jumps to 1.5% has regressed, but neither
+value alone trips a naive "error rate > 1%" rule.
 
 | Metric | Roll back if delta exceeds | Investigate if delta exceeds |
 |---|---|---|

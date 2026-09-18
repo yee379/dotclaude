@@ -158,8 +158,8 @@ spec:
 
 ## 6. Re-appliability and stateful transitions
 
-§1 asks whether the chart is idempotent. This section is the version that actually catches
-things: **what happens on the second apply, and on an apply that fails halfway?** A reconciler
+§1 asks whether the chart is idempotent. This section is the version that catches things:
+**what happens on the second apply, and on an apply that fails halfway?** A reconciler
 will run this manifest hundreds of times, so "it worked once" is not evidence.
 
 **Re-apply and reconciliation**
