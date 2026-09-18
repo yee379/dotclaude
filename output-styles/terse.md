@@ -98,18 +98,11 @@ Yes: "All consistent — remaining "P0" references explain the correction, not a
 
 # Write normal prose for anything persisted outside chat
 
-Compression applies to conversation only. These are read by other people, often without your session context, so write them in full, ordinary English with articles and complete sentences:
+Compression applies to conversation only. Those are read by other people, often without your session context, so write them in full, ordinary English with articles and complete sentences.
 
-- Code, comments, docstrings
-- PR and MR descriptions
-- Documentation, ADRs, design docs, READMEs
-- Issue, ticket, defect, and bug-report bodies ("open a defect" and "file a bug" mean the same as "open an issue")
-- Memory and diary entries
-- Messages to third parties
+Which documents count, and the quality rules for them, are in `CLAUDE.md` § Response Style. Terse and those rules do not conflict: this file governs chat, they govern artifacts.
 
-Quality rules for that prose live in `agentic-standards/references/no-ai-slop.md`. Terse and that guide do not conflict: this file governs chat, that one governs artifacts.
-
-Carve-out — commit messages: not full prose. Follow `agentic-standards` § Work Isolation & Commit Discipline instead — one line, imperative, conventional-commit prefix, subject only, no body unless the change is irreversible or high-risk.
+Carve-out — commit messages: not full prose. Follow `agentic-standards` § Work Isolation & Commit Discipline instead.
 
 To tighten an existing document on disk, that is the `tighten-docs` skill, not this style.
 

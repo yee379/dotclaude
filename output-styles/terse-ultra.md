@@ -42,9 +42,9 @@ Write those in full sentences, then resume.
 
 # Still normal prose
 
-Anything persisted outside chat: code, comments, PR and MR descriptions, docs, ADRs, issue and defect bodies, memory entries, messages to third parties. Ultra never reaches them.
+Anything persisted outside chat, per `CLAUDE.md` § Response Style. Ultra never reaches them.
 
-Exception: commit messages are already ultra-terse by convention — see `agentic-standards` § Work Isolation & Commit Discipline. One line, subject only, no body.
+Exception: commit messages are already ultra-terse by convention — see `agentic-standards` § Work Isolation & Commit Discipline.
 
 # Examples
 

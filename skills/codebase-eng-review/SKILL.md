@@ -99,6 +99,8 @@ Always work through the full interactive review: one section at a time (Architec
 
 ## Review Sections (after scope is agreed)
 
+**Global stop rule — applies to every section below.** When you find an issue, call AskUserQuestion — one issue per call, never batched. Present options, state your recommendation, explain WHY, and map it to a specific engineering preference above. Do not proceed to the next section until all its issues are resolved. If a section has no issues, say so and move on. In subagent mode, suppress AskUserQuestion — write a structured `### Decision:` entry in `## Decisions Required` and continue with the best safe default.
+
 ### 1. Architecture review
 Evaluate:
 * Overall system design and component boundaries.
@@ -109,7 +111,7 @@ Evaluate:
 * Whether key flows deserve ASCII diagrams in the plan or in code comments.
 * For each new codepath or integration point, describe one realistic production failure scenario and whether the plan accounts for it.
 
-**STOP.** For each issue found in this section, call AskUserQuestion individually. One issue per call. Present options, state your recommendation, explain WHY. Do NOT batch multiple issues into one AskUserQuestion. Only proceed to the next section after ALL issues in this section are resolved.
+**STOP.** Per the global stop rule.
 
 ### 2. Code quality review
 Evaluate:
@@ -131,7 +133,7 @@ breadth, and coupling hygiene (import cycles, layering violations, global mutabl
 temporal coupling). This is the section with the longest half-life — a bad signature outlives
 every bug in the diff.
 
-**STOP.** For each issue found in this section, call AskUserQuestion individually. One issue per call. Present options, state your recommendation, explain WHY. Do NOT batch multiple issues into one AskUserQuestion. Only proceed to the next section after ALL issues in this section are resolved.
+**STOP.** Per the global stop rule.
 
 ### 3. Test review
 Make a diagram of all new UX, new data flow, new codepaths, and new branching if statements or outcomes. For each, note what is new about the features discussed in this branch and plan. Then, for each new item in the diagram, identify what test will be needed (unit, integration, or E2E) and flag any that lack a clear testing strategy. This is a planning exercise — the tests do not exist yet. The output feeds the Test Plan Artifact below; actual test writing happens during implementation via `/tdd-standards`.
@@ -144,7 +146,7 @@ test fails?"), over-mocking signals, the flakiness source table, and what is wor
 another unit test. Record the verdict table and apply the blocking/warning thresholds as written;
 do not soften a blocking finding into a warning.
 
-**STOP.** For each issue found in this section, call AskUserQuestion individually. One issue per call. Present options, state your recommendation, explain WHY. Do NOT batch multiple issues into one AskUserQuestion. Only proceed to the next section after ALL issues in this section are resolved.
+**STOP.** Per the global stop rule.
 
 ### Test Plan Artifact
 
@@ -174,7 +176,7 @@ Include only what helps a tester know **what to test and where** — not impleme
 Load `references/performance-review.md` — the catalogue covers database/IO, algorithmic
 complexity, memory, caching, concurrency, frontend/API efficiency, and a quick-win checklist.
 
-**STOP.** For each issue or optimisation opportunity found in this section, call AskUserQuestion individually. One issue per call. Present options (including "do nothing — not worth the complexity"), state your recommendation, explain WHY. Do NOT batch. Only proceed to the next section after ALL issues in this section are resolved.
+**STOP.** Per the global stop rule, and offer "do nothing — not worth the complexity" as an option on every optimisation.
 
 ### 5. Resilience and idempotency
 
@@ -192,8 +194,7 @@ required output table — one row per new mutating or outbound codepath.
 This section catches the largest class of production incidents the rest of the review cannot
 see: code that is correct once and wrong on the retry.
 
-**STOP.** For each gap, call AskUserQuestion individually. One issue per call. State the concrete
-failure, not the principle. Only proceed after all gaps are resolved.
+**STOP.** Per the global stop rule. State the concrete failure, not the principle.
 
 ### 6. Observability
 
@@ -205,8 +206,8 @@ affordances.
 The bar is cognitive pattern #5 made concrete: a page fires at 03:00, the on-call has only logs,
 metrics, and traces — can they localise the fault in ten minutes?
 
-**STOP.** For each gap, call AskUserQuestion individually. For any silent failure with
-user-visible impact, recommend the specific signal — which metric, which label, which alert.
+**STOP.** Per the global stop rule. For any silent failure with user-visible impact, recommend the
+specific signal — which metric, which label, which alert.
 
 ### 7. Correctness classics
 
@@ -237,7 +238,7 @@ and resumable backfills, runtime estimated against production row counts, deploy
 ordering, and post-migration integrity verification. Strategy gaps cause arguments; mechanics
 gaps cause outages.
 
-**STOP.** For each gap found in this checklist, call AskUserQuestion individually. One issue per call. Only proceed after all gaps are resolved.
+**STOP.** Per the global stop rule.
 
 
 ## CRITICAL RULE — How to ask questions
