@@ -43,6 +43,13 @@ distinct information, or a negation.
 On a batch, report the skipped files by name. A run where nothing was skipped is a warning sign,
 not a success: it usually means the bar drifted down to justify editing everything.
 
+Do not triage by average sentence length without checking the splitter. A naive split on
+sentence-ending punctuation merges a markdown heading into the paragraph below it and joins
+bullets that lack terminal punctuation, which inflates the average and invents long "sentences"
+that are really lists. Split on blank lines first, drop lines starting with `#`, `|`, `>`, or
+`<!--`, strip bullet markers, then split. Correcting this moved one file from 26.2 to 22.9 words
+per sentence before any editing, and turned four files that looked like they needed work into one.
+
 ## Boundaries
 
 **Tighten only:** `.md`, `.txt`, `.typ`, `.typst`, `.tex`, and extensionless text files.
@@ -66,7 +73,9 @@ Copy these byte for byte. Do not reflow, reorder, reindent, or "tidy" them:
 - Commands (`npm install`, `git commit`, `docker build`).
 - Technical terms: library names, API names, protocols, algorithms.
 - Proper nouns: project names, people, companies.
-- Dates, version numbers, numeric values, units.
+- Dates, version strings, and units. Numbers in code blocks, tables, commands, and paths are
+  untouchable too. A numeric value in *prose* is the one exception — see § A number is content or
+  it is decoration.
 - Environment variables (`$HOME`, `NODE_ENV`).
 - Error strings.
 - Negations: not, never, no, only, except. Dropping one inverts the meaning.
@@ -99,6 +108,61 @@ original.
 Keep the word a reader already knows. Swapping a familiar word for a rarer, shorter one costs a
 lookup and saves nothing.
 
+## A number is content or it is decoration
+
+A number is content when a reader applies it, and decoration when it only shows that the work was
+done. The test is one question: would the instruction change if the number were absent? If not,
+cut it and keep the claim.
+
+Keep:
+
+- A threshold the reader applies — "worth following when its records come from more than three
+  distinct openers".
+- A comparison that carries the argument — "resolved 8 of 86 tickets in a broad family" against
+  "30 of 200 in this category", where the contrast is the point and the sentence collapses
+  without it.
+- A cost that drives a choice — "~67s against ~5s", which is why the expensive call is made once
+  per sitting.
+- A safety measurement — "emails the requester, measured 6 of 6".
+- Calibration for what to expect — "about 14% of values do not resolve".
+
+Cut:
+
+- Population counts behind a qualitative claim. "better populated than `category`: 47 of 72 open
+  tickets and 3,234 of 4,484 resolved" becomes "better populated than `category`".
+- A percentage restating the word beside it. "supplies about 70% of the result, so most of what
+  comes back" becomes "dominates the result".
+- The working behind a threshold already stated: "cuts the same-opener share from 53% to 10% while
+  keeping 52% of the pairs".
+- A count where a fraction is what the reader uses. "32 of 71 open tickets are email injection"
+  becomes "roughly half this queue".
+- "set on 72 of 72 open tickets" becomes "set on every open ticket".
+
+This overrides § Preserve exactly for numeric values in prose. It does not touch numbers in code
+blocks, tables, commands, version strings, or paths.
+
+Cutting decoration and tabulating content are the same discipline from opposite ends:
+`agentic-standards/references/technical-prose.md` § Measured values in prose requires a table once
+a sentence carries more than one measured value. A number that survives this test and has
+siblings belongs in that table, not back in the paragraph.
+
+## State the finding, not the trail to it
+
+A chain of internal identifiers is not prose. This passage:
+
+> That a non-broadcast shared watcher means two records are *related* was never tested —
+> [#053](../../../todo/053-...md) closed unrun, because judging relatedness needs human labels and
+> [#017](../../../todo/017-...md) ruled that harness out.
+
+becomes:
+
+> That a shared watcher means two records are related has never been tested, and testing it would
+> need human labels nobody has produced.
+
+Same finding, no tour through the issue tracker. A single trailing citation such as "(ADR-0038)"
+is cheap and stays. What goes is a sentence built out of references, where the reader must follow
+two of them to learn one fact.
+
 ## Example
 
 Original:
@@ -120,6 +184,11 @@ wording and say which passage you left alone. Meaning outranks length.
 
 Read the tightened file back before reporting. A file that no longer parses as the same
 instructions is a failure, however much shorter it is.
+
+In a repository whose tests assert prose content, removing a number or a citation can blind a
+guard: a registry of retired claims matches on wording, and a citation rule can require the record
+to be named. Run the test suite after this pass, and treat a newly-blind registry entry as part of
+the edit rather than a surprise.
 
 ## Redundancy pass
 
