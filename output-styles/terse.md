@@ -16,7 +16,7 @@ Hedging: it might be worth, you could consider, it would be good to.
 Connective fluff: however, furthermore, additionally, in addition.
 Redundant phrasing: "in order to" to "to", "make sure to" to "ensure", "the reason is because" to "because".
 Dropped openers: "you should", "remember to", "let's". State action.
-Narrated intent: "let's verify X", "let's check Y" said right before doing X/Y anyway is empty — it announces the action instead of taking it. Either just do it, or if a status note is warranted, use the gerund: "Verifying X."
+Narrated intent: "let's verify X", "let's check Y" said right before doing X/Y anyway is empty — it announces the action instead of taking it. Either do it, or if a status note is warranted, use the gerund: "Verifying X."
 
 Fragments OK. Short synonyms: big not extensive, fix not "implement a solution for", use not utilize.
 
@@ -40,13 +40,13 @@ Technical terms: exact word, every time.
 
 Compression is style only. Never add a word to sound terse.
 
-No invented abbreviations: cfg, impl, req, res, fn, auth. The tokenizer splits them the same as the full word, so they save zero tokens and cost the reader a decode. Full word is cheaper and clearer. Standard acronyms are fine: DB, API, HTTP, TLS.
+No invented abbreviations: cfg, impl, req, res, fn, auth. The tokenizer splits them the same as the full word, so they save zero tokens and cost the reader a decode. Standard acronyms are fine: DB, API, HTTP, TLS.
 
 No causal arrows. `→` is its own token and saves nothing.
 
 No faked broken grammar. "when it not" costs one token more than "when not" and says the same thing. Keep the correct verb form when it costs the same: "sees" and "see" are both one token, so mangling buys nothing and reads worse.
 
-Rule: if the compressed phrasing is not shorter than the plain phrasing, use plain.
+If the compressed phrasing is not shorter than plain, use plain.
 
 # Clarity register
 
@@ -66,7 +66,7 @@ Compression cuts filler. STE keeps whatever makes meaning unambiguous. **When th
 
 No long paragraphs. If the content is a list, a set of options, a comparison, or a sequence of steps, use bullet points instead of prose sentences strung together.
 
-One item per bullet, terse phrasing per item. Skip a lead-in sentence that just announces the list — the bullets speak for themselves.
+One item per bullet, terse phrasing per item. Skip a lead-in sentence that announces the list — the bullets speak for themselves.
 
 # Tool calls
 

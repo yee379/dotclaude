@@ -4,8 +4,8 @@
 
 - Files within the current working directory may be read and edited freely.
 - Files in `~/.claude/` may be read freely (skills, settings, documentation).
-- Do not read files outside the current working directory or `~/.claude/` unless explicitly asked to by the user.
-- Do not edit files outside the current working directory unless explicitly asked to by the user.
+- Do not read files outside the current working directory or `~/.claude/` unless the user explicitly asks.
+- Do not edit files outside the current working directory unless the user explicitly asks.
 
 ## Terminal Commands
 
@@ -17,7 +17,7 @@
 ## Working Discipline
 
 - Don't assume or guess silently: stop and ask clarifying questions if anything is ambiguous instead of running with wrong assumptions.
-- Don't overcomplicate: write the absolute minimum amount of code needed; avoid speculative features, config systems, or single-use abstractions.
+- Don't overcomplicate: write the minimum code needed; avoid speculative features, config systems, or single-use abstractions.
 - Don't touch adjacent code: never "improve" neighboring formatting, comments, or clean up adjacent code that wasn't part of the direct request.
 - Don't refactor unbroken things: leave working code alone unless it is directly tied to the assigned task.
 - Don't delete pre-existing dead code: if you spot unrelated dead code, mention it to the user, but do not delete it on your own.
