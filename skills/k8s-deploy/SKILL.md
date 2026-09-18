@@ -134,8 +134,8 @@ restart happens when it doesn't means shipping nothing and reporting success.
 kubectl diff -k <overlay>/            # exits 0 and prints nothing when there is no drift
 ```
 
-This catches unrelated drift about to be swept in, and tells you whether the apply or the restart is
-what will actually change anything.
+This catches unrelated drift about to be swept in, and tells you whether the apply or the restart
+is what will change anything.
 
 ### 4. Compare image **digests**, not tags
 
@@ -238,8 +238,8 @@ scripts/smoke-<service>.sh prod
 **Run it before the rollout too.** A gate nobody has seen fail is not known to test anything. The
 pre-rollout baseline should fail on exactly the checks the new version changes, and pass on
 everything else — that is the evidence the gate discriminates rather than always printing green. A
-baseline that passes completely means either the rollout already happened or the gate is vacuous;
-find out which before deploying.
+baseline that passes completely means either the rollout already happened or the gate tests
+nothing; find out which before deploying.
 
 **Design rules**, each earned by a failure:
 
