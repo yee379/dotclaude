@@ -1,6 +1,6 @@
 ---
 name: tighten-docs
-description: Tighten prose in natural-language files on disk (.md, .txt, .tex, .typ) without touching code, structure, or meaning. Backs up each file before overwriting. Use for "tighten this doc", "shorten this README", "condense these notes".
+description: Tighten prose in natural-language files on disk (.md, .txt, .tex, .typ) without touching code, structure, or meaning. Requires a clean git tree, or asks before overwriting. Use for "tighten this doc", "shorten this README", "condense these notes".
 ---
 
 # Tighten Docs
@@ -18,15 +18,14 @@ agreement first.
 
 1. Check the extension against the boundaries below. If it is not on the allowed list, stop and
    say so.
-2. Back up the original to the out-of-tree data directory, never beside the source:
-   `~/.claude/data/tighten-docs/<path-with-slashes-as-dashes>.original.<ext>`, so
-   `skills/troubleshoot/SKILL.md` backs up as `skills-troubleshoot-SKILL.original.md`.
-   Deriving the name from the whole path, not the basename, keeps 35 files called `SKILL.md`
-   from colliding.
-   Create the directory if absent. Never overwrite an existing backup — suffix with a timestamp.
-3. Never tighten a `*.original.*` file. Skip it.
-4. In a git repository with a clean tree, the commit is already a backup. Say so and skip step 2
-   if the user prefers; do not skip it silently.
+2. Establish a way back before overwriting anything. In a git repository the tree is the backup:
+   confirm the files you are about to edit are committed, then say so. `git diff` shows exactly
+   what changed and `git checkout -- <path>` restores any file byte for byte.
+3. No git, or uncommitted changes in a file you are about to edit? **Stop and ask.** Do not write
+   a copy anywhere by default — a scattered backup directory is its own maintenance problem, and
+   copies made automatically are never cleaned up. If the user wants one, they choose the
+   location.
+4. Never tighten a `*.original.*` file. Skip it — earlier runs of this skill may have left some.
 
 ## Skip a file that is already tight
 
@@ -195,7 +194,8 @@ Tightened:
 
 ## After
 
-Report one line per file: path, before and after line counts, backup location.
+Report one line per file: path, before and after line counts, and how it is recoverable — the
+commit it is clean against, or the location the user chose.
 
 If tightening would lose a distinction you cannot preserve in fewer words, keep the longer
 wording and say which passage you left alone. Meaning outranks length.
