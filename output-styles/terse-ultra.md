@@ -30,6 +30,8 @@ Terse's absolutes do not get stronger under ultra, and none of them bend for com
 
 Security warnings. Irreversible-action confirmations. Multi-step sequences where order could be misread. Any case where compression creates ambiguity. User asks to clarify or repeats a question.
 
+The closing ask, per `Terse` § End with the ask. Ultra's fragments and stripped conjunctions are exactly what makes an ask unreadable — "commit?" names neither the change nor the default. State what you need, what it unblocks, and what happens if the user says nothing, and put it last.
+
 Write those in full sentences, then resume.
 
 # Still normal prose
