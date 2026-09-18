@@ -151,6 +151,33 @@ fail all three before it goes:
 
 A unit that fails two tests and passes one gets tightened, not deleted.
 
+### A defect is not slack
+
+Those three tests detect absent content. Duplication, contradiction, and confusion are defects in
+content that is present, and they fail the tests for the wrong reason: a duplicated rule passes
+portability, and a contradicting rule is one the reader acts on, which is a pass. Do not route
+them through the deletion licence.
+
+Each one comes out of the edit, goes back verbatim, and is reported with a named warning. The
+document you hand back carries the original wording, and the warning is the deliverable.
+
+- **Duplicative.** The unit states a point already made in the same file. Cut the later copy only
+  when the surviving one sits above it under a heading the reader passes through on the way.
+  Otherwise put it back and warn, naming both locations. Across files it is not yours to cut at
+  all: § Redundancy pass owns that, and it stops at a proposal list.
+- **Contradictory.** Two units state rules that cannot both hold. Deleting either picks the
+  winner, which is a content decision this skill has no authority to make, and the shorter
+  document then silently loses a rule somebody relies on. Put both back, quote both with line
+  numbers, say which one you believe is current and why, and stop editing that section.
+- **Confusing.** You cannot recover what the unit means. Then you cannot tighten it either,
+  because you cannot preserve a meaning you never had. Deleting it is the worst outcome available:
+  it looks like a saving and is an information loss. Put it back verbatim and warn, naming the
+  readings you could not choose between.
+
+Never write the warning into the document. An inline `TODO`, `FIXME`, or `<!-- unclear -->` is the
+template residue `agentic-standards/references/technical-prose.md` § Do not write the template
+back forbids, and a tighten that adds markers grows the file it was called to shorten.
+
 ### Paragraph patterns
 
 - **The announcement.** A paragraph whose job is to say what the following paragraphs will say.
@@ -199,7 +226,9 @@ document does not have.
 
 A reworded sentence shows up in `git diff` and is easy to judge. A deleted one is not, because
 whoever reads the report cannot see what is gone. List each deleted sentence and paragraph
-verbatim under the file it came from, so the user can restore one without reading the diff.
+verbatim under the file it came from, so the user can restore one without reading the diff. Report
+the warnings from § A defect is not slack the same way, each with its class named, and say plainly
+that those passages were left in place.
 
 If every paragraph under a heading fails all three tests, stop and ask. An empty section is a
 structural change, and § Preserve structure keeps headings.
