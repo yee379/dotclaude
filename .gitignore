@@ -36,3 +36,9 @@ skills/skill-stocktake/results.json
 
 # skill tracking
 observations.jsonl
+
+# Out-of-tree scratch and caches — regenerated, never version controlled
+data/
+skills/synced/
+policy-limits.json.stamp.json
+policy-limits.json.stamp.json.tmp.*
