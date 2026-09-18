@@ -103,7 +103,8 @@ Define a term the reader will not know at first use, in one clause, then move on
   Consequences section written as bare bullets degrades into a list of assertions nobody can
   check.
 - **Table** for three or more items compared on the same axes: one row per item, one column per
-  axis, header naming the axis.
+  axis, header naming the axis. Also for measured values whatever the item count — see *Measured
+  values in prose* below.
 - **Numbered list** for ordered steps, or for items that other sections reference by number.
 - **Bullets** for an unordered set whose items are not parallel enough to tabulate.
 - **Code block**, with a language tag, for anything meant to be copied and run.
@@ -114,6 +115,35 @@ Add headings beyond the template only when a reader would navigate to that secti
 
 Do not pad. A four-line ADR with the right Decision beats forty lines of context around a vague
 one.
+
+### Measured values in prose
+
+Counts, ratios, durations, sizes, and percentages become unreadable interleaved with sentences.
+The reader has to lift each value out of the prose, compute the ratio the sentence leaves
+implicit, hold it while parsing the next one, then compare values that are not aligned. None of
+that survives a second reading, and the numbers cannot be diffed against a later measurement.
+
+**Threshold: more than one measured value in a sentence, or more than three in a paragraph, goes
+in a table.** Below that, a single number that is the point of its sentence stays inline —
+"rollback takes 40 minutes by hand" needs no table.
+
+Fails:
+
+> 47 of 72 open tickets and 3,234 of 4,484 resolved — …
+
+Passes:
+
+| Category | Matched | Total | Share |
+|---|---|---|---|
+| Open | 47 | 72 | 65% |
+| Resolved | 3,234 | 4,484 | 72% |
+
+Give every `x of y` its computed ratio, because the reader computes it anyway. Date the table and
+name the command or query behind it, so a later reader re-derives rather than trusts. This is the
+discipline of `draft-prd` Phase 2's `## Measured facts` block, applied to any persisted document.
+
+The prose around the table carries what the numbers mean, not the numbers again. State the one
+conclusion the table supports and leave the values to the table.
 
 ## Write the costs down
 
@@ -150,6 +180,8 @@ active.
 2. Search your own draft for session leakage: "as discussed", "per your request", "the user",
    "I ", "today", "above", "earlier", "we saw".
 3. Every number: does the document say how to re-derive it, or is it a copy that will go stale?
+   Any sentence holding more than one measured value, or paragraph holding more than three —
+   moved into a table?
 4. Every assumption: labelled, with a falsifier?
 5. Every risk and negative consequence: names a cost someone would feel, and who feels it?
 6. Would the archaeologist, holding only this document and the files it cites, reach the same
