@@ -126,7 +126,7 @@ sibling files. So the **task file**, not the index, carries:
   does not reduce #045's necessity.
 ```
 
-Keeping only one copy — in the task file — is what makes "the task file wins" actionable. The
+Keeping only one copy — in the task file — makes "the task file wins" actionable. The
 index gets edited during a rollout when the task file is not open, so duplication always drifts
 the same direction, with no way to tell which is current.
 
