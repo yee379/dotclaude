@@ -134,7 +134,10 @@ A template supplies headings and instructions. Neither belongs in the finished d
   which section this is.
 - **Never ship a placeholder.** A surviving `<one-line reason>`, `[what breaks]`, `TBD`, or `XXX`
   means the section was skipped rather than filled. Write the content, or write "Unknown:" and
-  what would settle it.
+  what would settle it. A `FIXME` is the one exception, because it makes the opposite claim: the
+  content is present and something about it is wrong. `tighten-docs` § How to write the marker
+  gives the form, and a `FIXME` is only ever a recorded defect, never a section you did not
+  finish.
 - **Never paraphrase the template's instruction as content.** A template line reading "list the
   alternatives considered" becomes a list of alternatives, not the sentence "Alternatives were
   considered."
@@ -143,7 +146,8 @@ A template supplies headings and instructions. Neither belongs in the finished d
   axis does not apply.
 
 Before saving, grep the draft for `TBD`, `XXX`, `N/A`, and whatever placeholder markers the
-template used.
+template used. Leave any `FIXME(tighten-docs, ...)` line alone: deleting it hides a defect rather
+than fixing one.
 
 ### Measured values in prose
 

@@ -158,25 +158,47 @@ content that is present, and they fail the tests for the wrong reason: a duplica
 portability, and a contradicting rule is one the reader acts on, which is a pass. Do not route
 them through the deletion licence.
 
-Each one comes out of the edit, goes back verbatim, and is reported with a named warning. The
-document you hand back carries the original wording, and the warning is the deliverable.
+Each one comes out of the edit and goes back verbatim, with a `FIXME` marking it in the document
+itself. A warning that lives only in your report reaches one person once; the next reader opens
+the file with no idea the passage is disputed, which is how a contradiction survives for a year.
 
 - **Duplicative.** The unit states a point already made in the same file. Cut the later copy only
   when the surviving one sits above it under a heading the reader passes through on the way.
-  Otherwise put it back and warn, naming both locations. Across files it is not yours to cut at
+  Otherwise leave it and mark it, naming both locations. Across files it is not yours to cut at
   all: § Redundancy pass owns that, and it stops at a proposal list.
 - **Contradictory.** Two units state rules that cannot both hold. Deleting either picks the
   winner, which is a content decision this skill has no authority to make, and the shorter
-  document then silently loses a rule somebody relies on. Put both back, quote both with line
-  numbers, say which one you believe is current and why, and stop editing that section.
+  document then silently loses a rule somebody relies on. Leave both, mark both, say which one
+  you believe is current and why, and stop editing that section.
 - **Confusing.** You cannot recover what the unit means. Then you cannot tighten it either,
   because you cannot preserve a meaning you never had. Deleting it is the worst outcome available:
-  it looks like a saving and is an information loss. Put it back verbatim and warn, naming the
+  it looks like a saving and is an information loss. Leave it verbatim, mark it, and name the
   readings you could not choose between.
 
-Never write the warning into the document. An inline `TODO`, `FIXME`, or `<!-- unclear -->` is the
-template residue `agentic-standards/references/technical-prose.md` § Do not write the template
-back forbids, and a tighten that adds markers grows the file it was called to shorten.
+### How to write the marker
+
+One line of its own, directly above the passage, nothing else on it:
+
+```
+FIXME(tighten-docs, 2026-09-18): contradiction. Line 204 requires the opposite. Line 204 is newer
+and is probably current, but choosing is a content decision, so both are left as written.
+```
+
+- `FIXME`, not `TODO`, `XXX`, or `TBD`. A `FIXME` says something present is wrong; the others say
+  something is missing, which is a different claim and is what
+  `agentic-standards/references/technical-prose.md` § Do not write the template back bans.
+- Always `FIXME(tighten-docs, YYYY-MM-DD)`, so `grep -rn 'FIXME(tighten-docs'` finds every one and
+  a reader knows when the judgement was made and by what.
+- Name the class — duplication, contradiction, or confusion — then the counterpart's location,
+  then what you could not decide. A marker reading "unclear" tells the next reader only that you
+  were also stuck.
+- Plain text on its own line, in any file type. Do not use an HTML comment: it is invisible in a
+  rendered document, which defeats the reason for marking it.
+- Never mark a passage you merely disagree with, and never use a marker to avoid the work of
+  understanding a passage. It records a defect you found and could not resolve, not a preference.
+
+The marker is the tightening pass's only licence to add lines to a file. Whoever resolves the
+defect deletes the marker in the same edit.
 
 ### Paragraph patterns
 
@@ -226,9 +248,10 @@ document does not have.
 
 A reworded sentence shows up in `git diff` and is easy to judge. A deleted one is not, because
 whoever reads the report cannot see what is gone. List each deleted sentence and paragraph
-verbatim under the file it came from, so the user can restore one without reading the diff. Report
-the warnings from § A defect is not slack the same way, each with its class named, and say plainly
-that those passages were left in place.
+verbatim under the file it came from, so the user can restore one without reading the diff. List
+every `FIXME` you added as well, with its file, line, and class, and say plainly that those
+passages were left as written. The marker serves the next reader and the list serves the user
+reading this run; neither replaces the other.
 
 If every paragraph under a heading fails all three tests, stop and ask. An empty section is a
 structural change, and § Preserve structure keeps headings.
