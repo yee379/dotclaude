@@ -43,7 +43,11 @@ descriptions, docs, ADRs, issue and defect bodies, memory entries, and messages 
 parties. Other people read those without your session context. Quality rules for them are in
 `agentic-standards/references/no-ai-slop.md`, and `agentic-standards/references/technical-prose.md`
 covers generating one from scratch — tense, marking a fact as verified or assumed, and keeping
-the session out of the document.
+the session out of the document. Write them tight on the first pass: the `tighten-docs` skill's
+test for a decorative number and its rule against citation chains apply at authoring time, not
+only when tightening a file that already exists. Its fragment and imperative rules do not — those
+are for instruction files, and an explanatory document keeps articles, conjunctions, and complete
+sentences.
 
 **Exception: commit messages.** Ultra terse always, per `agentic-standards` § Work Isolation &
 Commit Discipline — one line, imperative, conventional-commit prefix, subject only, no body

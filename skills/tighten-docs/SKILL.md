@@ -108,6 +108,24 @@ original.
 Keep the word a reader already knows. Swapping a familiar word for a rarer, shorter one costs a
 lookup and saves nothing.
 
+### Two of these rules depend on what the file is
+
+**Fragments are fine** and **imperative for instructions** hold for instruction files: a SKILL.md,
+a README usage section, a runbook step, a CLI help text. They are wrong for an explanatory
+artifact — an ADR, PRD, todo task file, research report, or incident write-up. There, dropping the
+conjunction drops the mechanism, and a Consequences section in fragments becomes a list of
+assertions nobody can check. On those files the two rules are suspended and
+`agentic-standards/references/technical-prose.md` wins, which requires articles, conjunctions, and
+complete sentences.
+
+Every other rule in this section applies to both.
+
+The rest of this skill is a file operation: back up, check the extension, skip what is already
+tight. Those steps have no meaning for a document being written for the first time. What does
+carry to authoring is § A number is content or it is decoration, § State the finding, not the
+trail to it, and the two paragraphs above — cited from `CLAUDE.md` § Response Style as standards
+that apply on the first pass.
+
 ## A number is content or it is decoration
 
 A number is content when a reader applies it, and decoration when it only shows that the work was
