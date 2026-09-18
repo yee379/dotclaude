@@ -10,9 +10,9 @@ Rewrites prose in a file to be shorter, in place, keeping structure and every li
 This is a file operation, not a response style. The `Terse` output style governs how you talk;
 this skill governs what you write into an existing document on disk when asked.
 
-Tightening removes slack at the word level. It is not summarising: every point in the original
-survives. If a point has to go to hit a length, that is a different job and needs the user's
-agreement first.
+Tightening removes slack at the word, sentence, and paragraph level. It is not summarising: every
+point in the original survives. If a point has to go to hit a length, that is a different job and
+needs the user's agreement first.
 
 ## Before editing anything
 
@@ -34,7 +34,9 @@ as already tight. Editing a lean file spends risk for no gain — every rewrite 
 qualifier, and a file with nothing to remove has only qualifiers left to lose.
 
 Slack looks like: filler words, "you should" and "make sure to", passive constructions, two
-bullets making one point, several examples of one pattern, a sentence restating its own heading.
+bullets making one point, several examples of one pattern, a sentence restating its own heading,
+a paragraph announcing what the next paragraphs will say, and a closing paragraph recapping the
+section.
 
 No slack means stop. Do not manufacture savings by cutting a qualifier, an example that carries
 distinct information, or a negation.
@@ -121,9 +123,86 @@ Every other rule in this section applies to both.
 
 The rest of this skill is a file operation: back up, check the extension, skip what is already
 tight. Those steps have no meaning for a document being written for the first time. What does
-carry to authoring is § A number is content or it is decoration, § State the finding, not the
-trail to it, and the two paragraphs above — cited from `CLAUDE.md` § Response Style as standards
-that apply on the first pass.
+carry to authoring is § Tighten the unit, not only the word, § A number is content or it is
+decoration, § State the finding, not the trail to it, and the two paragraphs above — cited from
+`CLAUDE.md` § Response Style as standards that apply on the first pass.
+
+## Tighten the unit, not only the word
+
+Word-level edits reach a fraction of the slack. A sentence can be built from good words and still
+carry nothing, and a paragraph can be built from good sentences and still repeat the one above it.
+Work the largest unit first: paragraph, then sentence, then word. Tightening a sentence you are
+about to delete wastes the effort and biases you toward keeping it.
+
+### What licenses a deletion
+
+The rule at the top of this skill preserves every *point*. A unit that carries no point is not a
+point, so removing it is tightening rather than summarising. Three tests decide, and a unit has to
+fail all three before it goes:
+
+- **Would the reader do anything differently if it were absent?** The same test as the one for
+  numbers. If nothing changes, the unit shows that the work was done instead of telling the reader
+  something.
+- **Portability.** Could this sentence move unchanged into another project's document or another
+  team's runbook? Then it is about documents in general, not about this one.
+- **Altitude.** Does it restate its neighbour at a different level of abstraction, as the general
+  version of the specific sentence below it or the specific version of the general one above? Keep
+  whichever one the reader acts on, which is usually the specific.
+
+A unit that fails two tests and passes one gets tightened, not deleted.
+
+### Paragraph patterns
+
+- **The announcement.** A paragraph whose job is to say what the following paragraphs will say.
+  The headings are already visible.
+- **The recap.** A closing paragraph restating the section the reader has just finished.
+- **Motivation longer than the rule it motivates.** Keep the mechanism, meaning the specific thing
+  that breaks, and cut the argument for caring about it.
+- **An example that restates the rule in other words.** An example earns its place by covering a
+  case the rule does not obviously reach.
+- **A paragraph that is a table.** Three or more items compared on the same axes belong in a
+  table. Converting one is a structural change, so propose it rather than doing it silently.
+
+### Sentence patterns
+
+- **A general truth the reader already accepts.** "Documentation is important for
+  maintainability." True, unarguable, and it changes nothing.
+- **A hedged instruction.** "You may want to consider validating the input." A hedged instruction
+  is not an instruction: either state it, or state the condition under which it applies.
+- **Metadiscourse.** A sentence telling the reader how to read the next one, how important it is,
+  or what to notice. Show it in the content or drop it.
+- **The scaffolding sentence.** "This section covers X", under a heading that says X.
+
+Never cut a sentence because it is long, because it is the only one in its paragraph, or because a
+section would look tidier without it.
+
+### Patterns imported from no-ai-slop
+
+`agentic-standards/references/no-ai-slop.md` § Patterns to cut is written for a human draft, but
+most of its entries are voice-neutral and apply here unchanged: binary contrasts, throat-clearing
+openers, faux-insight setups, colon reveals, superficial `-ing` analysis, importance puffery,
+interpretive metadiscourse, weasel attribution, fake-strong verbs, synonym cycling, negative
+listing, robotic rhythm, rhetorical setups, fake-profound kickers, and summary-recap endings. Its
+§ Words to cut applies in full, including the technical exception that keeps a banned word when it
+names the thing precisely.
+
+Three entries do not transfer. **Dramatic fragmentation** contradicts this skill's fragments rule,
+and § Two of these rules depend on what the file is decides which one wins. **Em dashes** and
+**formatting slop** are house style, so leave the document's existing convention alone rather than
+converting it during a tighten.
+
+The editing principles in that file do not transfer at all. "Preserve the writer's real voice",
+"minimum effective edit", and keeping humour, profanity, and "I think" all protect an author this
+document does not have.
+
+### Report every deletion
+
+A reworded sentence shows up in `git diff` and is easy to judge. A deleted one is not, because
+whoever reads the report cannot see what is gone. List each deleted sentence and paragraph
+verbatim under the file it came from, so the user can restore one without reading the diff.
+
+If every paragraph under a heading fails all three tests, stop and ask. An empty section is a
+structural change, and § Preserve structure keeps headings.
 
 ## A number is content or it is decoration
 
@@ -236,6 +315,8 @@ A pointer that is longer than the passage it replaces is not a saving. Leave the
 - `Terse` output style — conversation compression, not files.
 - `agentic-standards/references/no-ai-slop.md` — removing AI patterns while preserving an author's
   voice. Different goal: that guide protects voice and cadence, this one strips them for brevity.
-  Do not run both on the same document without deciding which you want.
+  § Patterns imported from no-ai-slop names the subset that carries over and the entries that do
+  not. Do not run the full guide over a document you are tightening without deciding which you
+  want.
 - `agentic-standards/references/technical-prose.md` — generative voice for a document written from
   scratch. Tighten an existing file; that guide governs a new one.
