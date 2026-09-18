@@ -86,6 +86,14 @@ State how to derive a value instead of copying the value, per
 plans and applies to every persisted document: a copied number goes stale, and the reader who
 catches it stale stops trusting the rest of the file.
 
+Section 2 of that file applies as well: state each rule normatively in exactly one place and
+reference it by name elsewhere. The same fact written into Context, Decision, and Consequences
+drifts on the first amendment, and then nobody can tell which copy is current.
+
+Cite only what you opened. A `file:line` you did not read is worse than no citation, because it
+looks verifiable and costs the archaeologist the trip to find it wrong. If a grep surfaced a
+symbol you never read, cite the symbol and say that, or cite the command.
+
 ## One term per concept
 
 Name each thing once, then repeat that name exactly. Rotating synonyms for variety forces the
@@ -115,6 +123,27 @@ Add headings beyond the template only when a reader would navigate to that secti
 
 Do not pad. A four-line ADR with the right Decision beats forty lines of context around a vague
 one.
+
+### Do not write the template back
+
+A template supplies headings and instructions. Neither belongs in the finished document.
+
+- **Never restate the heading in its own first sentence.** Under `## Problem Statement`, "The
+  problem is that the resolver leaks stack traces" wastes the line a skimming reader lands on.
+  Write "The resolver returns the raw exception text to the client." The heading already said
+  which section this is.
+- **Never ship a placeholder.** A surviving `<one-line reason>`, `[what breaks]`, `TBD`, or `XXX`
+  means the section was skipped rather than filled. Write the content, or write "Unknown:" and
+  what would settle it.
+- **Never paraphrase the template's instruction as content.** A template line reading "list the
+  alternatives considered" becomes a list of alternatives, not the sentence "Alternatives were
+  considered."
+- **Drop a column the document does not use.** A column carrying "N/A" in every row is the
+  template's requirement, not this document's content. Delete it and say once, in prose, why that
+  axis does not apply.
+
+Before saving, grep the draft for `TBD`, `XXX`, `N/A`, and whatever placeholder markers the
+template used.
 
 ### Measured values in prose
 
@@ -156,6 +185,11 @@ manual schema revert, done by hand by whoever is on call" beats "some additional
 complexity". For a rejected option, give the concrete reason it lost rather than calling it less
 suitable.
 
+Let the count be the real count. Two alternatives with a reason each beat three where the third
+exists to balance the section, and a risk table has as many rows as there are risks, not as many
+as the last one had. Equal-length lists, matched pro-and-con counts, and a positive consequence
+manufactured to offset every negative one all show that the shape was chosen before the content.
+
 ## Voice
 
 Plain, direct, and unhurried. Short sentences carrying one fact each, varied enough that the page
@@ -179,12 +213,16 @@ active.
    principles* entirely: it checks fidelity to a human draft that does not exist here.
 2. Search your own draft for session leakage: "as discussed", "per your request", "the user",
    "I ", "today", "above", "earlier", "we saw".
-3. Every number: does the document say how to re-derive it, or is it a copy that will go stale?
+3. Template residue: a heading restated in its own first sentence, a surviving placeholder, a
+   column of `N/A`, or the template's instruction paraphrased as content?
+4. Every number: does the document say how to re-derive it, or is it a copy that will go stale?
    Any sentence holding more than one measured value, or paragraph holding more than three —
    moved into a table?
-4. Every assumption: labelled, with a falsifier?
-5. Every risk and negative consequence: names a cost someone would feel, and who feels it?
-6. Would the archaeologist, holding only this document and the files it cites, reach the same
+5. Every citation: did you open it, and does the symbol still say what the document claims?
+6. Every assumption: labelled, with a falsifier?
+7. Every risk and negative consequence: names a cost someone would feel, and who feels it — and
+   is the count real rather than padded to fill the section?
+8. Would the archaeologist, holding only this document and the files it cites, reach the same
    decision?
 
 Never invent a fact, number, source, or falsifier to satisfy one of these checks. If the fact is
