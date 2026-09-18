@@ -169,8 +169,8 @@ Apply in addition to the original twelve.
 
 ### XIII. API first
 Design the contract *before* the implementation. The OpenAPI spec, Protobuf definition, or
-AsyncAPI schema is the source of truth — which is what enables parallel team development and clear
-service boundaries.
+AsyncAPI schema is the source of truth — which enables parallel team development and clear service
+boundaries.
 
 Commit `openapi.yaml` / `.proto` before any implementation · generate server stubs and client SDKs
 from the contract · consumer-driven contract testing (Pact) so changes don't silently break

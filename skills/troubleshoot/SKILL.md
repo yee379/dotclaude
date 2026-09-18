@@ -54,7 +54,7 @@ Load the relevant reference file(s) now, then follow the shared workflow below.
 
 ## Pre-flight
 
-**Debug skills:** before starting, search the project's `.claude/skills/` directory for any skill matching `debug-*`. If one is found whose description matches the component or system being diagnosed, load and apply it — it contains project-specific runbooks, known failure patterns, and ready-made kubectl/curl commands that supersede generic approaches. Example: a `debug-authnz` skill for auth stack issues, `debug-postgres` for database issues.
+**Debug skills:** first search the project's `.claude/skills/` directory for any skill matching `debug-*`. If one matches the component being diagnosed, load and apply it — it carries project-specific runbooks, known failure patterns, and ready-made kubectl/curl commands that supersede generic approaches. Example: `debug-authnz` for auth stack issues, `debug-postgres` for database issues.
 
 ```bash
 ls .claude/skills/debug-* 2>/dev/null
