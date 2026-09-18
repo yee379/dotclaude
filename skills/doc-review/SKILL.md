@@ -38,8 +38,8 @@ adjacent questions belong elsewhere; flag and defer, don't decide them:
 | Is the *terminology* right against the domain model? Should this become an ADR? | `/draft-prd` (Grill Mode), then `/codebase-arch-review` |
 | Is the capacity *sizing* in the baseline doc correct? | `/platform-capacity-review` |
 
-You still check the ADR, glossary entry, and baseline update are **named as work** — you just
-don't adjudicate their content.
+You still check the ADR, glossary entry, and baseline update are **named as work** — you don't
+adjudicate their content.
 
 ## Subagent mode
 
@@ -113,8 +113,8 @@ Does the plan identify which files need new or updated inline comments? For comp
 ASCII diagram comments called out as implementation work? For files with existing ASCII diagrams
 that this change touches, does the plan note those diagrams must be reviewed for accuracy?
 
-Stale inline diagrams are worse than none — they actively mislead. Reviewing them must be explicit
-work, not an afterthought.
+Stale inline diagrams are worse than none — they mislead. Reviewing them must be explicit work,
+not an afterthought.
 
 ### 4. Breaking changes and migrations
 A dedicated upgrade guide is required — a CHANGELOG entry alone is **not** sufficient — if any of

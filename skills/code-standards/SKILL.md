@@ -29,8 +29,8 @@ The ladder below is how KISS, DRY, and YAGNI get applied in practice.
 
 ## Build the least code that works
 
-Do things efficiently, not carelessly. Each action has to have a purpose and goal. Do not
-over-engineer. The best code is the code never written.
+Do things efficiently, not carelessly. Each action needs a purpose. Do not over-engineer. The best
+code is the code never written.
 
 No drift back to over-building. This is a reflex, not an occasional review pass.
 
@@ -54,8 +54,8 @@ whether something already exists.
 
 The ladder runs *after* you understand the problem, not instead of it. Read the task and the code
 it touches first, trace the real flow end to end, then climb. Two rungs work → take the higher one
-and move on. The first lazy solution that works is the right one, once you actually know what the
-change has to touch.
+and move on. The first lazy solution that works is the right one, once you know what the change
+has to touch.
 
 ### Bug fix = root cause, not symptom
 

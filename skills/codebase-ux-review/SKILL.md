@@ -27,8 +27,8 @@ a real user would get confused, get stuck, or give up, and get those gaps fixed 
 ## When it runs
 
 **Triage-gated:** `/board-review` decides at triage whether the change has user-facing surface and
-includes it automatically. Invoke directly for new CLI tools, APIs, or services scientists touch
-directly; changes to existing workflows (SLURM, storage, auth, data access); new documentation,
+includes it automatically. Invoke directly for new CLI tools, APIs, or services scientists touch;
+changes to existing workflows (SLURM, storage, auth, data access); new documentation,
 onboarding, or self-service portals; or anything where "can a user figure this out?" is
 non-trivial.
 
@@ -146,8 +146,8 @@ So a plan you scored 4.8 and then fixed is a plan that **needed** this review, n
 it. Say exactly that in the verdict line, and keep the low as-received score visible — it is the
 evidence the review was worth running.
 
-Then state the **top 3 risks** if shipped as-is (what will users actually struggle with?) and
-**the one thing** with the highest impact on user success.
+Then state the **top 3 risks** if shipped as-is (what will users struggle with?) and **the one
+thing** with the highest impact on user success.
 
 ## Output
 

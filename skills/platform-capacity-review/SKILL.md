@@ -108,7 +108,8 @@ a `runbook_url` is `/platform-ops-review`'s call — do not raise those findings
 
 ## 6. What else is needed beyond raw compute
 
-This is the most important section. Many platform failures happen not from resource exhaustion but from missing prerequisites.
+The most important section. Platform failures come more often from a missing prerequisite than from
+resource exhaustion.
 
 **Existence check, not a correctness review.** Confirm each prerequisite exists and is reachable; do
 not evaluate its content. The Vault role/policy, OIDC client, and service-mesh rows belong to
@@ -144,7 +145,8 @@ For workloads that will scale over time:
 | Storage | N GiB | N GiB | N GiB | N GiB |
 | CPU request | N cores | N | N | N |
 
-Flag if any 12-month projection exceeds 80% cluster utilisation — a capacity upgrade should be planned proactively.
+Flag if any 12-month projection exceeds 80% cluster utilisation — plan the capacity upgrade in
+advance.
 
 ---
 

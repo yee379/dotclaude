@@ -144,12 +144,15 @@ For each alert verify:
 
 ## 5. Operational debt and drift
 
-- **Existing runbooks invalidated?** If this service replaces or modifies an existing one, the old runbook may now be misleading.
-- **Related dashboards still accurate?** Cross-service dependency changes can break existing dashboards.
+- **Existing runbooks invalidated?** If this service replaces or modifies an existing one, the old
+  runbook may be misleading.
+- **Related dashboards still accurate?** Cross-service dependency changes can break existing
+  dashboards.
 
 ### Drift detection
 
-Running state drifting silently from declared state is one of the most common sources of "works on my cluster" incidents. A change that looks clean in git may be deploying into a cluster that has already drifted.
+Running state drifting silently from declared state is a common source of "works on my cluster"
+incidents. A change that looks clean in git may deploy into a cluster that has already drifted.
 
 **Pre-deploy drift check (mandatory before any production apply):**
 

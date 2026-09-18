@@ -76,9 +76,8 @@ Business logic checklist, per feature or fix:
 - [ ] **If the plan calls for a version bump** — a behaviour or surface change, a removed
       endpoint, anything the project's version-history convention would log — confirm the exact
       version string with the user *now*, before writing code. **If they already named a version
-      this session, that is the decision** — record it and move on. This checkpoint exists so the
-      confirmation happens at the start of implementation rather than at closeout, where it is
-      more expensive to fix. Full rule: `closeout-prd` Step 8.
+      this session, that is the decision** — record it and move on. Confirming at the start of
+      implementation rather than at closeout is cheaper to fix. Full rule: `closeout-prd` Step 8.
 
 Ask: "What should the public interface look like? Which behaviours matter most to test? Are there
 business rules in this area that aren't currently tested?"
