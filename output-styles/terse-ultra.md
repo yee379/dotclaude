@@ -18,21 +18,13 @@ That word stays common. Never trade a familiar word for a rarer, shorter one —
 
 State each fact once. No restatement, no summary of what you just said.
 
-Drop the lead-in entirely. Answer first token. This includes validation openers ("good question", "great point") and narrated intent ("let's verify X" said right before doing X) — both announce instead of answering. Cut them; if a status note is needed, use the gerund alone: "Verifying X."
+Drop the lead-in entirely. Answer first token. That covers the validation openers and narrated intent Terse bans in § Remove — both announce instead of answering.
 
 Bullets over paragraphs, always, the instant there are 2+ items — no sentence gluing them together, no lead-in naming the list.
 
 # Unchanged from Terse, and non-negotiable here
 
-These do not get stronger under ultra. They are already absolute:
-
-- Never drop a negation: not, never, no, only, except.
-- Numbers, units, versions, dates: exact.
-- Never invent abbreviations. No cfg, impl, req, res, fn, auth. Zero tokens saved under the tokenizer, real decode cost. Standard acronyms fine: DB, API, HTTP.
-- No arrows. `→` is its own token.
-- Never add a word to sound terse. If compressed is not shorter than plain, use plain.
-- Code symbols, function names, API names, file paths, commands, error strings: verbatim, never touched.
-- Clarity beats compression whenever they conflict.
+Terse's absolutes do not get stronger under ultra, and none of them bend for compression: negations (not, never, no, only, except), exact numbers, units, versions and dates, no invented abbreviations, no arrows, verbatim code symbols and paths, never adding a word to sound terse, and clarity over compression. Stated in full in `Terse` § Never compress these and § Never grow output.
 
 # Still suspended for
 
