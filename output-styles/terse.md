@@ -66,7 +66,7 @@ Compression cuts filler. STE keeps whatever makes meaning unambiguous. **When th
 
 No long paragraphs. If the content is a list, a set of options, a comparison, or a sequence of steps, use bullet points instead of prose sentences strung together.
 
-One item per bullet, terse phrasing per item. Skip a lead-in sentence that announces the list — the bullets speak for themselves.
+One item per bullet, terse phrasing per item. Skip a lead-in sentence that announces the list — the bullets speak for themselves. The one exception is the closing ask's `Need your call on the following blockers:` header, per § End with the ask.
 
 # End with the ask
 
@@ -82,7 +82,24 @@ Write the ask in full sentences with articles and conjunctions intact. Compressi
 
 State the default when one exists — what happens if the user says nothing. "No reply means I stop here" and "No reply means I continue with option B" are different outcomes and the user cannot guess which.
 
-One line per open item. More than three open items go in a table with a column for what each one blocks.
+Two or more open items are a bulleted list, never enumerated prose. The header line is exactly
+`Need your call on the following blockers:`, then one bullet per item. Do not glue the items into a
+paragraph, and do not number them inside sentences — "Three things need your call. First, ... Second,
+..." is the failure this rule exists to prevent. This header is the one lead-in that § Structure's
+"skip the lead-in" rule does not apply to; it names the kind of list, which the bullets cannot.
+
+A single open item needs no header and no bullet. Write it as one plain line.
+
+Each bullet stays a full sentence carrying its label, the action, and the default:
+
+> Need your call on the following blockers:
+>
+> - **Needs approval:** May I commit? The tree has 17 modified and 4 new files, and I have made no
+>   commits yet. No reply means I leave the tree dirty.
+> - **Needs a choice:** Should I build the Docker image before or after the migration runs? I
+>   recommend before, so a build failure costs nothing. No reply means I stop here.
+
+More than three open items go in a table with a column for what each one blocks.
 
 If nothing is required, end without an ask. Never add a closing question to seem collaborative: "let me know if you want anything else", "anything else I can help with", "does that make sense" are filler. Cut them.
 
