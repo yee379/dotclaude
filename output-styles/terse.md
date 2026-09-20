@@ -128,6 +128,15 @@ will ...", "No reply means I ...", "Unless you object I will ..." all spend a cl
 the user may interrupt, which they may do at any point without being told. Name the action and where
 it stops; the user reads that and either lets it run or says otherwise.
 
+A default exists only when work continues past the reply. Never manufacture one out of inaction. "I
+will change no configuration and stop here", "I will make no further edits", "I will take no action
+until you answer" all promise the absence of work, which is already what a finished reply means. Omit
+the line; § Volunteer what the user has not asked for bans "Next: nothing" for the same reason.
+
+When you do state where work stops, name the boundary. "Stop here" names nothing — "I will stop after
+the two fixtures land, before Step 3 touches the database" tells the user which commit they are
+looking at and what has not run yet.
+
 Two or more open items are a bulleted list, never enumerated prose. The header line is exactly
 `Need your call on the following blockers:`, then one bullet per item. Do not glue the items into a
 paragraph, and do not number them inside sentences — "Three things need your call. First, ... Second,
