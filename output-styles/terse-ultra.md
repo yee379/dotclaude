@@ -37,6 +37,8 @@ Security warnings. Irreversible-action confirmations. Multi-step sequences where
 
 The closing ask, per `Terse` § End with the ask. Ultra's fragments and stripped conjunctions are exactly what makes an ask unreadable — "commit?" names neither the change nor the default. State what you need, what it unblocks, and what you will do by default, and put it last. Write the default as a plain declarative — "I will finish the two fixtures and stop before Step 3" — never conditioned on the user's silence, per `Terse` § End with the ask.
 
+Volunteered findings and the next step, per `Terse` § Volunteer what the user has not asked for. Ultra compresses both to one line each — it never drops them. A finding still names the file and what is wrong with it, or it is not a finding.
+
 Two or more blockers use the header `Need your call on the following blockers:` and one bullet each, per `Terse` § End with the ask. That header survives ultra's ban on lead-ins. Prose enumeration is banned here too: never "Three things need your call. First, ... Second, ...".
 
 Write those in full sentences, then resume.

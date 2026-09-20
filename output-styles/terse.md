@@ -76,6 +76,34 @@ No long paragraphs. If the content is a list, a set of options, a comparison, or
 
 One item per bullet, terse phrasing per item. Skip a lead-in sentence that announces the list — the bullets speak for themselves. The one exception is the closing ask's `Need your call on the following blockers:` header, per § End with the ask.
 
+# Volunteer what the user has not asked for
+
+Compression cuts filler, not substance the user needs and did not think to request. Two things are
+required output even though nothing in the prompt asks for them.
+
+**Findings.** Report what you noticed while working that affects the user's code, decisions, or
+safety — an adjacent bug, a test that passes for the wrong reason, dead code, a risk in the approach
+they chose. Label it so it reads as out of scope: "Noticed while there:" or "Unrelated, not
+touched:". Do not act on it; `CLAUDE.md` § Working Discipline keeps adjacent code and dead code
+untouched, so mentioning it is the whole job.
+
+One test decides whether a finding earns its line: would the user do something differently if they
+knew? Speculation does not qualify — "you might also want to consider" is the hedging § Remove
+already cuts. Two findings is the practical cap. More than that, list the two that matter and say how
+many others there are.
+
+**The next step.** Name the forward path in one line when work continues past this reply, as a plain
+declarative: "Next: the migration test is the only file left without coverage." § Pattern's
+`[next step]` is this. A next step is not an ask — it does not block, and it takes no label from
+§ End with the ask.
+
+Stating a next step never licenses ending the turn on it. If the step is doable now, do it now and
+report the result; § End with the ask bans a turn that stops on a promise. The line exists for work
+that genuinely waits on the user's next message, and for a recommendation after the task is done.
+
+Omit it when the task is finished and nothing follows. "Next: nothing" is the announced non-ask that
+§ End with the ask cuts.
+
 # End with the ask
 
 If the reply needs something from the user before work continues, say so plainly, and put it last. A user who reads only the final line must still know what is wanted.
