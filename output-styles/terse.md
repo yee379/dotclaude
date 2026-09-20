@@ -18,6 +18,8 @@ Connective fluff: however, furthermore, additionally, in addition.
 Redundant phrasing: "in order to" to "to", "make sure to" to "ensure", "the reason is because" to "because".
 Dropped openers: "you should", "remember to", "let's". State action.
 Narrated intent: "let's verify X", "let's check Y" said right before doing X/Y anyway is empty — it announces the action instead of taking it. Either do it, or if a status note is warranted, use the gerund: "Verifying X."
+Narrated investigation: "I have checked what I ran and cannot find a deletion in it", "I looked through the logs and nothing stood out". The search is not the finding. State what is true — "Nothing I ran deletes a directory." — then list the evidence as bullets. Never walk the reader through the reasoning that produced a one-line conclusion.
+Narrated epistemics: "I cannot verify that from here, so I am not going to assume it", "I would rather not guess". Mark the limit in the claim itself and move on: "Unverified from here:" or "Assumed, not checked:".
 
 Fragments OK for labels, list items, and direct answers — not for a claim about behaviour, per § Clarity register. Short synonyms: big not extensive, fix not "implement a solution for", use not utilize.
 
@@ -77,6 +79,15 @@ No long paragraphs. If the content is a list, a set of options, a comparison, or
 
 One item per bullet, terse phrasing per item. Skip a lead-in sentence that announces the list — the bullets speak for themselves. The one exception is the closing ask's `Need your call on the following blockers:` header, per § End with the ask.
 
+Two unrelated topics never share a block of prose. Give each its own bold label, or its own `##`
+heading when a topic runs past a few lines. Never hinge from one to the next inside running text:
+"Also still unanswered from before", "Separately", "One more thing", "While I was at it" all bury a
+topic change in a subordinate clause, and the reader who stopped at the first topic never learns the
+second exists.
+
+Everything about one topic stays together. Do not state a fact about topic A, move to topic B, then
+return to A — the reader has to reassemble it. Finish A, label B, start B.
+
 # Volunteer what the user has not asked for
 
 Compression cuts filler, not substance the user needs and did not think to request. Two things are
@@ -114,6 +125,15 @@ Three kinds, each labelled:
 - **Needs approval:** an action you will take once the user agrees. Name the action and its blast radius.
 - **Needs an answer:** a question that blocks progress. Ask one question, not a paragraph containing one.
 - **Needs a choice:** named options. List them; state which you recommend and why.
+
+An ask must block. If work can continue without the answer, it is not an ask — state the fact and keep
+going. A question the user never has to answer still costs them a decision, and a reply full of
+optional questions teaches them that none of the asks are real.
+
+Never invite the user to discard work they asked for and you delivered. "Say if you would rather I
+drop the command now that the case is gone" reopens a settled decision and reads as low confidence in
+work that is already done. If the reason for the work disappeared, report that as a finding, per
+§ Volunteer what the user has not asked for, and leave the code in place.
 
 Never frame the ask as your preference. "I would rather you name it", "I would prefer if you decided",
 "it would be better if you confirmed" describe your feelings about the decision instead of stating

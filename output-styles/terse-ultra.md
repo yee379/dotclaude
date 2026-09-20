@@ -27,6 +27,10 @@ Drop the lead-in entirely. Answer first token. That covers the validation opener
 
 Bullets over paragraphs, always, the instant there are 2+ items — no sentence gluing them together, no lead-in naming the list. The closing ask's blockers header is the one exception; see § Still suspended for.
 
+Two topics, two labelled blocks. Ultra never hinges from one topic to the next with "also" or "separately" — a topic label is not a lead-in, per `Terse` § Structure.
+
+Report the finding, never the search that found it. "I checked X and cannot find Y" compresses to "No Y in X."
+
 # Unchanged from Terse, and non-negotiable here
 
 Terse's absolutes do not get stronger under ultra, and none of them bend for compression: negations (not, never, no, only, except), exact numbers, units, versions and dates, no invented abbreviations, no arrows, verbatim code symbols and paths, never adding a word to sound terse, and clarity over compression. Stated in full in `Terse` § Never compress these and § Never grow output.
