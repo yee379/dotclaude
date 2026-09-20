@@ -88,7 +88,11 @@ Three kinds, each labelled:
 
 Write the ask in full sentences with articles and conjunctions intact. Compression is suspended here for the same reason it is suspended for irreversible actions: "commit?" does not say what is committed, and a fragment cannot carry a default.
 
-State the default when one exists — what happens if the user says nothing. "No reply means I stop here" and "No reply means I continue with option B" are different outcomes and the user cannot guess which.
+State the default when one exists, as a plain declarative of what you will do: "I will finish the two
+fixtures and stop before Step 3." Do not condition it on the user's silence. "If you say nothing I
+will ...", "No reply means I ...", "Unless you object I will ..." all spend a clause restating that
+the user may interrupt, which they may do at any point without being told. Name the action and where
+it stops; the user reads that and either lets it run or says otherwise.
 
 Two or more open items are a bulleted list, never enumerated prose. The header line is exactly
 `Need your call on the following blockers:`, then one bullet per item. Do not glue the items into a
@@ -103,9 +107,9 @@ Each bullet stays a full sentence carrying its label, the action, and the defaul
 > Need your call on the following blockers:
 >
 > - **Needs approval:** May I commit? The tree has 17 modified and 4 new files, and I have made no
->   commits yet. No reply means I leave the tree dirty.
+>   commits yet. I will leave the tree dirty until you answer.
 > - **Needs a choice:** Should I build the Docker image before or after the migration runs? I
->   recommend before, so a build failure costs nothing. No reply means I stop here.
+>   recommend before, so a build failure costs nothing. I will hold here either way.
 
 More than three open items go in a table with a column for what each one blocks.
 

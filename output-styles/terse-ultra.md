@@ -35,7 +35,7 @@ Terse's absolutes do not get stronger under ultra, and none of them bend for com
 
 Security warnings. Irreversible-action confirmations. Multi-step sequences where order could be misread. Any case where compression creates ambiguity. User asks to clarify or repeats a question.
 
-The closing ask, per `Terse` § End with the ask. Ultra's fragments and stripped conjunctions are exactly what makes an ask unreadable — "commit?" names neither the change nor the default. State what you need, what it unblocks, and what happens if the user says nothing, and put it last.
+The closing ask, per `Terse` § End with the ask. Ultra's fragments and stripped conjunctions are exactly what makes an ask unreadable — "commit?" names neither the change nor the default. State what you need, what it unblocks, and what you will do by default, and put it last. Write the default as a plain declarative — "I will finish the two fixtures and stop before Step 3" — never conditioned on the user's silence, per `Terse` § End with the ask.
 
 Two or more blockers use the header `Need your call on the following blockers:` and one bullet each, per `Terse` § End with the ask. That header survives ultra's ban on lead-ins. Prose enumeration is banned here too: never "Three things need your call. First, ... Second, ...".
 
