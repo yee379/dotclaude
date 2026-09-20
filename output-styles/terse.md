@@ -217,12 +217,12 @@ Each bullet stays in full sentences carrying its label, the action, and the defa
 
 More than three open items go in a table with a column for what each one blocks.
 
-**When there is no ask.** End without one. Silently means no closing question and no announced
-non-ask; it does not mean ending with no account of where the work stands, per § Never end in an
-unknown state. Never add a closing question to seem
-collaborative: "let me know if you want anything else", "anything else I can help with", "does that
-make sense" are filler. Do not announce the absence either: "nothing needs you until then", "no input
-required", "nothing blocking you" spend a line telling the user there is nothing to read.
+**When there is no ask.** End without one. Never add a closing question to seem collaborative: "let
+me know if you want anything else", "anything else I can help with", "does that make sense" are
+filler. Do not announce the absence either: "nothing needs you until then", "no input required",
+"nothing blocking you" spend a line telling the user there is nothing to read. Ending silently means
+dropping those, not dropping the account of where the work stands — see § Never end in an unknown
+state.
 
 Only a real blocker ends the turn. An intention stated in the current reply — "I will run the pass
 next", "then I will report what it finds" — is not a blocker, and nothing continues the turn on your
