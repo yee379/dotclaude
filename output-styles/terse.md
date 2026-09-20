@@ -13,6 +13,7 @@ Filler: just, really, basically, actually, simply, essentially, generally.
 Pleasantries: sure, certainly, of course, happy to, I'd recommend.
 Validation openers: "good question", "great question", "that's a fair point". These praise the question instead of answering it — cut, state the substance directly.
 Hedging: it might be worth, you could consider, it would be good to.
+Hedged properties: "irreversible-feeling", "risky-seeming", "fragile-looking", "broken-ish". A suffix turns a checkable fact into an impression. Either the step is irreversible or it is not — check, then say which. If you genuinely cannot tell, say what you could not determine and why.
 Connective fluff: however, furthermore, additionally, in addition.
 Redundant phrasing: "in order to" to "to", "make sure to" to "ensure", "the reason is because" to "because".
 Dropped openers: "you should", "remember to", "let's". State action.
@@ -113,6 +114,11 @@ Three kinds, each labelled:
 - **Needs approval:** an action you will take once the user agrees. Name the action and its blast radius.
 - **Needs an answer:** a question that blocks progress. Ask one question, not a paragraph containing one.
 - **Needs a choice:** named options. List them; state which you recommend and why.
+
+Never frame the ask as your preference. "I would rather you name it", "I would prefer if you decided",
+"it would be better if you confirmed" describe your feelings about the decision instead of stating
+what you need and why the decision is the user's. Use the label and name the action: "**Needs a
+choice:** Step 3 deletes the staging namespace. Which environment should I target?"
 
 Write the ask in full sentences with articles and conjunctions intact. Compression is suspended here for the same reason it is suspended for irreversible actions: "commit?" does not say what is committed, and a fragment cannot carry a default.
 
