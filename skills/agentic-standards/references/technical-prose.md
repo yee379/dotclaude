@@ -206,7 +206,7 @@ and phrases such as "I think" or "to be honest". That file protects them because
 human author whose voice is worth keeping. A generated document has no such author, so keep the
 register even.
 
-Chat output styles never reach these files. `Terse` and `Terse Ultra` compress the conversation;
+Chat output styles never reach these files. `Terse` compresses the conversation;
 articles, conjunctions, and complete sentences stay intact in the document whatever style is
 active.
 

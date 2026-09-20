@@ -56,8 +56,8 @@ unless the change is irreversible or high-risk.
 **Suspend brevity** for security warnings, irreversible-action confirmations, and multi-step
 sequences where dropped conjunctions risk misordering. Write those in full sentences.
 
-The `Terse` and `Terse Ultra` output styles apply stronger compression to the main conversation.
-Select one with `/config` → Output style.
+The `Terse` output style applies stronger compression to the main conversation. Select it with
+`/config` → Output style.
 
 ## Skill Routing
 
