@@ -89,31 +89,68 @@ Compression cuts filler. STE keeps whatever makes meaning unambiguous. **When th
 
 # Structure
 
-No long paragraphs. Two or more items of any kind — a list, options, a comparison, steps, findings — go in bullets, never prose sentences strung together.
+No long paragraphs. Two or more items of any kind go in bullets or a table, never prose sentences
+strung together. A plain sequence — steps, a list of names — takes bullets. Anything compared takes a
+table, per the rule below.
 
 One item per bullet, terse phrasing per item. Skip a lead-in sentence that announces the list — the bullets speak for themselves. The one exception is the closing ask's `Need your call on the following blockers:` header, per § End with the ask.
 
-Bullets carry one dimension per item. The moment there are two — options against criteria, before
-against after, several items sharing the same attributes — use a table instead. Prose cannot hold two
-dimensions, and bullets fake it by repeating the axis in every line.
+**Anything compared goes in a table.** Bullets carry one dimension per item. The moment there are
+two, a table is the default and prose has to earn its place, not the other way round. Where you
+are weighing bullets against a table, pick the table.
 
-Table whenever the reader is comparing or choosing:
+The test is mechanical, so apply it instead of judging: **name the axes.** If what you are about to
+write has both a set of things and a set of facts you are stating about each of them, those are rows
+and columns. Write them as rows and columns.
+
+Three shapes mean you missed it and are now faking a table in prose:
+
+- **Repeated labels.** Consecutive bullets opening with the same bold word — `**Before:**` then
+  `**After:**`, `**Option A:**` then `**Option B:**`. The repeated word is a column header.
+- **Parallel clauses.** "X takes 40 ms and needs no index, while Y takes 4 ms and needs two." Two
+  subjects, same two facts each. That is a 2×3 table written sideways.
+- **Attribute runs.** A bullet list where every item carries the same comma-separated set —
+  name, then status, then count. The commas are cell boundaries.
 
 | Use | Shape |
 |---|---|
 | Options, choices, trade-offs | One row per option, one column per criterion |
+| Before against after | One row per thing changed, a Before column and an After column |
 | A summary of several items | One row per item, columns for the attributes they share |
+| Findings across files | One row per file, columns for what is wrong and what it costs |
+| Test or check results | One row per case, columns for input and outcome |
 | More than three open items | Per § End with the ask, with a column for what each one blocks |
+
+Worked example. Slop:
+
+> - **Before:** `consolidate-round.sh` reported a truncated reviewer as PASS, because the catch-all
+>   defaulted to it.
+> - **After:** it reports `IN_PROGRESS` and marks the reviewer `NOT_TERMINAL`.
+
+Both bullets state the same two facts — status and cause — about two points in time, with the axis
+repeated in bold. Correct:
+
+> | Case | Before | After |
+> |---|---|---|
+> | Truncated reviewer | PASS, via the catch-all | `IN_PROGRESS` + `NOT_TERMINAL` |
+> | Duplicate `## Status` | PASS, last heading read | FAIL, first heading read |
+
+The second row costs one line and would have cost three as bullets. That gap is the whole argument:
+a table gets cheaper per item, prose gets dearer.
 
 Name the criteria in the column headers, not `Pros` and `Cons` — those make the reader infer the
 axis you already know. State the recommendation outside the table, per § End with the ask.
 
-A table needs two real columns and two real rows. One row is a sentence; one content column is a
-list. Reformatting either into a grid is the decorative table § Remove bans.
+**The floor.** A table needs two real columns and two real rows. One row is a sentence; one content
+column is a list. Reformatting either into a grid is the decorative table § Remove bans, and leaning
+toward tables never licenses a one-row grid.
 
-Diagram — a fenced ASCII block — where the content is shape rather than comparison: a flow, a
-hierarchy, a before-and-after structure, or where something sits in a call path. Label the arrows.
-Never draw one where a sentence is clearer.
+Diagram — a fenced ASCII block — only where the content is shape: a flow, a hierarchy, or where
+something sits in a call path. Label the arrows. Never draw one where a sentence is clearer.
+
+Shape and comparison split before-and-after between them. Changed *values* are a table: one row per
+thing, a Before column and an After column. A changed *structure* — a call path that gained a hop, a
+boundary that moved — is a diagram, because the reader needs the topology, which no column holds.
 
 Two unrelated topics never share a block of prose. Give each its own bold label, or its own `##`
 heading when a topic runs past a few lines. Never hinge from one to the next inside running text:
@@ -342,6 +379,15 @@ Yes: "Verifying — only tested the 'reachable from inside' half."
 No: "All consistent — every remaining "P0" reference is explaining the correction, not asserting current severity. Let's verify the test/doc consistency checks aren't affected (unlikely, since these are pure markdown files) and commit."
 
 Yes: "All consistent — remaining "P0" references explain the correction, not assert severity. Verifying test/doc consistency checks are unaffected, then committing."
+
+Target register for a comparison:
+
+"Which of these two is faster?"
+
+> | Query | Latency | Index |
+> |---|---|---|
+> | `by_user` | 4 ms | two, composite |
+> | `by_date` | 40 ms | none |
 
 Target register for a plain question:
 
