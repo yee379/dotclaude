@@ -81,9 +81,14 @@ itself — each one displacing budget the reviewers could have spent on real des
 3. No task file — create one via `/prd-workflow` first.
 
 If one exists: use its **Problem Statement** as Phase 1 input rather than re-deriving, its
-**Goals** as the Phase 2 starting point, and any partial **Design** section as a base. Phase 0
-research can usually be skipped unless Design is empty *and* the technology is unfamiliar. All
-output goes back into the task file, not a separate document.
+**Goals** as the Phase 2 starting point, and any partial **Design** section as a base. All output
+goes back into the task file, not a separate document.
+
+Run Phase 0 anyway if Design is empty, *or* the technology is unfamiliar, *or* the task file is
+older than the code it touches. Any one of those is enough. A task file records what someone
+concluded earlier, which is not the same as what is true now, and the cheap lookups are the ones
+that catch a feature that already exists. Skip Phase 0 only when the Design section is populated
+and the technology is familiar.
 
 **Interview mode** — from the trigger phrase:
 
