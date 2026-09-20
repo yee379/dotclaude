@@ -5,7 +5,9 @@
 #
 # Usage: poll-round.sh <review_dir> <round> [reviewer1 reviewer2 ...]
 #
-# Prints a compact status block for each reviewer output file.
+# Prints a GitHub-flavoured markdown table, header included, one row per reviewer. The
+# renderer aligns the columns, so no padding is emitted here — emoji are variable width
+# and space-padded columns drift the moment a name or a status is wider than the pad.
 # Exits 0 only when EVERY active reviewer has a terminal ## Status (PASS / PASS WITH
 # WARNINGS / FAIL); 1 if any is missing, IN PROGRESS, or truncated without a status.
 #
@@ -26,29 +28,35 @@ REVIEWERS=("$@")
 
 code_to_name() {
   case "$1" in
-    dr) echo "research       " ;;
-    ar) echo "codebase-arch-review    " ;;
-    er) echo "codebase-eng-review     " ;;
-    dc) echo "doc-review              " ;;
-    sr) echo "security-review         " ;;
-    ux) echo "codebase-ux-review      " ;;
-    pa) echo "arch-review(platform)   " ;;
+    dr) echo "research" ;;
+    ar) echo "codebase-arch-review" ;;
+    er) echo "codebase-eng-review" ;;
+    dc) echo "doc-review" ;;
+    sr) echo "security-review" ;;
+    ux) echo "codebase-ux-review" ;;
+    pa) echo "arch-review (platform)" ;;
     cr) echo "platform-capacity-review" ;;
     ps) echo "platform-security-review" ;;
-    po) echo "platform-ops-review     " ;;
-    pe) echo "platform-eng-review     " ;;
-    *)  echo "$1                      " ;;
+    po) echo "platform-ops-review" ;;
+    pe) echo "platform-eng-review" ;;
+    *)  echo "$1" ;;
   esac
 }
 
+# A pipe or a newline in a preview line would break the row it sits in.
+cell() { printf '%s' "$1" | tr -d '\n' | sed 's/|/\\|/g'; }
+
 all_done=true
+
+echo "| Reviewer | Status | Early signal |"
+echo "|---|---|---|"
 
 for code in "${REVIEWERS[@]}"; do
   file="$REVIEW_DIR/round-${ROUND}-${code}.md"
   display=$(code_to_name "$code")
 
   if [[ ! -f "$file" ]]; then
-    echo "  🔵 queued      $display  —"
+    echo "| $display | 🔵 queued | — |"
     all_done=false
     continue
   fi
@@ -61,27 +69,27 @@ for code in "${REVIEWERS[@]}"; do
                 | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')
 
   case "$status_line" in
-    *PASSWITHWARNINGS*) icon="⚠️  warn    " ;;
-    *PASS*)             icon="✅ complete" ;;
-    *FAIL*)             icon="❌ fail    " ;;
-    *INPROGRESS*|"")    icon="⏳ running "; all_done=false ;;
-    *)                  icon="❓ unknown "; all_done=false ;;
+    *PASSWITHWARNINGS*) status="⚠️ WARN" ;;
+    *PASS*)             status="✅ PASS" ;;
+    *FAIL*)             status="❌ FAIL" ;;
+    *INPROGRESS*|"")    status="⏳ running"; all_done=false ;;
+    *)                  status="❓ unknown"; all_done=false ;;
   esac
 
   # A reviewer that appends a second "## Status" heading instead of editing the first
   # in place leaves a stale IN PROGRESS trailing the real terminal status. The icon
-  # above already used the FIRST occurrence (correct); flag the duplicate here so it
+  # status above already used the FIRST occurrence (correct); flag the duplicate here so it
   # gets fixed rather than silently tolerated round after round.
   status_heading_count=$(grep -c '^## Status' "$file")
   dupe_note=""
   if [[ "$status_heading_count" -gt 1 ]]; then
-    dupe_note=" ⚠️duplicate-status-heading(x${status_heading_count})"
+    dupe_note=" ✂️ duplicate \`## Status\` x${status_heading_count}"
   fi
 
   signal=$(grep -v "^$" "$file" | grep -v "^#" \
              | grep -vE '^(IN ?PROGRESS|PASS( WITH WARNINGS)?|FAIL)$' \
-             | tail -1 | cut -c1-50)
-  echo "  $icon  $display  ${signal:----}${dupe_note}"
+             | tail -1 | cut -c1-60)
+  echo "| $display | $status | $(cell "${signal:-—}")$(cell "$dupe_note") |"
 done
 
 $all_done && exit 0 || exit 1

@@ -103,14 +103,19 @@ Summarise the plan in 2–3 sentences so the user can confirm you read the right
 Use the triage table from the loaded config. **Default: run all reviewers.** Skip only if the skip
 condition is clearly and unambiguously met.
 
+```markdown
+**Triage complete — <N> of <M> reviewers running.**
+
+| Reviewer | Decision | Reason |
+|---|---|---|
+| <name> | ✅ run | — |
+| <name> | ⊘ skip | <the skip condition that matched, quoted from the config> |
+
+Starting Round 1.
 ```
-Triage complete
-──────────────────────────────────────────────────────
-<reviewer name>    RUN | SKIP (reason)
-...
-──────────────────────────────────────────────────────
-Starting Round 1...
-```
+
+A skipped reviewer always names the condition that skipped it. "SKIP" with no reason cannot be
+audited later, and the default is to run.
 
 ---
 
@@ -164,15 +169,15 @@ Load the full `no-ai-slop.md` only if the eval alone is not enough to fix what i
 rewrite the author's voice, and do not invent facts to satisfy a check — if a claim has no
 source, flag it rather than sourcing it.
 
-```
-Precision gate — #NNN
-──────────────────────────────────────────────────────
-Ground truth measured:  <N facts, from <source>>  (<M corrections made>)
-                         (<K reused from draft-prd's Feasibility checks table, J re-measured fresh>)
-Precision sweep:        <N items fixed>  (<breakdown>)
-Slop sweep:             <N items fixed>  (<breakdown>)
-Plan length:            <L lines>
-──────────────────────────────────────────────────────
+```markdown
+**Precision gate — #NNN**
+
+| Check | Result | Detail |
+|---|---|---|
+| Ground truth | <N> facts measured, <M> corrections | <source>; <K> reused from `draft-prd` Feasibility, <J> re-measured |
+| Precision sweep | <N> items fixed | <breakdown> |
+| Slop sweep | <N> items fixed | <breakdown> |
+| Plan length | <L> lines | — |
 ```
 
 If the gate made substantive corrections, **say what they were** — the plan the user approved has
@@ -368,18 +373,18 @@ best-default option.
    a reviewer left a stray duplicate `## Status`. Where icon and preview seem to conflict, read
    `grep -n '^## Status' -A1 <file>` — the exit code already told you the truth.
 
+   ```markdown
+   **⏳ #NNN Round N — <N> of <M> reported**
+
+   <poll-round.sh output verbatim — it emits the header row and the column rule itself>
    ```
-   ⏳ #NNN Round N — in progress  (N of M reviewers reported)
-   ──────────────────────────────────────────────────────────────
-   Reviewer             Status            Early signal
-   ──────────────────────────────────────────────────────────────
-   <poll-round.sh output here>
-   ──────────────────────────────────────────────────────────────
-   ```
+
+   Paste the script's rows unaltered. Re-typing them by hand is how the status vocabulary drifts:
+   one round reads `⚠️ WARN` and the next `✅ PASS WITH WARNINGS` for the same state.
 
    **Both signals must agree before consolidating:** all reviewers notified AND `poll-round.sh`
    exits `0`. Disagreement is itself the finding:
-   - **Notified, no terminal status** → died or ran out of context mid-write. Mark `⚠️ truncated`,
+   - **Notified, no terminal status** → died or ran out of context mid-write. Mark `✂️ truncated`,
      read the partial output, do **not** re-run automatically — ask the user.
    - **Terminal status, never notified** (session interrupted and resumed) → trust the file; note
      the agent was not observed exiting.
@@ -419,16 +424,19 @@ best-default option.
 
    a. **`blocking` first** — one at a time, in order:
 
-   ```
-   🛑 BLOCKING DECISION <M> of <total> — <reviewer name>
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   ❓ <the question>
+   Each one is an `AskUserQuestion` call: `header` names the subject in 12 characters or fewer, one
+   option per candidate, the recommended option first with `(Recommended)` suffixed, and each
+   option's `description` carrying what it costs. Where the tool is unavailable, write it:
 
-   Options:
-     A) ...
-     B) ...
+   ```markdown
+   **🛑 Blocking decision <M> of <total>** — <reviewer name> · review halted until answered
 
-   ⚠️  The review cannot proceed until this is answered.
+   <the question>
+
+   | Option | Consequence |
+   |---|---|
+   | <A> | <what it costs, and what it unblocks> |
+   | <B> | <what it costs, and what it unblocks> |
    ```
 
    Wait for the answer. Mark resolved, update the plan file, note in the reviewer output. Never
@@ -436,30 +444,54 @@ best-default option.
 
    b. **`judgement-call`** — all together, after blocking are resolved:
 
-   ```
-   🤔 JUDGEMENT CALLS — please confirm or override  (<N> decisions)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   1. [<reviewer>] <question> → defaulted to: <assumed>
-   2. [<reviewer>] <question> → defaulted to: <assumed>
+   ```markdown
+   **🤔 Judgement calls — <N> defaults taken, confirm or override**
 
-   Reply "ok" to accept all defaults, or specify overrides by number.
+   | # | Reviewer | Question | Defaulted to |
+   |---|---|---|---|
+   | 1 | <reviewer> | <question> | <assumed answer> |
+   | 2 | <reviewer> | <question> | <assumed answer> |
+
+   Reply "ok" to accept all, or name the numbers to override.
    ```
 
-   c. **`defaulted`** — one line: `ℹ️  <N> minor defaults taken.`
+   c. **`defaulted`** — one line: `ℹ️ <N> minor defaults taken.`
 
 8. **Round dashboard:**
 
-   ```
-   #NNN Round N complete
-   ──────────────────────────────────────────────────────────────────
-   <rows from loaded config>
-   ──────────────────────────────────────────────────────────────────
-   Decisions resolved this round: N blocking / N judgement-call / N defaulted
-   Amendments this round: N design / M precision
-   Plan amended this round: YES → starting Round N+1 | NO → board complete
+   ```markdown
+   **#NNN Round N complete**
+
+   | Reviewer | Result | Amendments | Key finding |
+   |---|---|---|---|
+   | <name> | ✅ PASS | — | <one line, or "—"> |
+   | <name> | ⚠️ WARN | 4 design / 5 precision | <one line> |
+
+   **Decisions resolved:** <N> blocking · <N> judgement-call · <N> defaulted
+   **Amendments:** <N> design / <M> precision
+   **Plan amended:** YES — starting Round N+1 | NO — board complete
    ```
 
-   Symbols: `✅ PASS | ⚠️ WARN | ❌ FAIL | — SKIP | ✂️ TRUNC`
+   The `Amendments` column splits design from precision per reviewer, which is what the iterate
+   decision in item 9 keys on. A single total hides the distinction the rule depends on.
+
+   **Status vocabulary — these six strings, nothing else**, so a hand-written row and a script row
+   read alike. `poll-round.sh` emits the first five; `⊘ skip` is triage-only, since a skipped
+   reviewer is never passed to the script:
+
+   | Symbol | Means |
+   |---|---|
+   | ✅ PASS | Terminal, no warnings |
+   | ⚠️ WARN | Terminal, PASS WITH WARNINGS |
+   | ❌ FAIL | Terminal, blocking issues open |
+   | ⏳ running | Started, no terminal status yet |
+   | 🔵 queued | Launched, no output file yet |
+   | ⊘ skip | Triaged out, with the reason |
+
+   Two more mark a defect rather than a state: `✂️ truncated` for a reviewer that died mid-write,
+   and `❓ unknown` for a status string that matches none of the above. Never write
+   `✅ PASS WITH WARNINGS` — the tick and the warning contradict each other, and `⚠️ WARN` is the
+   one string for that state.
 
 9. **Decide whether to iterate — automatically, keyed on `design:` amendments, not raw count:**
    - Any **`design:`** amendment → run the cheap-check test below before launching a round.
@@ -521,8 +553,8 @@ Verdicts (from loaded config): CLEAR TO BUILD / CLEAR TO APPLY / CLEAR WITH WARN
 UNSTABLE.
 
 **Take each reviewer's status from its own `## Status` section.** `consolidate-round.sh` extracts
-the first `PASS` token, reporting `PASS WITH WARNINGS` as `PASS`; `poll-round.sh`'s preview column
-truncates and can read like a status. Where a script and a reviewer's file disagree, the file wins.
+the first `PASS` token, reporting `PASS WITH WARNINGS` as `PASS`; `poll-round.sh`'s Early signal column
+truncates at 60 characters and can read like a status. Where a script and a reviewer's file disagree, the file wins.
 
 **Report an unfavourable verdict straight**, including where your own earlier prediction was
 wrong. Separate the mechanical test from your judgement: "the amendment rule says UNSTABLE; zero
@@ -548,7 +580,8 @@ deleted.**
 
    | Reviewer | Result | Amended | Key findings |
    |---|---|---|---|
-   | <reviewer rows from loaded config> |
+   | <name> | ✅ PASS | — | <one line, or "—"> |
+   | <name> | ⚠️ WARN | 4 design / 5 precision | <one line> |
 
    **Accepted warnings:** <list or "none">
    **Unresolved decisions:** <N> (or "none")
