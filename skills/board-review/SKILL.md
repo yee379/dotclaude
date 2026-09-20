@@ -275,8 +275,9 @@ Your job:
 
    **Exactly one `## Status` heading must ever exist in the file** — the one from the
    skeleton, edited in place once at the end. Appending a fresh `## Status` block at a
-   checkpoint leaves a stale `IN PROGRESS` line below the real verdict, which makes
-   `poll-round.sh`'s preview column contradict its own icon.
+   checkpoint leaves a stale `IN PROGRESS` line below the real verdict. `status-of.sh` reads the
+   first heading, so the verdict stays right, and both scripts flag the duplicate — but the Early
+   signal column will then contradict its own status symbol.
 
    Final structure:
 
@@ -364,9 +365,14 @@ best-default option.
    bash ~/.claude/skills/board-review/poll-round.sh todo/review/027-my-feature 1 dr ar er dc sr
    ```
 
-   It prints one line per reviewer and exits `0` only when every file carries a **terminal**
-   `## Status` (`PASS` / `PASS WITH WARNINGS` / `FAIL`). `IN PROGRESS` counts as running — a
-   reviewer's first action is the skeleton, so the file existing means *started*, never *finished*.
+   It prints one row per reviewer and exits `0` only when every file carries a **terminal** status —
+   `PASS`, `WARN`, or `FAIL` via `status-of.sh`. `IN PROGRESS` counts as running: a reviewer's first
+   action is the skeleton, so the file existing means *started*, never *finished*.
+
+   **Why a file check at all, when the notification already fired.** The notification reports that the
+   agent's process exited. This reports that its output file carries a verdict. An agent that runs out
+   of context mid-write does the first without the second, and that is the only case where the two
+   disagree — which is why both must agree below.
 
    **The exit code and leading icon are the verdict; the trailing preview text is not.** That
    preview is the file's last non-blank line and can read `IN PROGRESS` next to a terminal icon if
@@ -396,6 +402,11 @@ best-default option.
    ```bash
    bash ~/.claude/skills/board-review/consolidate-round.sh <review_dir> <round> <reviewer_codes...>
    ```
+
+   It digests each reviewer file — up to 800 lines apiece — down to a status, counts, and a
+   ten-line summary. That is why it exists: reading six full reviewer files into context would
+   cost more than the round's findings are worth. A reviewer whose status is not terminal comes
+   back marked `NOT_TERMINAL`; do not fold it into the round.
 
    It extracts STATUS, AMENDED, DECISIONS, BLOCKING, OPPORTUNITIES, and a ≤10-line SUMMARY per
    reviewer. Read a reviewer's full file only when the SUMMARY is insufficient — never
@@ -552,9 +563,11 @@ VERDICT:  <verdict from loaded config>
 Verdicts (from loaded config): CLEAR TO BUILD / CLEAR TO APPLY / CLEAR WITH WARNINGS / BLOCKED /
 UNSTABLE.
 
-**Take each reviewer's status from its own `## Status` section.** `consolidate-round.sh` extracts
-the first `PASS` token, reporting `PASS WITH WARNINGS` as `PASS`; `poll-round.sh`'s Early signal column
-truncates at 60 characters and can read like a status. Where a script and a reviewer's file disagree, the file wins.
+**Both scripts read status through `status-of.sh`, so they cannot disagree.** It takes the first
+`## Status` heading and the first non-blank line under it, and has no catch-all to `PASS` — an
+unrecognised string is `UNKNOWN` and blocks. `poll-round.sh`'s Early signal column still truncates at
+60 characters and can read like a status; that column is preview text, never the verdict. Where a
+script and a reviewer's file genuinely disagree, the file wins.
 
 **Report an unfavourable verdict straight**, including where your own earlier prediction was
 wrong. Separate the mechanical test from your judgement: "the amendment rule says UNSTABLE; zero

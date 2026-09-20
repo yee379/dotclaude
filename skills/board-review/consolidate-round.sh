@@ -6,7 +6,7 @@
 #
 # Output per reviewer (to stdout):
 #   === <reviewer> ===
-#   STATUS: PASS | PASS WITH WARNINGS | FAIL | TRUNCATED | MISSING
+#   STATUS: PASS | WARN | FAIL | IN_PROGRESS | UNKNOWN | TRUNCATED | MISSING
 #   AMENDED: YES | NO
 #   DECISIONS: <count of ## Decision: entries>
 #   BLOCKING: <count>
@@ -14,6 +14,14 @@
 #   SUMMARY:
 #   <up to 10 lines from ## Summary section>
 #   ---
+#
+# STATUS comes from status-of.sh, the same parser poll-round.sh uses. Only PASS,
+# WARN, and FAIL are terminal; anything else means this reviewer has no verdict and
+# the round is not complete.
+#
+# Section content ignores the skeleton placeholders a reviewer writes as its first
+# action — "_(in progress)_" and the like. Counting those as content reported an
+# amendment for a reviewer that amended nothing.
 #
 # Reviewer codes:
 #   Codebase: dr=research  ar=codebase-arch-review  er=codebase-eng-review
@@ -24,6 +32,9 @@
 #
 # Example:
 #   consolidate-round.sh todo/review/007-my-feature 1 dr ar er dc sr
+
+# shellcheck source=status-of.sh
+. "$(dirname "${BASH_SOURCE[0]}")/status-of.sh"
 
 REVIEW_DIR="$1"
 ROUND="$2"
@@ -53,47 +64,42 @@ for code in "${REVIEWERS[@]}"; do
 
   echo "=== $display ==="
 
-  if [[ ! -f "$file" ]]; then
-    echo "STATUS: MISSING"
+  status=$(status_of "$file")
+  echo "STATUS: $status"
+
+  if [[ "$status" == "MISSING" ]]; then
     echo "---"
     continue
   fi
 
-  if grep -q "^## Status" "$file" 2>/dev/null; then
-    status_line=$(grep -A1 "^## Status" "$file" | tail -1 | tr -d '[:space:]')
-    case "$status_line" in
-      *PASS*WITH*WARNINGS*) echo "STATUS: PASS WITH WARNINGS" ;;
-      *PASS*)               echo "STATUS: PASS" ;;
-      *FAIL*)               echo "STATUS: FAIL" ;;
-      *)                    echo "STATUS: PASS" ;;
-    esac
-  else
-    echo "STATUS: TRUNCATED"
+  # A non-terminal status is a defect in the round, not a verdict. Say so here rather
+  # than letting the digest read like a completed review.
+  if ! status_is_terminal "$status"; then
+    echo "NOT_TERMINAL: this reviewer has no verdict — do not consolidate it"
   fi
 
-  if grep -q "^## Amendments" "$file" 2>/dev/null; then
-    amended_content=$(awk '/^## Amendments/{found=1; next} found && /^##/{exit} found{print}' "$file" | grep -v "^$" | head -1)
-    if [[ -n "$amended_content" ]]; then
-      echo "AMENDED: YES"
-    else
-      echo "AMENDED: NO"
-    fi
+  # Drop blank lines and the italic skeleton placeholders, e.g. "_(in progress)_".
+  section_content() {
+    awk -v h="^## $2" '$0 ~ h {found=1; next} found && /^##/{exit} found{print}' "$1" \
+      | grep -v '^[[:space:]]*$' \
+      | grep -vE '^_\(.*\)_$'
+  }
+
+  if [[ -n "$(section_content "$file" Amendments | head -1)" ]]; then
+    echo "AMENDED: YES"
   else
     echo "AMENDED: NO"
   fi
 
-  decision_count=$(grep -c "^### Decision:" "$file" 2>/dev/null || echo 0)
-  echo "DECISIONS: $decision_count"
+  # `grep -c` prints the count and exits 1 when it is zero. A `|| echo 0` fallback
+  # therefore appended a SECOND zero on its own line and corrupted the digest.
+  echo "DECISIONS: $(grep -c '^### Decision:' "$file")"
+  echo "BLOCKING: $(grep -c 'Severity.*blocking' "$file")"
 
-  blocking_count=$(grep -c "Severity.*blocking" "$file" 2>/dev/null || echo 0)
-  echo "BLOCKING: $blocking_count"
-
-  opportunity_count=$(awk '/^## Opportunities/{found=1; next} found && /^##/{exit} found && NF{c++} END{print c+0}' "$file" 2>/dev/null || echo 0)
+  opportunity_count=$(section_content "$file" Opportunities | wc -l | tr -d ' ')
   echo "OPPORTUNITIES: $opportunity_count"
 
   echo "SUMMARY:"
-  awk '/^## Summary/{found=1; next} found && /^##/{exit} found{print}' "$file" \
-    | grep -v "^$" \
-    | head -10
+  section_content "$file" Summary | head -10
   echo "---"
 done

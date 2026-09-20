@@ -3,13 +3,17 @@
 # check when a subagent completion notification never arrives. It is NOT the completion
 # signal: the harness notification is. Do not call this on a timer.
 #
+# The notification says the agent's process exited. This says its output file carries a
+# terminal verdict. An agent that runs out of context mid-write does the first without the
+# second, which is the case this script exists to catch.
+#
 # Usage: poll-round.sh <review_dir> <round> [reviewer1 reviewer2 ...]
 #
 # Prints a GitHub-flavoured markdown table, header included, one row per reviewer. The
 # renderer aligns the columns, so no padding is emitted here — emoji are variable width
 # and space-padded columns drift the moment a name or a status is wider than the pad.
-# Exits 0 only when EVERY active reviewer has a terminal ## Status (PASS / PASS WITH
-# WARNINGS / FAIL); 1 if any is missing, IN PROGRESS, or truncated without a status.
+# Exits 0 only when EVERY active reviewer has a terminal status (PASS / WARN / FAIL);
+# 1 if any is missing, in progress, truncated, or unparseable.
 #
 # Reviewer codes:
 #   Codebase: dr=research  ar=codebase-arch-review  er=codebase-eng-review
@@ -20,6 +24,9 @@
 #
 # Example:
 #   poll-round.sh todo/review/007-my-feature 1 dr ar er dc sr
+
+# shellcheck source=status-of.sh
+. "$(dirname "${BASH_SOURCE[0]}")/status-of.sh"
 
 REVIEW_DIR="$1"
 ROUND="$2"
@@ -55,35 +62,30 @@ for code in "${REVIEWERS[@]}"; do
   file="$REVIEW_DIR/round-${ROUND}-${code}.md"
   display=$(code_to_name "$code")
 
+  # Status comes from status-of.sh so this script and consolidate-round.sh cannot
+  # disagree about what counts as terminal.
+  case "$(status_of "$file")" in
+    PASS)        status="✅ PASS" ;;
+    WARN)        status="⚠️ WARN" ;;
+    FAIL)        status="❌ FAIL" ;;
+    IN_PROGRESS) status="⏳ running";    all_done=false ;;
+    TRUNCATED)   status="✂️ truncated";  all_done=false ;;
+    MISSING)     status="🔵 queued";     all_done=false ;;
+    *)           status="❓ unknown";    all_done=false ;;
+  esac
+
   if [[ ! -f "$file" ]]; then
-    echo "| $display | 🔵 queued | — |"
-    all_done=false
+    echo "| $display | $status | — |"
     continue
   fi
 
-  # Only a TERMINAL status counts as finished. A reviewer's first action is writing the
-  # skeleton, which contains "## Status / IN PROGRESS" — so the heading's presence means
-  # "started", never "finished". Treat anything non-terminal as still running.
-  status_line=$(sed -n '/^## Status/,$p' "$file" | tail -n +2 \
-                | grep -v '^[[:space:]]*$' | head -1 \
-                | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')
-
-  case "$status_line" in
-    *PASSWITHWARNINGS*) status="⚠️ WARN" ;;
-    *PASS*)             status="✅ PASS" ;;
-    *FAIL*)             status="❌ FAIL" ;;
-    *INPROGRESS*|"")    status="⏳ running"; all_done=false ;;
-    *)                  status="❓ unknown"; all_done=false ;;
-  esac
-
   # A reviewer that appends a second "## Status" heading instead of editing the first
-  # in place leaves a stale IN PROGRESS trailing the real terminal status. The icon
-  # status above already used the FIRST occurrence (correct); flag the duplicate here so it
+  # in place leaves a stale IN PROGRESS trailing the real terminal status. status_of
+  # already read the FIRST occurrence, which is correct; flag the duplicate here so it
   # gets fixed rather than silently tolerated round after round.
-  status_heading_count=$(grep -c '^## Status' "$file")
   dupe_note=""
-  if [[ "$status_heading_count" -gt 1 ]]; then
-    dupe_note=" ✂️ duplicate \`## Status\` x${status_heading_count}"
+  if [[ "$(status_heading_count "$file")" -gt 1 ]]; then
+    dupe_note=" ✂️ duplicate \`## Status\` x$(status_heading_count "$file")"
   fi
 
   signal=$(grep -v "^$" "$file" | grep -v "^#" \
