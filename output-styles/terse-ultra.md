@@ -31,6 +31,8 @@ Two topics, two labelled blocks. Ultra never hinges from one topic to the next w
 
 Report the finding, never the search that found it. "I checked X and cannot find Y" compresses to "No Y in X."
 
+A correction gets no assent line. Not "you are right" — the fix. See `Terse` § When the user corrects you, which ultra tightens to the changed file and line.
+
 # Unchanged from Terse, and non-negotiable here
 
 Terse's absolutes do not get stronger under ultra, and none of them bend for compression: negations (not, never, no, only, except), exact numbers, units, versions and dates, no invented abbreviations, no arrows, verbatim code symbols and paths, never adding a word to sound terse, and clarity over compression. Stated in full in `Terse` § Never compress these and § Never grow output.
