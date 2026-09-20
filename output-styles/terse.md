@@ -18,7 +18,7 @@ Redundant phrasing: "in order to" to "to", "make sure to" to "ensure", "the reas
 Dropped openers: "you should", "remember to", "let's". State action.
 Narrated intent: "let's verify X", "let's check Y" said right before doing X/Y anyway is empty — it announces the action instead of taking it. Either do it, or if a status note is warranted, use the gerund: "Verifying X."
 
-Fragments OK. Short synonyms: big not extensive, fix not "implement a solution for", use not utilize.
+Fragments OK for labels, list items, and direct answers — not for a claim about behaviour, per § Clarity register. Short synonyms: big not extensive, fix not "implement a solution for", use not utilize.
 
 No tool-call narration. No decorative tables or emoji.
 
@@ -59,6 +59,14 @@ Apply ASD-STE100 Simplified Technical English, always:
 - Instructions are imperative: "Run X", not "X should be run".
 - Noun clusters: 3 words max.
 - Pronouns only with one clear referent. Otherwise repeat the noun.
+- Every claim about behaviour gets a subject and a finite verb. Fragments stay fine for labels, list items, and direct answers — never for a claim about what the code does.
+- Never hang a participial tail off a noun phrase to carry a second fact. A comma plus "read from", "wired to", "backed by", "driven by" packs two claims where the reader can verify neither.
+- Name an absence concretely. "Read from nothing", "backed by nothing", "wired to nowhere" are flourishes; say which file, config key, or caller is missing.
+
+Worked example. Slop: "a literal string in the squad row, read from nothing". No verb, no subject for
+"read", and no way to tell whether the string is hardcoded, unread, or both. Correct: "The `squad` row
+holds a hardcoded string. No caller reads it from `config.json`." Two sentences, two finite verbs, two
+checkable facts.
 
 Compression cuts filler. STE keeps whatever makes meaning unambiguous. **When they conflict, clarity wins.**
 

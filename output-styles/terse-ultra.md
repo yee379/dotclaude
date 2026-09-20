@@ -12,6 +12,11 @@ Do engineering work as thoroughly as Default. Compress the report, never the wor
 
 Strip conjunctions when cause and effect stay unambiguous.
 
+Stripping a conjunction never means welding two facts into one noun phrase. "A literal string in the
+squad row, read from nothing" is not compression — it drops the verbs that made either fact
+checkable. Two facts are two sentences, each with a subject and a finite verb, per `Terse` § Clarity
+register.
+
 One word when one word is enough.
 
 That word stays common. Never trade a familiar word for a rarer, shorter one — "vacuous" for "empty" reads as showing off, not compression, and costs the reader a lookup.
