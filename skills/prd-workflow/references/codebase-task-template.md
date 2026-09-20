@@ -54,6 +54,44 @@ Numbered list of what Done looks like. Each goal should be independently verifia
 
 What this task deliberately does not do. Prevents scope creep.
 
+## Rationale [optional]
+
+Why this is worth doing now rather than later, and what it is being done instead of. Fill this in
+when the task competes for a release slot, was raised by a user or stakeholder rather than by a
+review, or displaces something already on `TODO.md`. Omit it for maintenance and follow-up work
+where the Problem Statement is the whole argument.
+
+---
+
+## User Stories
+
+One per distinct actor. Keep the acceptance criteria testable — "returns 403", not "handles auth
+correctly".
+
+**As an** operator **I want** the raw error in the logs **so that** I can diagnose a failure the
+LLM never saw.
+
+- **AC:** `LOG.error` receives the unredacted exception text.
+- **AC:** the client response contains no IP address, hostname, or stack frame.
+
+---
+
+## Requirements
+
+### Functional
+
+| ID | Requirement | Verified by |
+|---|---|---|
+| FR-1 | Every transport error is logged raw before being re-raised | `test_logs_raw_error` |
+
+### Non-functional
+
+| ID | Requirement | Budget | Verified by |
+|---|---|---|---|
+| NFR-1 | Sanitisation adds no measurable latency to the error path | < 1 ms | `test_sanitise_latency` |
+
+Every row names what verifies it. A requirement with no verifier is a wish.
+
 ---
 
 ## Design
@@ -72,6 +110,14 @@ GraphQLClient.execute()
 ### Key Decisions
 
 Record every "we chose X over Y because Z" as you design.
+
+### Trade-offs
+
+What each decision costs, stated as the thing given up rather than as a caveat.
+
+| Decision | Gains | Costs | Accepted because |
+|---|---|---|---|
+| Sanitise at the client boundary | One choke point, no resolver changes | Loses per-resolver error detail | No resolver needs it today; #045 revisits if one does |
 
 ---
 
@@ -114,6 +160,42 @@ Questions that must be answered before or during implementation.
 Include a recommended answer so they can be resolved quickly.
 
 1. **Should X or Y?** — Recommendation: X, because Z.
+
+---
+
+## Risk Register
+
+| Risk | Likelihood | Impact | Mitigation | Owner |
+|---|---|---|---|---|
+| Sanitiser strips a message operators rely on | Medium | Low | Raw text stays in logs; mitigation is the design | — |
+
+Carry the residual risk explicitly. A register where every risk is mitigated to zero was not
+written honestly.
+
+---
+
+## Definition of Done
+
+- [ ] Every FR and NFR row has a passing verifier
+- [ ] Every Goal is independently demonstrable
+- [ ] Tests cover the failure path, not only the happy path
+- [ ] Docs updated per `/doc-review`
+- [ ] No open question left unresolved
+- [ ] Shipped release written into the Status line
+
+Distinct from the Implementation Checklist: that tracks steps taken, this states the condition the
+work has to satisfy.
+
+---
+
+## Measured facts — measured YYYY-MM-DD, re-derive before implementing
+
+Every value someone could otherwise guess, with the command that produced it. Re-run these before
+implementing; a measured fact decays.
+
+| Fact | Value | Command | Measured |
+|---|---|---|---|
+| Call sites of `GraphQLClient.execute` | 7 | `rg -c 'execute\(' src/` | YYYY-MM-DD |
 
 ---
 

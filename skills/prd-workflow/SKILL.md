@@ -303,6 +303,35 @@ its own. Never save it all for the end. Always stage **by name**; never `git add
 6. **Never delete task files.** Cancelled tasks get `❌ Won't Do` and a reason.
 7. **One branch per task.**
 8. **Update before ending a session.**
+9. **The task file is where deliberation lives.** Provenance, rejected options, the argument that
+   settled a decision, revisions the plan went through, and what an implementation attempt hit all
+   belong here and nowhere else.
+
+## The task file absorbs the discussion
+
+Everything downstream of the task file carries conclusions only. An ADR, a source file, a comment,
+a commit message, and a PR description each state what is true and why it holds — never how the
+team arrived there, who proposed what, or which alternative was argued first.
+
+| Artifact | Carries | Never carries |
+|---|---|---|
+| Task file | Provenance, options weighed, revisions, problems hit, open questions | — |
+| ADR | The decision, its context, the rejected alternatives with the fact that kills each | The route to the decision, or who favoured what |
+| Code | What the code does | Why the design was debated |
+| Comment | Why this code is non-obvious, or the invariant it protects | A decision history, or a pointer to a conversation |
+| Commit message | One imperative line | Rationale — the task file holds it |
+| PR description | What changed and how to verify it | The deliberation, beyond a task-file link |
+
+An ADR's rejected alternatives are not an exception. It records the alternative and the fact that
+rules it out, which is a conclusion. It does not record that the alternative was preferred for two
+rounds, or which review raised it — that is provenance, and provenance is the task file's.
+
+Where a downstream artifact needs the history, link the task file (`todo/NNN-slug.md`) rather than
+reproducing it. One home means one thing to correct when the history turns out wrong.
+
+This rule is about *placement*. `agentic-standards/references/technical-prose.md` § Leave the
+session out of it governs *phrasing* in every document, including the task file: no "as discussed
+above", no "the user wants", absolute dates. Both apply.
 
 ## Where standards fit
 
@@ -324,7 +353,7 @@ Design section and note it in Problems & Solutions.
 | Skill | Integration |
 |-------|------------|
 | `/codebase-scout` | Writes task files into `todo/`; this workflow picks them up |
-| `/draft-prd` | Fills the Design (codebase) or Platform Design (platform) section |
+| `/draft-prd` | Fills every planning section — see its § Output template for the phase-to-section map |
 | `/board-review` | Run before implementation; verdict updates task status |
 | `/research` | Saved to `todo/research/<slug>/`; linked from the task file |
 | `/k8s-deploy` | Write the outcome to Deployment Log after every apply |

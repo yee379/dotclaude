@@ -293,6 +293,11 @@ For each significant decision, a short ADR using
 the import cycle, the unreachable branch, the measurement. A decision recorded without them gets
 re-litigated: reviewers independently propose options you already closed (rule 7).
 
+**The ADR carries the conclusion, not the route to it.** Which option was argued first, which
+review raised it, and how many rounds it took are provenance — they stay in the task file, per
+`prd-workflow` § The task file absorbs the discussion. Recording the rejected alternative and the
+fact that kills it is a conclusion, so that stays.
+
 **Do not allocate from a shared monotonic sequence while another branch or agent holds it** — ADR
 numbers, migration numbers, task ids. Record *"next free is N, confirm against the merged tree"*
 and state the derivation (`ls docs/adr/`), not the number. Do not assume concurrent work consumes
@@ -487,24 +492,33 @@ Then prompt: *"Plan written and status set to ⬜ Open. Ready to run `/board-rev
 
 ## Output template
 
-```
-# [Feature / Platform Change]: [Name]
+The task file is the output. Its headings are fixed by
+`~/.claude/skills/prd-workflow/references/codebase-task-template.md` or
+`platform-task-template.md` — write into those sections rather than inventing a parallel structure,
+and do not append a second copy of a section that already exists.
 
-## Problem & Goal
-## [User Stories (codebase) | Capacity Assessment (platform)]
-## Requirements (FR + NFR + AC) [codebase] | Feasibility (platform)
-## Module Design (codebase) | Migration Path (platform)
-## System Design (codebase) | Infrastructure Design (platform)
-## ADRs
-## Operational Readiness + Security Posture [platform]
-## Trade-offs
-## Delivery Slices
-## Risk Register
-## Definition of Done
-## Measured facts (dated, with the command for each)
-```
+Phase-to-section map:
 
-**No line-count target.** Length alone is not a defect and is not scored; duplication is. A long
-plan that says everything once is fine; a short plan restating a value in three places is not. If
-a plan feels long, cut restatement, not content — never cut requirements, ADRs, or risk entries to
-hit a page count. A great plan also has diagrams.
+| Phase | Codebase section | Platform section |
+|---|---|---|
+| 1 — Problem framing | Problem Statement, Goals, Non-Goals | Problem Statement, Goals, Non-Goals |
+| 1.5 — User Stories | User Stories | — |
+| 2 — Requirements / Feasibility | Requirements (FR, NFR) | Feasibility, Platform Design › Capacity Assessment |
+| 2.5 — Feasibility checks | Measured facts | Feasibility |
+| 3 — ADRs | `docs/adr/`, count in Board Review | `docs/adr/`, count in Board Review |
+| 3.5 — Module Design / Migration | Design › Architecture | Platform Design › Architecture / Topology |
+| 4 — System / Infra Design | Design › Architecture | Platform Design › Architecture / Topology |
+| 5 — Operational Readiness | — | Platform Design › Operational Readiness |
+| 6 — Security Posture | — | Platform Design › Security Posture |
+| 7 — Trade-offs | Design › Trade-offs | Platform Design › Trade-offs |
+| 8 — Delivery Sequencing | Implementation Plan, Implementation Checklist | Implementation Plan, Implementation Checklist |
+| 9 — Risk Register | Risk Register | Risk Register |
+| 10 — Definition of Done | Definition of Done | Definition of Done |
+| 11 — Precision sweep | every section | every section |
+
+ADRs are separate files under `docs/adr/`, not a task-file section. The task file records the count
+in Board Review and links each one.
+
+Deliberation does not go in the plan sections. Options weighed, revisions, and who raised what
+belong in Provenance and Problems & Solutions, per `prd-workflow` § The task file absorbs the
+discussion.

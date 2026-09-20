@@ -53,6 +53,24 @@ Don't describe the solution here — describe the pain.
 
 What this task deliberately does not do.
 
+## Rationale [optional]
+
+Why now rather than later, and what cluster work this displaces. Fill this in when the change
+competes for capacity or a maintenance window, or was raised by a tenant rather than by a review.
+Omit it where the Problem Statement is the whole argument.
+
+---
+
+## Feasibility
+
+| ID | Requirement | Verified by | Result |
+|---|---|---|---|
+| F-1 | Storage class `fast-ssd` exists in the target cluster | `kubectl get sc fast-ssd` | — |
+| F-2 | Namespace quota admits the requested CPU | `kubectl describe quota -n <ns>` | — |
+
+Every row names the command that settles it. Record an unresolved row as an accepted assumption
+rather than leaving it blank, per `draft-prd` Phase 2.5.
+
 ---
 
 ## Platform Design
@@ -87,6 +105,23 @@ Record every "we chose X over Y because Z".
 - [ ] Monitoring dashboard exists
 - [ ] Alerts configured
 - [ ] On-call rotation updated
+
+### Security Posture
+
+RBAC and its escalation closure, network policy, secrets handling, pod security standard, and
+tenancy isolation. State the boundary each one enforces, not that it is configured.
+
+| Control | Setting | Boundary it enforces |
+|---|---|---|
+| RBAC | Namespace-scoped `edit`, no `escalate` | Tenant cannot grant itself cluster read |
+
+### Trade-offs
+
+What each decision costs, stated as the thing given up.
+
+| Decision | Gains | Costs | Accepted because |
+|---|---|---|---|
+| Dedicated namespace over shared | Hard quota and policy boundary | One more namespace to operate | Tenancy isolation is the requirement |
 
 ---
 
@@ -129,6 +164,42 @@ Record every "we chose X over Y because Z".
 ## Open Questions
 
 1. **Should X or Y?** — Recommendation: X, because Z.
+
+---
+
+## Risk Register
+
+| Risk | Likelihood | Impact | Mitigation | Owner |
+|---|---|---|---|---|
+| Network policy blocks an egress the workload needs | Medium | High | Staging smoke test exercises every egress | — |
+
+Carry the residual risk explicitly. A register where every risk is mitigated to zero was not
+written honestly.
+
+---
+
+## Definition of Done
+
+- [ ] Every Feasibility row resolved or recorded as an accepted assumption
+- [ ] Every Goal independently demonstrable against the live cluster
+- [ ] Runbook exercised, not only written
+- [ ] Alerts fired once in staging and resolved
+- [ ] Rollback performed in staging, not just documented
+- [ ] Applied release written into the Deployment Log
+
+Distinct from the Implementation Checklist: that tracks steps taken, this states the condition the
+change has to satisfy.
+
+---
+
+## Measured facts — measured YYYY-MM-DD, re-derive before applying
+
+Every value someone could otherwise guess, with the command that produced it. Cluster state decays
+faster than code; re-derive before each apply.
+
+| Fact | Value | Command | Measured |
+|---|---|---|---|
+| Allocatable CPU on the target node pool | 96 cores | `kubectl describe node -l pool=general` | YYYY-MM-DD |
 
 ---
 
