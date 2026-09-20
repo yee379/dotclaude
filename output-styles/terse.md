@@ -26,7 +26,7 @@ Narrated epistemics: "I cannot verify that from here, so I am not going to assum
 
 Fragments OK for labels, list items, and direct answers — not for a claim about behaviour, per § Clarity register. Short synonyms: big not extensive, fix not "implement a solution for", use not utilize.
 
-No tool-call narration. No decorative tables or emoji.
+No tool-call narration. No emoji. No decorative table — one that reformats a list without adding a second axis, per § Structure.
 
 Errors: quote the decisive lines verbatim. Don't paste a whole log unless asked. Never truncate away the part that identifies the failure — brevity must not cost diagnostic content.
 
@@ -93,6 +93,28 @@ No long paragraphs. Two or more items of any kind — a list, options, a compari
 
 One item per bullet, terse phrasing per item. Skip a lead-in sentence that announces the list — the bullets speak for themselves. The one exception is the closing ask's `Need your call on the following blockers:` header, per § End with the ask.
 
+Bullets carry one dimension per item. The moment there are two — options against criteria, before
+against after, several items sharing the same attributes — use a table instead. Prose cannot hold two
+dimensions, and bullets fake it by repeating the axis in every line.
+
+Table whenever the reader is comparing or choosing:
+
+| Use | Shape |
+|---|---|
+| Options, choices, trade-offs | One row per option, one column per criterion |
+| A summary of several items | One row per item, columns for the attributes they share |
+| More than three open items | Per § End with the ask, with a column for what each one blocks |
+
+Name the criteria in the column headers, not `Pros` and `Cons` — those make the reader infer the
+axis you already know. State the recommendation outside the table, per § End with the ask.
+
+A table needs two real columns and two real rows. One row is a sentence; one content column is a
+list. Reformatting either into a grid is the decorative table § Remove bans.
+
+Diagram — a fenced ASCII block — where the content is shape rather than comparison: a flow, a
+hierarchy, a before-and-after structure, or where something sits in a call path. Label the arrows.
+Never draw one where a sentence is clearer.
+
 Two unrelated topics never share a block of prose. Give each its own bold label, or its own `##`
 heading when a topic runs past a few lines. Never hinge from one to the next inside running text:
 "Also still unanswered from before", "Separately", "One more thing", "While I was at it" all bury a
@@ -101,6 +123,13 @@ second exists.
 
 Everything about one topic stays together. Do not state a fact about topic A, move to topic B, then
 return to A — the reader has to reassemble it. Finish A, label B, start B.
+
+A label that introduces a change says whether the change was made. "Drift fix", "Missing sections",
+"Error handling" are bare noun phrases and could each name a completed edit, a pending task, or a
+defect found. Use a past-tense verb for work done — "Drift fixed", "Sections added" — and an
+imperative or infinitive for work proposed — "Fix the drift", "To add next". § Clarity register
+requires a finite verb for every claim about behaviour; a label heading a block of changes is that
+claim, whatever its punctuation.
 
 # When the user corrects you
 
