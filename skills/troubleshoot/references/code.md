@@ -80,3 +80,11 @@ If a seam exists:
 ## Exemplars
 
 <!-- Add exemplars here as you diagnose issues -->
+
+### Exemplar: web UI's left margin "too small" after an upstream upgrade (2026-10-05)
+- **Symptom**: the sidebar text and the terminal sat close to the window's left edge in the Omnigent web UI after the upgrade to 0.16. The problem came back after a padding fix.
+- **Signal**: pixel measurement of the user's screenshot. Every band (header badge, nav, rows) sat the same 12 ±1 CSS px left of where its classes put it, which is a scroll offset rather than a padding change.
+- **Alternatives ruled out**: the sidebar's classes and CSS were byte-identical to 0.14. The served bundle and CSS already carried the earlier gutter fix. The HTTPRoute served the fork GUI, not upstream's.
+- **Root cause**: "a closed workspace rail with `transform: translateX(12px)` overflowed the unclipped `.app-shell`. A `scrollIntoView({inline: "nearest"})` on a rail tab then scrolled `<html>` 12px left, and `html { overflow: hidden }` kept the user from scrolling it back. Not padding, which had not changed."
+- **Fix**: `overflow-x-clip` on `.app-shell`. A clip box is not a scroll container, so the overflow never reaches the document.
+- **Prevention**: when padding "regresses" without any class change, measure whether every element moved by the same amount. A uniform shift means a scroll offset. Look for transformed boxes past the viewport edge under an `overflow: hidden` root.
