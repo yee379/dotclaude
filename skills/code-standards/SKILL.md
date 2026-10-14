@@ -147,10 +147,43 @@ tests too.
 | Query shape and result bounding | `references/performance.md` |
 | Before/after examples of each anti-pattern | `references/code-smells.md` |
 
-## Code smells
+## Reduce Complexity
 
-Watch for long functions (>50 lines), deep nesting (5+ levels), magic numbers, dead code, and
-inconsistent naming. Examples in `references/code-smells.md`.
+Complexity comes from dependencies and obscurity, not line count — a shorter file that's harder to
+trace is not simpler, and a dense one-liner collapsing three decisions into unreadable code is not
+a win. Never minimize line count as a goal in itself.
+
+- **Deep modules.** A simple interface hiding real work beats a thin wrapper that exposes its
+  internals. Fewer, deeper modules over many shallow ones (Ousterhout).
+- **Rule of Three.** Tolerate duplication through the second occurrence; extract on the third.
+  Abstracting on the first or second usually locks in the wrong shape (Fowler).
+- **Tidy as you touch.** Leave a file clearer than found, in the same change — not a separate
+  cleanup pass (Boy Scout Rule).
+- **Scope review findings.** When a review flags gaps, fix what breaks correctness or the stated
+  requirement. Extra abstraction layers, defensive branches for cases that can't happen, and
+  speculative config suggested by a reviewer are optional, not findings to chase — chasing all of
+  them is how over-engineering gets introduced after the fact.
+
+### Checkable limits
+
+Lint-enforced ceilings, not targets to hit exactly. Flag when crossed; don't rewrite working code
+just to shave a line.
+
+| Signal | Ceiling | Source |
+|---|---|---|
+| Function length | 50 lines | ESLint `max-lines-per-function` default |
+| Nesting depth | 4 levels | ESLint `max-depth` default |
+| Parameters | 3-4 | ESLint `max-params` default |
+| File length | 300 lines (100-500 band) | ESLint `max-lines` |
+| Cyclomatic / cognitive complexity | 10-20 per function | McCabe's original heuristic; SonarQube's Cognitive Complexity default (15) |
+
+These are long-standing convention, not a validated productivity study — cyclomatic complexity,
+cognitive complexity, and the maintainability index all correlate heavily with raw line count and
+are contested as predictors of real maintainability. Treat a crossed ceiling as a prompt to look,
+not a score to optimize — gaming one by collapsing logic into denser code defeats the point.
+
+Also watch for magic numbers, dead code, and inconsistent naming. Examples in
+`references/code-smells.md`.
 
 ## Related skills
 
