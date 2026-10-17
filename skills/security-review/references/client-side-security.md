@@ -54,7 +54,12 @@ Also:
 - [ ] `object-src 'none'` and `base-uri 'self'` — `<base>` injection redirects every relative URL
 - [ ] `frame-ancestors` set (the clickjacking control; `X-Frame-Options` is the legacy fallback)
 - [ ] `form-action` restricted, so an injected form cannot post credentials off-origin
-- [ ] Report-only mode with a collector someone reads
+- [ ] Report-only mode with a collector someone reads — and an end date. Report-only blocks
+      nothing; enforce once the reports are clean
+- [ ] Content that must run script (a user- or agent-authored HTML preview) renders in a document
+      of its own served with a `sandbox` CSP, which gives it an opaque origin. An `srcdoc` frame
+      inherits the parent's origin. The parent's `message` receiver checks `event.source` is that
+      frame and `event.origin === "null"`
 
 ## 4. Token storage and cookies
 
@@ -65,6 +70,11 @@ Also:
 - [ ] **Scope:** `Domain=.example.com` sends the session to every subdomain, so one vulnerable or
       third-party-hosted subdomain reads it. Prefer host-only cookies and the `__Host-` prefix
 - [ ] Session identifier rotated on login and any privilege change (`vuln-classes.md` 8)
+- [ ] **The gateway's cookie too.** An SSO proxy's session cookie on a parent domain with no
+      `SameSite` makes every sibling host same-site, and browsers' Lax-by-default does not stop a
+      same-site request. Read its `Set-Cookie`, not the application's
+- [ ] `Clear-Site-Data: "cookies"` clears cookies for the whole registrable domain — every sibling
+      application's session. Send `"cache", "storage"` unless that is intended
 
 ## 5. CSRF
 
@@ -77,6 +87,12 @@ Also:
 - [ ] `GET` requests have no side effects
 - [ ] Login CSRF (victim logged into the attacker's account) and logout CSRF considered
 - [ ] WebSocket handshakes validate `Origin` — CORS does not apply
+- [ ] `Sec-Fetch-Site` is the simplest robust gate: refuse a state-changing request whose value is
+      `same-site` or `cross-site`. The application's own pages send `same-origin`; non-browser
+      clients send none. It can be enforced at a gateway for an application you cannot patch — then
+      confirm no more specific route rule wins over it (`vuln-classes.md` 19)
+- [ ] An application-wide guard (JSON content type, `Origin` check) is verified **per route**: one
+      route registered without the dependency is the bypass
 
 ## 6. Cross-origin surface
 
@@ -98,6 +114,31 @@ Also:
       staff-only flags
 - [ ] Source maps not published to production, or access-controlled
 - [ ] Data the API returns but the UI hides is disclosed (§4.8)
+
+## 8. Content on the origin from a less-trusted source
+
+- [ ] A server that proxies files from a less-trusted backend (a worker, a runner, a user's host,
+      object storage) does not pass the backend's `Content-Type` and `Content-Disposition` through.
+      Force `attachment`, `X-Content-Type-Options: nosniff` and `Content-Security-Policy: sandbox`,
+      or the backend's owner serves HTML on your origin
+- [ ] A `blob:` URL has the origin of the page that made it. A blob built with a server-supplied
+      type (SVG, HTML, XHTML) runs its script when opened in its own tab. Give active types an
+      inert type, or sanitise before making the blob
+- [ ] `window.open("")` returns a same-origin `about:blank` tab; assigning an unchecked URL to its
+      `location` runs `javascript:` on your origin. Parse with `new URL()` and navigate only for
+      `http:` and `https:`
+- [ ] Links from tool output, MCP elicitations, pull-request metadata or any third-party record are
+      attacker-controlled `href`s, scheme-checked like user input
+
+## 9. Persistence after an XSS
+
+- [ ] Service workers and Cache Storage written by same-origin script outlive the page and the
+      session, and the next account on the same browser reads them back. Naming caches per user
+      does not help: script on the origin can open any cache name
+- [ ] Clear them from the server when the account changes: an `HttpOnly` cookie holding an HMAC of
+      the user, which script can neither read nor forge, and `Clear-Site-Data: "cache", "storage"`
+      on a document response when the cookie is missing or names someone else. Treat a missing
+      cookie as another user's, so evicting it only forces a clear
 
 ---
 

@@ -75,6 +75,9 @@ support_agent
 - **Wildcards and inheritance:** does a parent grant silently cover children created later? Is
   that intended, and visible to whoever grants it?
 - Are permissions additive only, or can a deny be shadowed by an allow?
+- Does one sentinel mean two things? A level of `None` for both "permissions are off" and "this
+  caller has no direct grant here" lets the second take the first's path, which allows everything.
+  Inherited access (a child object reached through its parent's grant) is where it shows up
 
 ## 5. Comprehensibility
 

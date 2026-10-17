@@ -1,6 +1,6 @@
 ---
 name: security-review
-description: Adversarial security review for backend APIs, web frontends, Kubernetes workloads, GraphQL endpoints, Python services, and infrastructure. Threat-models the change, enumerates the attack surface, actively hunts for vulnerable code, and reports findings with an attack path and severity — covering auth bypass, the authorisation model itself, IDOR, injection, XSS and client-side sinks, SSRF, secrets, cryptographic design, data classification and egress, supply chain, open CVEs, zero trust, and whether an exploit would even be detected. Use when asked to review security, "is this safe", audit for vulnerabilities, or as part of /board-review.
+description: Adversarial security review for backend APIs, web frontends, Kubernetes workloads, GraphQL endpoints, Python services, MCP and agentic infrastructure, and infrastructure. Threat-models the change, enumerates the attack surface, actively hunts for vulnerable code, and reports findings with an attack path and severity — covering auth bypass, the authorisation model itself, OAuth/OIDC and SAML flow misconfiguration, WebAuthn/passkeys, IDOR, injection, XSS and client-side sinks, SSRF, secrets, cryptographic design, data classification and egress, supply chain, open CVEs, zero trust, and whether an exploit would even be detected. Use when asked to review security, "is this safe", audit for vulnerabilities, or as part of /board-review.
 license: MIT
 compatibility: opencode
 ---
@@ -57,17 +57,22 @@ When run inside `/board-review`, the orchestrator provides `Plan file:` and `Out
   input get `blocking`.
 
 Checkpoints: threat model, attack surface, hunt sweep, vulnerability classes, secrets, auth,
-authorisation, authorisation model, input validation, API security, client-side, Kubernetes,
-supply chain, data protection, data governance, CVE scan, crypto design, detection and audit,
-defense in depth, trust boundary trace.
+authorisation, authorisation model, OAuth/OIDC, SAML/SSO, WebAuthn, input validation, API security,
+client-side, MCP and agentic infrastructure, Kubernetes, supply chain, data protection, data
+governance, CVE scan, crypto design, detection and audit, defense in depth, trust boundary trace.
 
 ## Priority hierarchy
 
 Low on context: Step 0 → Step 1 → Step 2 → auth/authz and the authorisation model → injection
 (server-side, then client-side) → secrets → Step 3 classes → detection and audit → Kubernetes →
-supply chain → data protection and governance → crypto design → CVE scan → defense in depth.
+supply chain and CVE scan → data protection and governance → crypto design → defense in depth.
 **Never skip Step 0, Step 1, Step 2, or auth/authz.** A partial review that enumerated the
 surface beats a complete checklist walk that did not.
+
+Supply chain and CVE scan moved up from last-but-one: exploited vulnerabilities in internet-facing
+infrastructure are a real, rising initial-access vector per current breach-telemetry reporting,
+contested by survey-based reporting that ranks phishing first instead. Treat this as a deliberate
+increase in attention, not a claim that injection or auth/authz matter less.
 
 ---
 
@@ -98,7 +103,8 @@ git diff $(git merge-base HEAD main 2>/dev/null || git merge-base HEAD master 2>
 Sweep beyond HTTP routes: HTTP/GraphQL/gRPC endpoints, queue and stream consumers, webhook
 receivers, scheduled jobs, CLI commands and flags, environment variables and config files, file
 and object-storage uploads, template render inputs, deserialisation sites, inter-service calls,
-admin and debug surfaces, and anything an LLM tool call can reach.
+admin and debug surfaces, MCP servers and other tool-serving infrastructure, and anything an LLM
+tool call can reach.
 
 Per entrypoint: **who reaches it without credentials, and what is the worst they can do if the
 authorisation decision is wrong?** A row with no authorisation decision, or one that happens only
@@ -121,7 +127,7 @@ tables ran; an omission needs a justification grounded in the code.
 
 ## Step 3 — Answer the classes grep cannot see
 
-Load `references/vuln-classes.md` — the 14 classes that appear as a *missing* pattern, an
+Load `references/vuln-classes.md` — the 20 classes that appear as a *missing* pattern, an
 interaction, or a logic error rather than a bad line. For each class the change triggers, answer
 its questions and record the answer. **"Not considered" is itself a finding.**
 
@@ -148,6 +154,13 @@ Fix shapes: `references/remediation-examples.md`.
 Load `references/jwt-authentication.md` for JWT verification and secure cookie patterns. Then
 enumerate **every** authentication path, not just the one this change touches — class 8 in
 `vuln-classes.md`.
+
+If the change touches OAuth or OIDC, load `references/oauth-oidc-security.md` — `redirect_uri`
+exact matching, PKCE, issuer binding, and CI/CD OIDC federation trust policy are common gaps a
+JWT-only review misses. If it touches SAML or SSO, load `references/saml-sso-security.md` — XML
+Signature Wrapping is live in 2025-era CVEs, not a legacy concern. If it touches WebAuthn or
+passkeys, load `references/webauthn-passkey-security.md`, and check the account-recovery flow with
+the same scrutiny as the passkey flow itself — it is usually the weaker path.
 
 ### 4.3 Authorisation
 
@@ -185,6 +198,11 @@ Platform layer — RBAC topology, NetworkPolicy, multi-tenancy, service mesh —
 - [ ] Secrets via mounted volume or external-secrets, not environment variables
 - [ ] Image referenced by digest, not a mutable tag
 - [ ] Image scan passes in CI (trivy/grype); no CISA KEV matches in base image or deps
+- [ ] Container runtime and kernel patch level tracked as its own item, not assumed covered by
+      application dependency scanning — a workload can pass every check above and still be
+      exploitable through the runtime underneath it (e.g. a runc symlink-race escape)
+- [ ] No mount of the Docker or CRI-O socket into a workload — the single most-cited real-world
+      container-escape path
 
 ### 4.7 Dependency and supply chain
 
@@ -195,12 +213,25 @@ trivy image ghcr.io/org/api:1.4.2  # container image
 ```
 
 - [ ] Vulnerability scan in CI, blocking on high/critical
-- [ ] Lock files committed (`uv.lock`, `package-lock.json`)
+- [ ] Lock files committed (`uv.lock`, `package-lock.json`) **and honoured by the image build** —
+      a build that resolves afresh ships versions the lock never allowed, and its scan results
+      describe a different tree
 - [ ] Base image pinned to digest; GitHub Actions pinned to commit SHA
 - [ ] Automated dependency update PRs (Dependabot / Renovate)
 - [ ] No CDN-loaded third-party script without an SRI hash
 - [ ] New dependencies checked for typosquatting, install-time scripts, and dependency confusion
 - [ ] CI cannot leak secrets to fork-triggered workflows (`pull_request_target`, `workflow_run`)
+- [ ] Secrets rotated on a stated cadence, not left valid indefinitely — this is a separate check
+      from the fork-PR leakage check above, since a secret can be handled correctly in CI and still
+      sit unrotated for years
+- [ ] CI runners named explicitly as a compromise target in the threat model, not only developer
+      machines — a compromised runner reaches the same secrets a compromised laptop would
+- [ ] Third-party SaaS and AI-tool integrations with repo or credential access reviewed as a supply
+      chain entrypoint, not assumed safe because they are not a code dependency
+- [ ] If an SBOM is generated, something consumes it — re-matched against newly disclosed CVEs after
+      release, not only scanned once against the source tree at build time
+- [ ] If build provenance (SLSA) is generated, something verifies it before deploy — generation
+      without verification satisfies no threat model
 
 ### 4.8 Data protection
 
@@ -226,6 +257,9 @@ flow above reaches every copy. An unenumerated destination is an unreviewed one.
 2. **EPSS** — prioritise > 0.5 regardless of CVSS.
 3. **CISA KEV match** — an immediate blocker.
 4. Newly disclosed CVEs in frameworks used, since the last review.
+5. **The upstream project's own tracker** for the version you run: security issues, fix PRs and
+   GitHub security advisories (GHSA). Fixes are often public as issues or PRs long before any CVE,
+   and a PR closed unmerged leaves the flaw in place.
 
 ```bash
 trivy image --severity CRITICAL,HIGH ghcr.io/org/api:1.4.2
@@ -270,6 +304,17 @@ Everything above is prevention. This answers: **if this were exploited, would we
 we reconstruct it?** Absent detection never reduces the severity of a preventable flaw — report
 both.
 
+### 4.14 MCP and agentic infrastructure
+
+*Trigger: the change adds, configures, or depends on an MCP server, or orchestrates more than one
+agent.* Load `references/mcp-security.md`.
+
+Distinct from class 9 in `vuln-classes.md`, which covers untrusted content reaching a model through
+an already-trusted tool: this covers the tool-serving infrastructure itself being the vulnerable
+component, and the agent-to-agent trust boundaries when more than one agent is involved — classes
+15 and 16 in `vuln-classes.md`. A server trusted "because it only runs locally" is still reachable
+by any other local process; local execution is not an authentication boundary.
+
 ---
 
 ## Step 5 — Trust boundary trace
@@ -303,7 +348,7 @@ Security Review complete
 Threat model:          N assets, N adversaries in scope, N inherited trust assumptions
 Attack surface:        N entrypoints enumerated, M with no authz decision
 Hunt sweep:            N/N tables run (omitted: <table> — <reason>)
-Vulnerability classes: N/14 applicable, N answered
+Vulnerability classes: N/20 applicable, N answered
 Authorisation model:   N decision points, N escalation paths found
 Detection:             N security events logged / N required; denials logged: yes|no
 Egress destinations:   N enumerated, N without a covering agreement
@@ -336,3 +381,6 @@ with citations, plus these items that live in the references rather than the box
 - [ ] Keys: rotation operationally possible, compromise procedure named, separate per environment
 - [ ] Audit trail: separate from app logs, append-only, retention stated, queryable by actor *and* object
 - [ ] OWASP Top 10 and API Top 10: each item considered and addressed or acknowledged
+- [ ] Mitigations at a gateway or proxy probed per path spelling (encoded separators, double
+      encoding), with the answering component identified — not read from the configuration. Write
+      probes target objects that do not exist: a probe that succeeds has written real data

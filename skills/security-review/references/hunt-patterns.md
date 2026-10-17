@@ -101,6 +101,10 @@ so these rank alongside the server-side injection table, not below it.
 | Token in web storage | `rg -n 'localStorage\.\|sessionStorage\.'` | A token here is readable by any XSS on the origin |
 | CSP weakened | `rg -n "unsafe-inline\|unsafe-eval\|Content-Security-Policy"` | Either directive defeats CSP as an XSS control |
 | Secrets in the bundle | `rg -n '(api[_-]?key\|token\|secret)' dist/ build/ .next/ 2>/dev/null` | Grep the **built** output, not the source |
+| Proxied content headers | `rg -n -i 'content-disposition\|content-type' -g '*proxy*' -g '*route*'` then read each forwarding site | A header copied from a less-trusted backend decides how the browser renders it on your origin |
+| Blob with a supplied type | `rg -n 'createObjectURL\(\|new Blob\('` | Is the type taken from a response? An SVG or HTML blob runs script in a tab of its own |
+| Same-origin blank tab | `rg -n "window\.open\(\s*[\"']{2}"` | Followed by a `location` assignment of an unchecked URL: `javascript:` on your origin |
+| Origin storage that persists | `rg -n 'serviceWorker\.register\|caches\.open\|indexedDB\.open'` | What clears it when the account using the browser changes? |
 | Origin check by prefix | `rg -n 'startsWith\(.*origin\|endsWith\(.*\(host\|origin\)\|origin\.includes\('` | `evil-example.com` and `example.com.evil.com` both pass |
 
 ## API shape and GraphQL

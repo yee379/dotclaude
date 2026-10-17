@@ -104,6 +104,12 @@ can call tools.
 - Is model output that becomes a command, query, path, or URL validated the same way user input
   would be? Model output is untrusted input.
 - Can the model reach a secret, an internal endpoint, or another tenant's data through a tool?
+- **Excessive autonomy:** does a high-impact or irreversible action — moving funds, modifying
+  production, sending a communication — execute without a human-in-the-loop gate? Scoping the tool
+  set (above) bounds *what* the model can reach; this bounds *whether it can act alone* once it
+  reaches it. Both answers are required, not one or the other.
+- If any tool is served by an MCP server, review the server itself against `mcp-security.md` — a
+  vulnerable tool-serving process is a separate risk from a malicious prompt reaching a clean one.
 
 ## 10. Supply chain beyond CVEs
 
@@ -156,6 +162,13 @@ can call tools.
   Compare them directly — this is one of the highest-yield checks in the whole review.
 - **Field selection as disclosure:** can a caller request a field the UI hides? Over-fetching is
   disclosure regardless of what the client renders.
+- **Inventory management (OWASP API9):** does a deprecated or undocumented API version still
+  respond? List every version reachable, not just the one the current client calls — a zombie
+  endpoint often skipped the authz/validation fixes the current one received.
+- **Unsafe consumption of APIs (OWASP API10):** does this service trust a downstream API's response
+  without validating it — the inverse of SSRF, where the risk is in what your app *does* with a
+  reply rather than where it sends the request? A malicious or compromised upstream can return data
+  that drives an injection, a redirect, or a trust decision on your side.
 
 ## 14. Client-side trust boundary
 
@@ -167,3 +180,99 @@ can call tools.
 - Does the bundle carry a secret, an internal hostname, or an unreleased endpoint path?
 - Is a stored XSS reachable by a lower-privileged user and rendered to a higher-privileged one?
   That is a privilege-boundary crossing, not a cosmetic bug.
+
+## 15. RAG access-control inheritance
+
+*Trigger:* any retrieval-augmented generation system over a multi-tenant or mixed-trust document
+store.
+
+- Does a document's access-control metadata propagate from ingestion to each individual retrieved
+  chunk, or is access checked only at ingestion and assumed to hold at retrieval? The two are not
+  the same system, and this is a confused-deputy-via-retrieval gap, not a tool-scoping problem.
+- Can a document injected into the corpus by a lower-privileged source (a shared drive, a ticket, a
+  support inbox) be retrieved into a higher-privileged user's context? That is corpus poisoning, a
+  write-time attack distinct from runtime prompt injection.
+- Are embeddings themselves treated as sensitive data? A compromised vector store can leak a
+  meaningful fraction of the source text back out — embeddings need the access control and
+  encryption of the documents they were derived from, not an afterthought.
+
+## 16. Agent-to-agent trust boundaries
+
+*Trigger:* the system orchestrates more than one agent, or an agent at one privilege level can
+invoke another.
+
+- A trust boundary exists wherever identity, data, authority, or state crosses into a component with
+  a different policy owner — user to orchestrator, orchestrator to a specialist agent, agent to
+  shared memory, agent to an external provider. Name each crossing in this change.
+- Can a lower-privileged agent cause a higher-privileged one to act on its behalf (vertical
+  escalation), or can one agent's output corrupt a peer's context or decision (horizontal
+  propagation)? Prompt-level defenses on one agent do not stop propagation across the chain.
+- Does shared memory or state between agents carry the same scoping as a direct API call would, or
+  is it treated as an internal, implicitly trusted channel?
+
+## 17. Application-layer security misconfiguration
+
+*Trigger:* always — distinct from the Kubernetes pod-security checklist and the crypto key-lifecycle
+checklist, which cover different layers.
+
+- Are debug endpoints, admin panels, or verbose error pages reachable in production?
+- Are default credentials still active on any component — a database, a cache, an admin console?
+- Are standard security headers set (HSTS, CSP, X-Frame-Options, X-Content-Type-Options), or is the
+  default framework response relied on?
+- Is any feature or endpoint enabled that the application does not use — a default sample route, an
+  unused API version, a management interface left on?
+
+## 18. Mishandling of exceptional conditions
+
+*Trigger:* always.
+
+- Does an unhandled exception leak internal state — a stack trace, a query, a file path — into a
+  response or a log a lower-privileged actor can read?
+- Is there a code path that fails open — an authorization check, a validation step, or a feature
+  flag that defaults to allow when its dependency errors?
+- Do the error paths for authentication, validation, and business logic behave consistently, or can
+  a caller distinguish "invalid input" from "not authorized" from "internal error" in a way that
+  becomes an oracle?
+
+## 19. The front door and the backend disagree
+
+*Trigger:* a gateway, proxy, ingress or mesh makes a security decision for a backend —
+authenticates, injects an identity header, denies a route, or rewrites headers.
+
+- Identity asserted in a header: can anything other than the gateway reach the backend and set it —
+  a neighbouring Pod, a sidecar, another tenant's workload? A NetworkPolicy in the manifests is not
+  enforcement: some clusters accept and ignore it (vclusters, CNIs without policy support). Prove
+  isolation with a probe from a neighbouring Pod.
+- Does a path rule match every path the backend routes to the same handler? Gateways and backends
+  decode differently: an encoded separator (`%2F`) kept by one and decoded by the other, encoded
+  letters, and double encoding (`%252F`) that passes a check made after one decode. The rule must
+  accept every spelling the backend serves.
+- Rule precedence across match types (regex against prefix, header and method matches) is
+  implementation-specific. A more specific *allow* rule can beat a general *deny*. Measure which
+  component answered, per spelling, rather than reading the configuration.
+- Fail closed: route guarded requests to a component that refuses everything it does not
+  explicitly serve, so a pattern that matches too much denies rather than leaks.
+- Before blocking an upstream route, list its callers from source and from access logs. Agents,
+  hosts and CLIs often call through the same public gateway, with the same kind of token a hostile
+  user holds, so a gateway cannot tell them apart.
+
+## 20. Delegation that outlives or exceeds the grant
+
+*Trigger:* sharing, collaboration roles, delegated administration, or any field a non-owner can
+write on an object that later runs as its owner.
+
+- Can a collaborator write something the owner's process consumes — launch arguments, config,
+  hooks, environment, a tool allow-list, a schedule? It runs as the owner. Allow-list it at the
+  consumer, and log rejected names, never values.
+- Does what a grantee wrote survive the grant's revocation — a stored setting, a planted argument,
+  a resource moved into the grantee's own object?
+- Does revocation propagate? Removing someone from the source of truth (a roster, an IdP group)
+  must clear every derived copy: a database flag, a cached role, an issued token. Turning a feature
+  off must revoke what it granted, not only stop new grants.
+- Can the requester answer its own approval? An approval or step-up whose response the same caller
+  can supply in a retry is not an approval.
+- Is redaction applied to every representation? A JSON view that redacts secrets beside a raw
+  export or bundle download that does not, served at a lower permission level, is the leak.
+- Does a report from a semi-trusted agent (a worker, a host, a runner) bind to resources that agent
+  owns, or can one tenant's agent fail, close or relabel another tenant's resource by naming its ID?
+
