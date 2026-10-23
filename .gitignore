@@ -40,5 +40,6 @@ observations.jsonl
 # Out-of-tree scratch and caches — regenerated, never version controlled
 data/
 skills/synced/
+**/.trash
 policy-limits.json.stamp.json
 policy-limits.json.stamp.json.tmp.*
