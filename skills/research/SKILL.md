@@ -158,16 +158,33 @@ For each major claim or recommendation:
 3. Are any sources low-credibility, outdated, or single-sourced?
 4. What assumptions are baked in that might not hold in a different context?
 5. Is the conclusion stronger than the evidence actually supports?
+6. Where sources conflict or overlap (RFC vs. draft vs. vendor doc vs. blog post), does the
+   synthesis state which one takes precedence and why? An unresolved conflict with no stated
+   precedence is a material finding, not a detail to smooth over.
+7. For each claimed "standard" or "best practice", is there a real implementation example — not
+   just the spec text — showing the concrete fields or values in use (e.g., an actual `act.iss` /
+   `act.sub` pair in a token-exchange implementation, not just RFC 8693's description of them)? A
+   practice with no cited implementation is unverified in practice, whatever the spec says.
+8. How prevalent is the practice actually — ubiquitous, common among major implementers, a single
+   vendor's convention, or seen only in a draft/proposal with no adoption? State this explicitly;
+   "best practice" asserted without an adoption estimate is a claim stronger than its evidence.
 
-Search specifically for: criticism, failure post-mortems, dissenting expert
-opinion, known limitations, and edge cases the initial research may have missed.
+Search specifically for: criticism, failure post-mortems, dissenting expert opinion, known
+limitations, edge cases the initial research may have missed, real production implementations
+(open-source code, vendor docs with worked examples) of each claimed standard, and any data on
+how many implementers actually follow it.
 
-Return a list of challenges, each with a severity (material / minor) and the
-source or reasoning behind it. Do not pad — if a finding is solid, say so briefly.
+Return a list of challenges, each with a severity (material / minor) and the source or reasoning
+behind it. Tag each challenge by kind — counter-evidence, unresolved precedence, or
+missing/unverified real-world implementation — so the synthesis step can route it correctly. Do
+not pad — if a finding is solid and already backed by a real implementation, say so briefly.
 ```
 
 Incorporate the results: strengthen the claim with corroboration, lower its confidence, or move it
-to Open Questions.
+to Open Questions. For an unresolved-precedence challenge, state the precedence explicitly in the
+report (which source wins and why) rather than presenting the conflicting sources side by side. For
+a missing-implementation challenge, either add the real example found or relabel the claim as
+spec-only / low adoption — do not keep calling it a "best practice" without one.
 
 ### Step 5 — Consolidate and synthesise
 
